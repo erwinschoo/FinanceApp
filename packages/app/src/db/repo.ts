@@ -3,7 +3,7 @@ import { toCents } from "../lib/money";
 import { uid } from "../lib/id";
 import { payeeKey, type PayeeRef } from "../helpers/payees";
 import { scheduleSync } from "../sync/autoSync";
-import type { Category, CategoryType, GoalRow, ParsedRow, RuleRow, TxRow } from "./types";
+import type { Category, CategoryGroupRow, CategoryType, GoalRow, ParsedRow, RuleRow, TxRow } from "./types";
 
 /* Categorie van een transactie wijzigen (handmatig → auto:false). */
 export async function updateTxCategory(id: string, category: string): Promise<void> {
@@ -211,8 +211,10 @@ export async function existingHashes(): Promise<Set<string>> {
 /* ── Categorie-beheer ── */
 const TINTS = ["var(--blue-soft)", "var(--orange-soft)", "#F2EFF7", "#ECF3F1", "#EBF1F2", "#F7EEF1", "#FAF1E6", "#F1F2F4", "#EAF3F4"];
 
-export async function addCategory(c: { name: string; color: string; type: CategoryType; parentId: string | null }): Promise<string> {
+export async function addCategory(c: { name: string; color: string; type: CategoryType; groupId: string }): Promise<string> {
   const id = uid("c");
+  const inGroup = (await db.categories.where("groupId").equals(c.groupId).toArray());
+  const order = inGroup.reduce((m, x) => Math.max(m, x.order ?? 0), -1) + 1;
   const row: Category = {
     id,
     name: c.name.trim() || "Naamloos",
@@ -220,39 +222,124 @@ export async function addCategory(c: { name: string; color: string; type: Catego
     tint: TINTS[Math.floor(Math.random() * TINTS.length)],
     initial: (c.name.trim()[0] || "?").toUpperCase(),
     type: c.type,
-    parentId: c.parentId,
+    groupId: c.groupId,
+    order,
   };
   await db.categories.put(row);
   scheduleSync();
   return id;
 }
 
-export async function updateCategory(id: string, patch: Partial<Pick<Category, "name" | "color" | "type" | "parentId">>): Promise<void> {
+export async function updateCategory(id: string, patch: Partial<Pick<Category, "name" | "color" | "type" | "groupId">>): Promise<void> {
   const clean: Partial<Category> = { ...patch };
   if (patch.name != null) clean.initial = (patch.name.trim()[0] || "?").toUpperCase();
+  // bij wisselen van groep achteraan in de nieuwe groep plaatsen
+  if (patch.groupId != null) {
+    const inGroup = await db.categories.where("groupId").equals(patch.groupId).toArray();
+    clean.order = inGroup.filter((x) => x.id !== id).reduce((m, x) => Math.max(m, x.order ?? 0), -1) + 1;
+  }
   await db.categories.update(id, clean);
   scheduleSync();
 }
 
 /* Hoeveel transacties gebruiken deze categorie (voor veilig verwijderen). */
-export async function categoryUsage(id: string): Promise<{ txCount: number; childCount: number }> {
+export async function categoryUsage(id: string): Promise<{ txCount: number }> {
   const txCount = await db.transactions.where("category").equals(id).count();
-  const childCount = await db.categories.where("parentId").equals(id).count();
-  return { txCount, childCount };
+  return { txCount };
 }
 
 /* Verwijder een categorie. Transacties + payee-mappings die ernaar wijzen worden
- * naar 'reassignTo' verplaatst (default 'overig'). Groepen met kinderen kunnen niet
- * worden verwijderd zolang er kinderen zijn. */
+ * naar 'reassignTo' verplaatst (default 'overig'). */
 export async function deleteCategory(id: string, reassignTo = "overig"): Promise<void> {
-  const childCount = await db.categories.where("parentId").equals(id).count();
-  if (childCount > 0) throw new Error("Verplaats of verwijder eerst de subcategorieën.");
   await db.transaction("rw", db.categories, db.transactions, db.payees, async () => {
     const txs = await db.transactions.where("category").equals(id).toArray();
     if (txs.length) await db.transactions.bulkPut(txs.map((t) => ({ ...t, category: reassignTo })));
     const payees = await db.payees.where("categoryId").equals(id).toArray();
     if (payees.length) await db.payees.bulkPut(payees.map((p) => ({ ...p, categoryId: reassignTo })));
     await db.categories.delete(id);
+  });
+  scheduleSync();
+}
+
+/* ── Categoriegroep-beheer (puur organisatorisch) ── */
+const GROUP_COLORS = ["var(--blue)", "var(--orange)", "var(--pos)", "var(--cat-5)", "var(--cat-6)", "var(--cat-4)", "#7A6FA8", "#5AA0A8"];
+
+export async function addCategoryGroup(g: { name: string; color?: string }): Promise<string> {
+  const id = uid("grp");
+  const all = await db.categoryGroups.toArray();
+  const order = all.reduce((m, x) => Math.max(m, x.order ?? 0), -1) + 1;
+  await db.categoryGroups.put({
+    id,
+    name: g.name.trim() || "Nieuwe groep",
+    color: g.color ?? GROUP_COLORS[all.length % GROUP_COLORS.length],
+    order,
+  });
+  scheduleSync();
+  return id;
+}
+
+export async function updateCategoryGroup(id: string, patch: Partial<Pick<CategoryGroupRow, "name" | "color">>): Promise<void> {
+  await db.categoryGroups.update(id, patch);
+  scheduleSync();
+}
+
+/* Verwijder een groep. De categorieën erin verhuizen naar 'reassignTo' (verplicht:
+ * een groep mag geen wezen achterlaten). */
+export async function deleteCategoryGroup(id: string, reassignTo: string): Promise<void> {
+  if (!reassignTo || reassignTo === id) throw new Error("Kies een groep om de categorieën naartoe te verplaatsen.");
+  await db.transaction("rw", db.categories, db.categoryGroups, async () => {
+    const members = await db.categories.where("groupId").equals(id).toArray();
+    if (members.length) {
+      const target = await db.categories.where("groupId").equals(reassignTo).toArray();
+      let order = target.reduce((m, x) => Math.max(m, x.order ?? 0), -1);
+      await db.categories.bulkPut(members.map((c) => ({ ...c, groupId: reassignTo, order: ++order })));
+    }
+    await db.categoryGroups.delete(id);
+  });
+  scheduleSync();
+}
+
+/* Zet een categorie in een (andere) groep op positie 'index' (drag & drop-drop).
+ * Hernummert de orders binnen de doelgroep naar 0…N. */
+export async function setCategoryGroup(catId: string, groupId: string, index?: number): Promise<void> {
+  await db.transaction("rw", db.categories, async () => {
+    const cat = await db.categories.get(catId);
+    if (!cat) return;
+    const others = (await db.categories.where("groupId").equals(groupId).toArray())
+      .filter((c) => c.id !== catId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const at = index == null || index < 0 || index > others.length ? others.length : index;
+    others.splice(at, 0, { ...cat, groupId });
+    await db.categories.bulkPut(others.map((c, i) => ({ ...c, groupId, order: i })));
+  });
+  scheduleSync();
+}
+
+/* Verschuif een categorie één plek binnen zijn groep (order-swap met de buur). */
+export async function moveCategoryOrder(catId: string, dir: "up" | "down"): Promise<void> {
+  await db.transaction("rw", db.categories, async () => {
+    const cat = await db.categories.get(catId);
+    if (!cat) return;
+    const ordered = (await db.categories.where("groupId").equals(cat.groupId).toArray())
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const idx = ordered.findIndex((c) => c.id === catId);
+    const swap = dir === "up" ? idx - 1 : idx + 1;
+    if (idx < 0 || swap < 0 || swap >= ordered.length) return;
+    const a = ordered[idx], b = ordered[swap];
+    await db.categories.bulkPut([{ ...a, order: b.order ?? 0 }, { ...b, order: a.order ?? 0 }]);
+  });
+  scheduleSync();
+}
+
+/* Verschuif een categoriegroep één plek in de lijst (order-swap met de buur). */
+export async function moveGroupOrder(id: string, dir: "up" | "down"): Promise<void> {
+  await db.transaction("rw", db.categoryGroups, async () => {
+    const ordered = (await db.categoryGroups.toArray()).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const idx = ordered.findIndex((g) => g.id === id);
+    const swap = dir === "up" ? idx - 1 : idx + 1;
+    if (idx < 0 || swap < 0 || swap >= ordered.length) return;
+    const a = ordered[idx], b = ordered[swap];
+    await db.categoryGroups.bulkPut([{ ...a, order: b.order ?? 0 }, { ...b, order: a.order ?? 0 }]);
   });
   scheduleSync();
 }

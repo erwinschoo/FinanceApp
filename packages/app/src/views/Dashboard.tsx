@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useApp } from "../state/AppContext";
 import { eur, eurSign, fmtDate, monthKeyLabelFull } from "../lib/format";
-import { txInMonth, incomeOf, expensesOf, savingsOf, spendByCat, rollupToTopLevel } from "../helpers/aggregations";
+import { txInMonth, incomeOf, expensesOf, savingsOf, spendByCat } from "../helpers/aggregations";
 import { budgetColor } from "../helpers/budgetColor";
 import { KpiCard } from "../components/KpiCard";
 import { CatTag } from "../components/CatTag";
@@ -52,11 +52,10 @@ export function Dashboard() {
   const prevBalance = monthIdx > 0 ? balanceAt(monthIdx - 1) : null;
 
   const monthTxs = txInMonth(transactions, key);
-  const spend = spendByCat(monthTxs, catMap);
-  const spendTop = rollupToTopLevel(spend, catMap); // per hoofdgroep
+  const spend = spendByCat(monthTxs, catMap); // per leaf-categorie
   const donutData = categories
-    .filter((c) => !c.parentId && c.type === "uitgave" && spendTop[c.id])
-    .map((c) => ({ label: c.name, value: spendTop[c.id], color: c.color, id: c.id }))
+    .filter((c) => c.type === "uitgave" && spend[c.id])
+    .map((c) => ({ label: c.name, value: spend[c.id], color: c.color, id: c.id }))
     .sort((a, b) => b.value - a.value);
   const totalSpend = donutData.reduce((s, d) => s + d.value, 0) || 1;
 

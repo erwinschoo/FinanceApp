@@ -294,6 +294,17 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 .reorder:hover { background:var(--subtle); color:var(--ink); }
 .reorder[data-disabled="true"] { opacity:.3; pointer-events:none; }
 
+/* categoriegroepen — Beheer (drag & drop) */
+.cat-group-sec { border:1px solid var(--line); border-radius:14px; padding:6px 14px 10px; margin-bottom:14px; transition:border-color .12s var(--ease), background .12s var(--ease); }
+.cat-group-sec.drag-over { border-color:var(--blue); background:var(--blue-tint); }
+.cat-group-h { display:flex; align-items:center; gap:11px; padding:8px 0 6px; }
+.cat-empty-drop { font-size:12.5px; color:var(--faint); font-style:italic; padding:14px 0; text-align:center; border:1px dashed var(--line); border-radius:10px; margin:4px 0; }
+.cat-row { display:flex; align-items:center; gap:11px; padding:12px 2px; cursor:default; border-radius:8px; background:var(--surface); }
+.cat-row.dragging { opacity:.45; }
+.cat-grip { display:inline-flex; align-items:center; color:var(--faint); cursor:grab; flex:none; }
+.cat-grip:active { cursor:grabbing; }
+.cat-drop-line { height:2px; background:var(--blue); border-radius:2px; margin:0 2px; }
+
 /* import dropzone */
 .drop { border:2px dashed var(--line); border-radius:18px; background:var(--bg); padding:54px 40px; text-align:center; transition:all .2s var(--ease); }
 .drop.over { border-color:var(--blue); background:var(--blue-tint); }

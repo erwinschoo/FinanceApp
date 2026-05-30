@@ -10,7 +10,17 @@ export interface Category {
   tint: string;           // achtergrondtint
   initial: string;        // letter in merchant-avatar fallback
   type: CategoryType;
-  parentId: string | null; // null = hoofdcategorie; anders id van de groep
+  groupId: string;        // id van de categoriegroep waar deze categorie onder valt
+  order: number;          // volgorde binnen de groep
+}
+
+/* Categoriegroep: puur organisatorisch (UX) — niet toewijsbaar aan transacties.
+ * Bepaalt nu alleen de groepering in pickers/beheer; later eventueel weergave per groep. */
+export interface CategoryGroupRow {
+  id: string;
+  name: string;
+  color: string;          // CSS var() of hex (bolletje + koptekst)
+  order: number;          // volgorde van de groep in de lijst
 }
 
 /* ── DB-rijen (centen) ── */

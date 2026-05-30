@@ -1,5 +1,5 @@
 import { db } from "./schema";
-import { DEFAULT_CATEGORIES } from "../categories";
+import { DEFAULT_CATEGORIES, DEFAULT_GROUPS } from "../categories";
 import { DEFAULT_RULES } from "../categorize/rules";
 import { toCents } from "../lib/money";
 import { uid } from "../lib/id";
@@ -33,7 +33,8 @@ export async function seedIfEmpty(): Promise<void> {
   const count = await db.categories.count();
   if (count > 0) return;
 
-  await db.transaction("rw", [db.categories, db.budgets, db.rules, db.importProfiles, db.meta], async () => {
+  await db.transaction("rw", [db.categories, db.categoryGroups, db.budgets, db.rules, db.importProfiles, db.meta], async () => {
+    await db.categoryGroups.bulkPut(DEFAULT_GROUPS);
     await db.categories.bulkPut(DEFAULT_CATEGORIES);
     await db.rules.bulkPut(DEFAULT_RULES.map((r) => ({ ...r, id: uid("r") })));
 

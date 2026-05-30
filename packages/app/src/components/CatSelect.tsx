@@ -5,7 +5,7 @@ import { Ic } from "./Ic";
 import type { Category } from "../db/types";
 
 export function CatSelect({ value, onChange, includeIncome = false }: { value: string; onChange: (c: string) => void; includeIncome?: boolean }) {
-  const { categories } = useApp();
+  const { categories, categoryGroups } = useApp();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -16,9 +16,9 @@ export function CatSelect({ value, onChange, includeIncome = false }: { value: s
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
 
-  const byName = (a: Category, b: Category) => a.name.localeCompare(b.name, "nl");
-  const tops = categories.filter((c) => !c.parentId && (includeIncome || c.id !== "inkomen")).sort(byName);
-  const childrenOf = (id: string) => categories.filter((c) => c.parentId === id).sort(byName);
+  const byOrder = (a: Category, b: Category) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name, "nl");
+  const inGroup = (id: string) =>
+    categories.filter((c) => c.groupId === id && (includeIncome || c.id !== "inkomen")).sort(byOrder);
 
   function opt(c: Category) {
     return (
@@ -40,13 +40,13 @@ export function CatSelect({ value, onChange, includeIncome = false }: { value: s
       </button>
       {open && (
         <div className="cat-menu scroll">
-          {tops.map((c) => {
-            const kids = childrenOf(c.id);
-            if (kids.length === 0) return opt(c);
+          {categoryGroups.map((g) => {
+            const members = inGroup(g.id);
+            if (members.length === 0) return null;
             return (
-              <div key={c.id}>
-                <div className="cat-group">{c.name}</div>
-                {kids.map(opt)}
+              <div key={g.id}>
+                <div className="cat-group">{g.name}</div>
+                {members.map(opt)}
               </div>
             );
           })}

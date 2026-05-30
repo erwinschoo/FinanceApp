@@ -3,20 +3,19 @@ import { eur, eurSign, monthKeyLabelFull } from "../lib/format";
 import { txInMonth, incomeOf, spendByCat } from "../helpers/aggregations";
 import { budgetColor } from "../helpers/budgetColor";
 import { setRecurringBudget } from "../db/repo";
-import type { Category } from "../db/types";
+import type { Category, CategoryGroupRow } from "../db/types";
 
 export function Budgets() {
-  const { transactions, months, monthIdx, budgets, categories, catMap } = useApp();
+  const { transactions, months, monthIdx, budgets, categories, categoryGroups, catMap } = useApp();
   const key = months[monthIdx];
   const monthTxs = txInMonth(transactions, key);
   const spend = spendByCat(monthTxs, catMap);
   const income = incomeOf(monthTxs, catMap);
 
-  const byName = (a: Category, b: Category) => a.name.localeCompare(b.name, "nl");
-  const childrenOf = (id: string) => categories.filter((c) => c.parentId === id).sort(byName);
-  const topLevel = categories.filter((c) => !c.parentId && c.type === "uitgave").sort(byName);
-  // budgetteerbaar = uitgave-categorie zonder kinderen (leaf)
-  const leaves = categories.filter((c) => c.type === "uitgave" && childrenOf(c.id).length === 0);
+  const byOrder = (a: Category, b: Category) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name, "nl");
+  // budgetteerbare uitgave-categorieën per groep
+  const expenseInGroup = (id: string) => categories.filter((c) => c.groupId === id && c.type === "uitgave").sort(byOrder);
+  const leaves = categories.filter((c) => c.type === "uitgave");
   const totalBudget = leaves.reduce((s, c) => s + (budgets[c.id] || 0), 0);
   const totalSpent = leaves.reduce((s, c) => s + (spend[c.id] || 0), 0);
   const toAllocate = income - totalBudget;
@@ -56,10 +55,9 @@ export function Budgets() {
     );
   }
 
-  function GroupHeader({ g }: { g: Category }) {
-    const kids = childrenOf(g.id);
-    const b = kids.reduce((s, k) => s + (budgets[k.id] || 0), 0);
-    const sp = kids.reduce((s, k) => s + (spend[k.id] || 0), 0);
+  function GroupHeader({ g, members }: { g: CategoryGroupRow; members: Category[] }) {
+    const b = members.reduce((s, k) => s + (budgets[k.id] || 0), 0);
+    const sp = members.reduce((s, k) => s + (spend[k.id] || 0), 0);
     const r = b ? sp / b : 0;
     return (
       <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 150px", alignItems: "center", gap: 22, padding: "16px 0 8px" }}>
@@ -106,13 +104,13 @@ export function Budgets() {
           ))}
         </div>
         <div>
-          {topLevel.map((top) => {
-            const kids = childrenOf(top.id);
-            if (kids.length === 0) return <LeafRow key={top.id} c={top} />;
+          {categoryGroups.map((g) => {
+            const members = expenseInGroup(g.id);
+            if (members.length === 0) return null;
             return (
-              <div key={top.id}>
-                <GroupHeader g={top} />
-                {kids.map((k) => <LeafRow key={k.id} c={k} indent />)}
+              <div key={g.id}>
+                <GroupHeader g={g} members={members} />
+                {members.map((k) => <LeafRow key={k.id} c={k} indent />)}
               </div>
             );
           })}

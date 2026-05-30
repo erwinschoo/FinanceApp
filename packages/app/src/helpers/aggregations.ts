@@ -40,18 +40,17 @@ export function spendByCat(txs: Transaction[], catMap: CatMap): Record<string, n
   return out;
 }
 
-/* Het hoofd(groep)-id van een categorie: parent indien aanwezig, anders zichzelf. */
-export function topLevelOf(catId: string, catMap: CatMap): string {
-  const c = catMap[catId];
-  if (!c) return catId;
-  return c.parentId ?? c.id;
+/* De categoriegroep-id van een categorie. Bouwsteen voor latere weergave per groep;
+ * aggregatie zelf gebeurt per leaf-categorie (groepen zijn organisatorisch). */
+export function groupOf(catId: string, catMap: CatMap): string {
+  return catMap[catId]?.groupId ?? catId;
 }
-/* Rol een per-categorie-bedrag op naar hoofdgroep-niveau. */
-export function rollupToTopLevel(spend: Record<string, number>, catMap: CatMap): Record<string, number> {
+/* Rol een per-categorie-bedrag op naar groep-niveau (voor toekomstige per-groep weergave). */
+export function rollupToGroup(spend: Record<string, number>, catMap: CatMap): Record<string, number> {
   const out: Record<string, number> = {};
   for (const [catId, v] of Object.entries(spend)) {
-    const top = topLevelOf(catId, catMap);
-    out[top] = (out[top] || 0) + v;
+    const g = groupOf(catId, catMap);
+    out[g] = (out[g] || 0) + v;
   }
   return out;
 }
