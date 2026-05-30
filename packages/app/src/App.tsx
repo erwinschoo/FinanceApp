@@ -18,7 +18,7 @@ const Manage = lazy(() => import("./views/Manage").then((m) => ({ default: m.Man
 
 const META: Record<ViewId, { title: string; sub: string; month: boolean }> = {
   dashboard: { title: "Overzicht", sub: "Je financiële beeld in één oogopslag", month: true },
-  transacties: { title: "Transacties", sub: "Controleer en deel je uitgaven in", month: true },
+  transacties: { title: "Transacties", sub: "Controleer en deel je uitgaven in", month: false },
   budgetten: { title: "Budgetten", sub: "Stem je budget af per categorie", month: true },
   spaardoel: { title: "Spaardoelen", sub: "Stel doelen en volg je voortgang", month: false },
   tegenpartijen: { title: "Tegenpartijen", sub: "Wijs per winkel of rekening één keer een categorie toe", month: false },

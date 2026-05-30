@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useApp } from "../state/AppContext";
 import { eur, eurSign, fmtDate, monthKeyLabelFull } from "../lib/format";
 import { txKey } from "../helpers/aggregations";
@@ -9,15 +9,21 @@ import { MerchantAv } from "../components/MerchantAv";
 import { Ic } from "../components/Ic";
 
 export function Transactions() {
-  const { transactions, months, monthIdx, setMonthIdx, categories } = useApp();
+  const { transactions, categories } = useApp();
   const [q, setQ] = useState("");
-  const [scope, setScope] = useState<"maand" | "alle">("maand");
+  const [monthSel, setMonthSel] = useState<string>(""); // "" = nieuwste maand in data; "alle" = alles
   const [catFilter, setCatFilter] = useState("alle");
   const [onlyUncat, setOnlyUncat] = useState(false);
 
-  const key = months[monthIdx];
+  // alleen maanden die echt in de database zitten (nieuwste eerst)
+  const monthsInData = useMemo(
+    () => [...new Set(transactions.map((t) => txKey(t)))].sort().reverse(),
+    [transactions],
+  );
+  const selectedMonth = monthSel || monthsInData[0] || "alle";
+
   let rows = transactions;
-  if (scope === "maand") rows = rows.filter((t) => txKey(t) === key);
+  if (selectedMonth !== "alle") rows = rows.filter((t) => txKey(t) === selectedMonth);
   if (catFilter !== "alle") rows = rows.filter((t) => (catFilter === "leeg" ? !t.category : t.category === catFilter));
   if (onlyUncat) rows = rows.filter((t) => !t.category);
   if (q.trim()) {
@@ -25,7 +31,7 @@ export function Transactions() {
     rows = rows.filter((t) => t.merchant.toLowerCase().includes(s) || (t.note || "").toLowerCase().includes(s) || t.rawDescription.toLowerCase().includes(s));
   }
 
-  const uncatCount = transactions.filter((t) => !t.category && txKey(t) === key).length;
+  const uncatCount = transactions.filter((t) => !t.category && (selectedMonth === "alle" || txKey(t) === selectedMonth)).length;
   const totalOut = rows.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
   const totalIn = rows.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
 
@@ -37,7 +43,7 @@ export function Transactions() {
           <div className="nt">
             <b>{uncatCount} transactie{uncatCount === 1 ? "" : "s"} wacht{uncatCount === 1 ? "" : "en"} op indeling.</b> Klik op een categorie-label om ze toe te wijzen — daarna tellen ze mee in je budgetten.
             <button className="btn btn-ghost" style={{ marginLeft: 10, padding: "3px 10px", color: "var(--blue)" }}
-              onClick={() => { setOnlyUncat(true); setScope("maand"); }}>Toon alleen deze</button>
+              onClick={() => setOnlyUncat(true)}>Toon alleen deze</button>
           </div>
         </div>
       )}
@@ -51,17 +57,13 @@ export function Transactions() {
           </div>
           <div style={{ position: "relative" }}>
             <select
-              value={scope === "alle" ? "alle" : key}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === "alle") setScope("alle");
-                else { setScope("maand"); setMonthIdx(months.indexOf(v)); }
-              }}
+              value={selectedMonth}
+              onChange={(e) => setMonthSel(e.target.value)}
               style={{ appearance: "none", border: "1px solid var(--line)", borderRadius: 10, padding: "9px 32px 9px 13px", fontSize: 13.5, fontWeight: 700, color: "var(--ink)", background: "#fff", cursor: "pointer" }}>
               <option value="alle">Alle maanden</option>
-              {[...months].reverse().map((mk) => <option key={mk} value={mk}>{monthKeyLabelFull(mk)}</option>)}
+              {monthsInData.map((mk) => <option key={mk} value={mk}>{monthKeyLabelFull(mk)}</option>)}
             </select>
-            <span style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--faint)" }}><Ic name="chevronDown" size={16} /></span>
+            <span style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", lineHeight: 0, pointerEvents: "none", color: "var(--faint)" }}><Ic name="chevronDown" size={16} /></span>
           </div>
           <div style={{ position: "relative" }}>
             <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
@@ -70,7 +72,7 @@ export function Transactions() {
               <option value="leeg">Niet ingedeeld</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <span style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--faint)" }}><Ic name="chevronDown" size={16} /></span>
+            <span style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", lineHeight: 0, pointerEvents: "none", color: "var(--faint)" }}><Ic name="chevronDown" size={16} /></span>
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: 7, marginLeft: "auto", fontSize: 13, fontWeight: 600, color: "var(--body)", cursor: "pointer" }}>
             <input type="checkbox" checked={onlyUncat} onChange={(e) => setOnlyUncat(e.target.checked)} style={{ accentColor: "var(--blue)", width: 16, height: 16 }} />
