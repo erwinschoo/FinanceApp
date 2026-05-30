@@ -83,7 +83,8 @@ function Sidebar({ view, setView, uncategorizedCount }) {
   return (
     <aside className="sb">
       <div className="sb-brand">
-        <span className="wm">FinanceApp</span>
+        <GoatLogo size={34} />
+        <span className="wm">bokkiep</span>
       </div>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>

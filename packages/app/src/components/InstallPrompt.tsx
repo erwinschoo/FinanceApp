@@ -40,7 +40,7 @@ function snooze(): void {
   }
 }
 
-/* Toont bij het openen een popup om FinanceApp als app te installeren, mits:
+/* Toont bij het openen een popup om bokkiep als app te installeren, mits:
  * nog niet geïnstalleerd, op een mobiel scherm en niet recent weggeklikt. */
 export function InstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
@@ -99,12 +99,12 @@ export function InstallPrompt() {
           <span style={{ width: 44, height: 44, borderRadius: 12, background: "var(--blue-soft)", color: "var(--blue)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
             <Ic name="download" size={24} />
           </span>
-          <h3 style={{ margin: 0 }}>FinanceApp installeren</h3>
+          <h3 style={{ margin: 0 }}>bokkiep installeren</h3>
         </div>
 
         {iosHelp ? (
           <>
-            <p style={{ marginBottom: 12 }}>Zet FinanceApp op je beginscherm om hem als app te gebruiken — zonder browserbalk.</p>
+            <p style={{ marginBottom: 12 }}>Zet bokkiep op je beginscherm om hem als app te gebruiken — zonder browserbalk.</p>
             <ol style={{ margin: "0 0 20px", paddingLeft: 20, fontSize: 14, color: "var(--body)", lineHeight: 1.75 }}>
               <li>Tik op de deel-knop <Ic name="share" size={15} style={{ verticalAlign: "-2px", color: "var(--blue)" }} /> onderaan in Safari.</li>
               <li>Kies <b>Zet op beginscherm</b>.</li>
@@ -114,7 +114,7 @@ export function InstallPrompt() {
           </>
         ) : (
           <>
-            <p>Gebruik FinanceApp als een echte app op je telefoon — sneller te openen en zonder browserbalk.</p>
+            <p>Gebruik bokkiep als een echte app op je telefoon — sneller te openen en zonder browserbalk.</p>
             <div style={{ display: "flex", gap: 10 }}>
               <button className="btn" style={{ flex: 1, justifyContent: "center" }} onClick={later}>Niet nu</button>
               <button className="btn btn-primary" style={{ flex: 1, justifyContent: "center" }} onClick={install}>

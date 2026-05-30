@@ -14,8 +14,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["icon.svg", "apple-touch-icon-180x180.png"],
       manifest: {
-        name: "FinanceApp — persoonlijk financieel overzicht",
-        short_name: "FinanceApp",
+        name: "bokkiep — persoonlijk financieel overzicht",
+        short_name: "bokkiep",
         description: "Importeer banktransacties, categoriseer, budgetteer en volg je spaardoelen.",
         lang: "nl",
         theme_color: "#5E81B5",

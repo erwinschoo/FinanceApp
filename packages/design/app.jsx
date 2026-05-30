@@ -1,11 +1,10 @@
-/* FinanceApp — root: state, context provider, shell */
+/* bokkiep — root: state, context provider, shell */
 function App() {
   const D = window.FA_DATA;
   const [view, setView] = React.useState("dashboard");
   const [monthIdx, setMonthIdx] = React.useState(D.months.length - 1); // current month
   const [transactions, setTransactions] = React.useState(() => D.transactions.map(t => ({ ...t })));
   const [budgets, setBudgets] = React.useState(() => ({ ...D.BUDGETS }));
-  const [savings, setSavings] = React.useState(() => ({ ...D.SAVINGS }));
   const [savingsGroups, setSavingsGroups] = React.useState(
     () => D.SAVINGS_GROUPS.map(g => ({ ...g, goals: g.goals.map(x => ({ ...x })) })));
 
@@ -48,7 +47,7 @@ function App() {
   const value = {
     view, setView, monthIdx, setMonthIdx, months: D.months,
     transactions, setTransactions, updateCat,
-    budgets, setBudget, savings, setSavings,
+    budgets, setBudget,
     savingsGroups, setSavingsGroups, sgActions,
   };
 

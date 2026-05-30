@@ -139,17 +139,6 @@
     gezondheid: 90, vrijetijd: 320, verzekeringen: 230, overig: 80,
   };
 
-  // ── savings ── kept for backward-compat (primary goal mirror)
-  const SAVINGS = {
-    goalName: "Verbouwing keuken",
-    target: 18000,
-    current: 11250,
-    monthly: 520,
-    startDate: "2024-09-01",
-    targetDate: "2027-03-01",
-    accountStart: 5400,
-  };
-
   // ── savings GROUPS — categories, each with prioritised goals ──
   // The category "balance" (already saved) cascades into goals by priority:
   // goal #1 fills first, the overflow flows into #2, etc.
@@ -191,7 +180,7 @@
   ];
 
   window.FA_DATA = {
-    CATS, CAT, BUDGETS, SAVINGS, SAVINGS_GROUPS, SAVINGS_LIBRARY,
+    CATS, CAT, BUDGETS, SAVINGS_GROUPS, SAVINGS_LIBRARY,
     transactions: all,
     months: monthsList,
     MONTHS_NL, MONTHS_SH,

@@ -4,6 +4,7 @@ import { useTheme } from "../state/useTheme";
 import { useAutoSyncStatus } from "../sync/autoSync";
 import { db } from "../db/schema";
 import { Ic } from "./Ic";
+import goatLogo from "../assets/ibex-orange.png";
 
 interface NavItem { id: ViewId; label: string; icon: string; tip: string }
 
@@ -71,7 +72,8 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
   return (
     <aside className={"sb" + (open ? " open" : "")}>
       <div className="sb-brand">
-        <span className="wm">Finance<b>App</b></span>
+        <img className="goat" src={goatLogo} width={34} height={34} alt="" aria-hidden="true" style={{ display: "block", objectFit: "contain" }} />
+        <span className="wm">bokkiep</span>
       </div>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{MAIN.map(item)}</nav>
