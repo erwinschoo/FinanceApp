@@ -1,7 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import type {
   Category, TxRow, BudgetRow, RuleRow, GoalRow,
-  ImportBatchRow, ImportProfileRow, MetaRow,
+  ImportBatchRow, ImportProfileRow, MetaRow, PayeeRow,
 } from "./types";
 
 export class FinanceDB extends Dexie {
@@ -13,6 +13,7 @@ export class FinanceDB extends Dexie {
   importBatches!: Table<ImportBatchRow, string>;
   importProfiles!: Table<ImportProfileRow, string>;
   meta!: Table<MetaRow, string>;
+  payees!: Table<PayeeRow, string>;
 
   constructor() {
     super("financeapp");
@@ -25,6 +26,11 @@ export class FinanceDB extends Dexie {
       importBatches: "id, importedAt",
       importProfiles: "id, bankName",
       meta: "key",
+    });
+    // v2: tegenpartijen + extra transactions-indexen voor retro-apply per payee
+    this.version(2).stores({
+      transactions: "id, date, category, dedupeHash, importBatchId, counterIban, merchant",
+      payees: "key, categoryId, kind",
     });
   }
 }

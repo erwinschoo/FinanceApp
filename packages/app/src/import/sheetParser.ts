@@ -3,7 +3,8 @@ import { mapIngRow, type RawRecord } from "./ingProfile";
 import { matchCategory } from "../categorize/rules";
 import { dedupeHash } from "../lib/id";
 import { toCents } from "../lib/money";
-import { existingHashes } from "../db/repo";
+import { existingHashes, existingPayeeMap } from "../db/repo";
+import { payeeKey } from "../helpers/payees";
 import type { ParsedRow, RuleRow } from "../db/types";
 
 /* Lees een Excel-/CSV-bestand in tot rij-objecten (header → waarde). */
@@ -20,6 +21,7 @@ async function readWorkbook(file: File): Promise<RawRecord[]> {
 export async function parseFile(file: File, rules: RuleRow[]): Promise<ParsedRow[]> {
   const records = await readWorkbook(file);
   const hashes = await existingHashes();
+  const payeeMap = await existingPayeeMap();
   const seenInFile = new Set<string>();
 
   const rows: ParsedRow[] = [];
@@ -28,7 +30,10 @@ export async function parseFile(file: File, rules: RuleRow[]): Promise<ParsedRow
     if (!m.date || !m.rawDescription) continue;
     const cents = toCents(m.amount);
     const hash = dedupeHash([m.date, cents, m.counterIban, m.rawDescription]);
-    const category = matchCategory({ merchant: m.merchant, rawDescription: m.rawDescription }, rules);
+    // Tegenpartij-toewijzing wint van brede trefwoordregels.
+    const category =
+      payeeMap.get(payeeKey({ counterIban: m.counterIban, merchant: m.merchant })) ??
+      matchCategory({ merchant: m.merchant, rawDescription: m.rawDescription }, rules);
     const duplicate = hashes.has(hash) || seenInFile.has(hash);
     seenInFile.add(hash);
     rows.push({

@@ -6,6 +6,7 @@ const NAV: { id: ViewId; label: string; icon: string }[] = [
   { id: "transacties", label: "Transacties", icon: "list" },
   { id: "budgetten", label: "Budgetten", icon: "sliders" },
   { id: "spaardoel", label: "Spaardoelen", icon: "target" },
+  { id: "tegenpartijen", label: "Tegenpartijen", icon: "wallet" },
 ];
 
 export function Sidebar() {

@@ -1,12 +1,47 @@
 import { db } from "./schema";
 import { toCents } from "../lib/money";
 import { uid } from "../lib/id";
-import { makeRule } from "../categorize/rules";
+import { payeeKey, type PayeeRef } from "../helpers/payees";
 import type { GoalRow, ParsedRow, TxRow } from "./types";
 
 /* Categorie van een transactie wijzigen (handmatig → auto:false). */
 export async function updateTxCategory(id: string, category: string): Promise<void> {
   await db.transactions.update(id, { category, auto: false });
+}
+
+/* Ken een categorie toe aan een hele tegenpartij: bewaar de mapping én pas 'm
+ * toe op ALLE bestaande transacties van die tegenpartij (overschrijven). */
+export async function assignPayeeCategory(
+  ref: PayeeRef & { name?: string },
+  categoryId: string,
+): Promise<number> {
+  const key = payeeKey(ref);
+  const kind = ref.counterIban ? "iban" : "merchant";
+  let updated = 0;
+  await db.transaction("rw", db.payees, db.transactions, async () => {
+    await db.payees.put({
+      key,
+      kind,
+      iban: ref.counterIban || "",
+      name: ref.name || ref.merchant || ref.counterIban || "Onbekend",
+      categoryId,
+    });
+    const matches =
+      kind === "iban"
+        ? await db.transactions.where("counterIban").equals(ref.counterIban).toArray()
+        : (await db.transactions.where("merchant").equals(ref.merchant).toArray()).filter((t) => !t.counterIban);
+    if (matches.length) {
+      await db.transactions.bulkPut(matches.map((t) => ({ ...t, category: categoryId, auto: true })));
+      updated = matches.length;
+    }
+  });
+  return updated;
+}
+
+/* key → categoryId voor toepassing tijdens import. */
+export async function existingPayeeMap(): Promise<Map<string, string>> {
+  const all = await db.payees.toArray();
+  return new Map(all.filter((p) => p.categoryId).map((p) => [p.key, p.categoryId]));
 }
 
 /* Een terugkerend budget per categorie zetten (euro's in). */
@@ -18,12 +53,6 @@ export async function setRecurringBudget(categoryId: string, euros: number): Pro
     amountCents: toCents(euros),
     carryOver: false,
   });
-}
-
-/* Een regel afleiden uit een handmatige indeling en opslaan. */
-export async function addRuleFromMerchant(merchant: string, categoryId: string): Promise<void> {
-  const rule = makeRule("merchant", merchant, categoryId, 50);
-  await db.rules.put(rule);
 }
 
 /* Spaardoel toevoegen of bijwerken (euro's in). */

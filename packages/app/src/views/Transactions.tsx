@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useApp } from "../state/AppContext";
 import { eur, eurSign, fmtDate, monthKeyLabelFull } from "../lib/format";
 import { txKey } from "../helpers/aggregations";
-import { updateTxCategory, addRuleFromMerchant } from "../db/repo";
+import { assignPayeeCategory } from "../db/repo";
 import { CatTag } from "../components/CatTag";
 import { CatSelect } from "../components/CatSelect";
 import { MerchantAv } from "../components/MerchantAv";
@@ -14,7 +14,6 @@ export function Transactions() {
   const [scope, setScope] = useState<"maand" | "alle">("maand");
   const [catFilter, setCatFilter] = useState("alle");
   const [onlyUncat, setOnlyUncat] = useState(false);
-  const [ruled, setRuled] = useState<Set<string>>(new Set());
 
   const key = months[monthIdx];
   let rows = transactions;
@@ -29,11 +28,6 @@ export function Transactions() {
   const uncatCount = transactions.filter((t) => !t.category && txKey(t) === key).length;
   const totalOut = rows.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
   const totalIn = rows.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
-
-  async function makeRule(merchant: string, category: string, id: string) {
-    await addRuleFromMerchant(merchant, category);
-    setRuled((prev) => new Set(prev).add(id));
-  }
 
   return (
     <div className="content-inner fade-in">
@@ -107,19 +101,10 @@ export function Transactions() {
                       ) : t.category === "sparen" ? (
                         <CatTag catId="sparen" />
                       ) : (
-                        <CatSelect value={t.category} onChange={(c) => updateTxCategory(t.id, c)} />
-                      )}
-                      {t.category && !t.auto && t.category !== "inkomen" && t.category !== "sparen" && (
-                        ruled.has(t.id) ? (
-                          <span style={{ fontSize: 11.5, color: "var(--pos)", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 3 }}>
-                            <Ic name="check" size={13} /> regel
-                          </span>
-                        ) : (
-                          <button className="btn btn-ghost" title={`Onthoud: "${t.merchant}" → categorie`} style={{ padding: "3px 8px", fontSize: 11.5 }}
-                            onClick={() => makeRule(t.merchant, t.category, t.id)}>
-                            <Ic name="sparkle" size={13} /> regel maken
-                          </button>
-                        )
+                        <CatSelect
+                          value={t.category}
+                          onChange={(c) => assignPayeeCategory({ counterIban: t.counterIban, merchant: t.merchant }, c)}
+                        />
                       )}
                     </div>
                   </td>

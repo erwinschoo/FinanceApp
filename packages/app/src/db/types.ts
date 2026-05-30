@@ -77,6 +77,16 @@ export interface MetaRow {
   value: unknown;
 }
 
+/* Tegenpartij = een vaste payee. Geïdentificeerd via IBAN indien aanwezig,
+ * anders via de opgeschoonde merchant-naam (pinbetalingen hebben geen IBAN). */
+export interface PayeeRow {
+  key: string;              // PK: "iban:<iban>" of "merchant:<naam>"
+  kind: "iban" | "merchant";
+  iban: string;             // "" bij merchant-kind
+  name: string;             // weergavenaam
+  categoryId: string;       // toegewezen categorie ("" = nog niet)
+}
+
 /* ── App-/view-model (euro's) ── */
 export interface Transaction {
   id: string;

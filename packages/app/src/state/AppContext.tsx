@@ -4,9 +4,9 @@ import { db } from "../db/schema";
 import { rowToTx, rowToGoal } from "../db/map";
 import { lastTwelveMonthKeys } from "../helpers/aggregations";
 import { fromCents } from "../lib/money";
-import type { Category, Transaction, Goal, RuleRow } from "../db/types";
+import type { Category, Transaction, Goal, RuleRow, PayeeRow } from "../db/types";
 
-export type ViewId = "dashboard" | "transacties" | "budgetten" | "spaardoel" | "import" | "sync";
+export type ViewId = "dashboard" | "transacties" | "budgetten" | "spaardoel" | "tegenpartijen" | "import" | "sync";
 
 interface AppState {
   ready: boolean;
@@ -16,6 +16,8 @@ interface AppState {
   budgets: Record<string, number>; // categoryId -> euro (recurring)
   goals: Goal[];
   rules: RuleRow[];
+  payees: PayeeRow[];
+  payeeMap: Map<string, string>; // key -> categoryId
   months: string[];
   monthIdx: number;
   setMonthIdx: (i: number) => void;
@@ -42,8 +44,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const budgetRows = useLiveQuery(() => db.budgets.toArray(), [], undefined);
   const goalRows = useLiveQuery(() => db.goals.toArray(), [], undefined);
   const ruleRows = useLiveQuery(() => db.rules.toArray(), [], undefined);
+  const payeeRows = useLiveQuery(() => db.payees.toArray(), [], undefined);
 
-  const ready = !!categories && !!txRows && !!budgetRows && !!goalRows && !!ruleRows;
+  const ready = !!categories && !!txRows && !!budgetRows && !!goalRows && !!ruleRows && !!payeeRows;
 
   const value = useMemo<AppState>(() => {
     const cats = categories ?? [];
@@ -57,13 +60,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     const goals: Goal[] = (goalRows ?? []).map(rowToGoal).sort((a, b) => a.priority - b.priority);
     const rules = (ruleRows ?? []) as RuleRow[];
+    const payees = (payeeRows ?? []) as PayeeRow[];
+    const payeeMap = new Map(payees.filter((p) => p.categoryId).map((p) => [p.key, p.categoryId]));
     const uncategorizedCount = transactions.filter((t) => !t.category).length;
 
     return {
-      ready, categories: cats, catMap, transactions, budgets, goals, rules,
+      ready, categories: cats, catMap, transactions, budgets, goals, rules, payees, payeeMap,
       months, monthIdx, setMonthIdx, view, setView, uncategorizedCount,
     };
-  }, [categories, txRows, budgetRows, goalRows, ruleRows, ready, months, monthIdx, view]);
+  }, [categories, txRows, budgetRows, goalRows, ruleRows, payeeRows, ready, months, monthIdx, view]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

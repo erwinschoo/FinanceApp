@@ -7,6 +7,7 @@ import { Dashboard } from "./views/Dashboard";
 import { Transactions } from "./views/Transactions";
 import { Budgets } from "./views/Budgets";
 import { Savings } from "./views/Savings";
+import { Payees } from "./views/Payees";
 
 // Lazy: Import laadt SheetJS (xlsx), Sync laadt MSAL — pas inladen wanneer nodig.
 const Import = lazy(() => import("./views/Import").then((m) => ({ default: m.Import })));
@@ -17,6 +18,7 @@ const META: Record<ViewId, { title: string; sub: string; month: boolean }> = {
   transacties: { title: "Transacties", sub: "Controleer en deel je uitgaven in", month: true },
   budgetten: { title: "Budgetten", sub: "Stem je budget af per categorie", month: true },
   spaardoel: { title: "Spaardoelen", sub: "Stel doelen en volg je voortgang", month: false },
+  tegenpartijen: { title: "Tegenpartijen", sub: "Wijs per winkel of rekening één keer een categorie toe", month: false },
   import: { title: "Importeren", sub: "Laad je banktransacties in via Excel", month: false },
   sync: { title: "Synchroniseren", sub: "Back-up en sync via je eigen OneDrive", month: false },
 };
@@ -26,6 +28,7 @@ const VIEWS: Record<ViewId, ComponentType> = {
   transacties: Transactions,
   budgetten: Budgets,
   spaardoel: Savings,
+  tegenpartijen: Payees,
   import: Import,
   sync: Sync,
 };
