@@ -9,7 +9,7 @@ import { MerchantAv } from "../components/MerchantAv";
 import { Ic } from "../components/Ic";
 
 export function Transactions() {
-  const { transactions, months, monthIdx, categories } = useApp();
+  const { transactions, months, monthIdx, setMonthIdx, categories } = useApp();
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"maand" | "alle">("maand");
   const [catFilter, setCatFilter] = useState("alle");
@@ -49,9 +49,19 @@ export function Transactions() {
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Zoek op naam of notitie…"
               style={{ width: "100%", border: "1px solid var(--line)", borderRadius: 10, padding: "9px 12px 9px 36px", fontSize: 14, outline: "none", background: "var(--subtle)" }} />
           </div>
-          <div className="seg">
-            <button className={scope === "maand" ? "on" : ""} onClick={() => setScope("maand")}>{monthKeyLabelFull(key)}</button>
-            <button className={scope === "alle" ? "on" : ""} onClick={() => setScope("alle")}>Alle maanden</button>
+          <div style={{ position: "relative" }}>
+            <select
+              value={scope === "alle" ? "alle" : key}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "alle") setScope("alle");
+                else { setScope("maand"); setMonthIdx(months.indexOf(v)); }
+              }}
+              style={{ appearance: "none", border: "1px solid var(--line)", borderRadius: 10, padding: "9px 32px 9px 13px", fontSize: 13.5, fontWeight: 700, color: "var(--ink)", background: "#fff", cursor: "pointer" }}>
+              <option value="alle">Alle maanden</option>
+              {[...months].reverse().map((mk) => <option key={mk} value={mk}>{monthKeyLabelFull(mk)}</option>)}
+            </select>
+            <span style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--faint)" }}><Ic name="chevronDown" size={16} /></span>
           </div>
           <div style={{ position: "relative" }}>
             <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}

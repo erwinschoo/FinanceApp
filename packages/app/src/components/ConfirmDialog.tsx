@@ -16,9 +16,9 @@ export function ConfirmDialog({ open, title, message, confirmLabel = "Verwijdere
       <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <h3>{title}</h3>
         <p>{message}</p>
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button className="btn" onClick={onCancel}>Annuleren</button>
-          <button className="btn btn-danger" onClick={onConfirm}><Ic name="trash" size={16} /> {confirmLabel}</button>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button className="btn" style={{ flex: 1, justifyContent: "center" }} onClick={onCancel}>Annuleren</button>
+          <button className="btn btn-danger" style={{ flex: 1, justifyContent: "center" }} onClick={onConfirm}><Ic name="trash" size={16} /> {confirmLabel}</button>
         </div>
       </div>
     </div>
