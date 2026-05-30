@@ -95,7 +95,7 @@ export function Payees() {
                     <td className={"amt tnum " + (p.total >= 0 ? "pos" : "neg")} style={{ textAlign: "right" }}>{eurSign(p.total, 2)}</td>
                     <td className="tnum" style={{ color: "var(--muted)", fontWeight: 600 }}>{fmtDate(p.lastDate)}</td>
                     <td>
-                      <CatSelect value={p.categoryId} onChange={(cat) => assignPayeeCategory({ counterIban: p.iban, merchant: p.name }, cat)} />
+                      <CatSelect value={p.categoryId} includeIncome onChange={(cat) => assignPayeeCategory({ counterIban: p.iban, merchant: p.name }, cat)} />
                     </td>
                   </tr>
                 );

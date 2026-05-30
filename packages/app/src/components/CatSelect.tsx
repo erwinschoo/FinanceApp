@@ -4,7 +4,7 @@ import { CatTag } from "./CatTag";
 import { Ic } from "./Ic";
 import type { Category } from "../db/types";
 
-export function CatSelect({ value, onChange }: { value: string; onChange: (c: string) => void }) {
+export function CatSelect({ value, onChange, includeIncome = false }: { value: string; onChange: (c: string) => void; includeIncome?: boolean }) {
   const { categories } = useApp();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -17,7 +17,7 @@ export function CatSelect({ value, onChange }: { value: string; onChange: (c: st
   }, [open]);
 
   const byName = (a: Category, b: Category) => a.name.localeCompare(b.name, "nl");
-  const tops = categories.filter((c) => !c.parentId && c.id !== "inkomen").sort(byName);
+  const tops = categories.filter((c) => !c.parentId && (includeIncome || c.id !== "inkomen")).sort(byName);
   const childrenOf = (id: string) => categories.filter((c) => c.parentId === id).sort(byName);
 
   function opt(c: Category) {
