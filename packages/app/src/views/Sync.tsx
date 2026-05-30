@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import { Ic } from "../components/Ic";
+import { db } from "../db/schema";
 import { isSyncConfigured, getPca, getAccount, signIn, signOut } from "../sync/msal";
 import { syncNow, pushToOneDrive, pullFromOneDrive, getSyncMeta } from "../sync/syncEngine";
+
+/* Houdt de verbindingsstatus in db.meta zodat de zijbalk hem reactief kan tonen
+ * zonder MSAL te hoeven laden. */
+async function setAccountMeta(acc: { email?: string; name?: string } | null) {
+  if (acc?.email) await db.meta.put({ key: "account", value: { email: acc.email, name: acc.name } });
+  else await db.meta.delete("account");
+}
 
 export function Sync() {
   const configured = isSyncConfigured();
@@ -17,6 +25,7 @@ export function Sync() {
         await getPca();
         const acc = getAccount();
         setEmail(acc?.username ?? null);
+        await setAccountMeta(acc ? { email: acc.username, name: acc.name } : null);
         const meta = await getSyncMeta();
         setLastSynced(meta?.lastSyncedAt ?? null);
       } catch { /* genegeerd */ }
@@ -84,7 +93,7 @@ export function Sync() {
                 <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14 }}>Verbonden</div>
                 <div style={{ fontSize: 12.5, color: "var(--muted)" }}>{email}</div>
               </div>
-              <button className="btn btn-ghost" style={{ marginLeft: "auto" }} disabled={busy} onClick={() => run(async () => { await signOut(); setEmail(null); }, "Uitgelogd.")}>Uitloggen</button>
+              <button className="btn btn-ghost" style={{ marginLeft: "auto" }} disabled={busy} onClick={() => run(async () => { await signOut(); setEmail(null); await setAccountMeta(null); }, "Uitgelogd.")}>Uitloggen</button>
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <button className="btn btn-primary" disabled={busy} onClick={() => run(async () => { const r = await syncNow(); setMsg({ kind: "ok", text: r.action === "pulled" ? "Nieuwere versie opgehaald van OneDrive." : "Lokale data geüpload naar OneDrive." }); }, "Gesynchroniseerd.")}>
@@ -99,7 +108,7 @@ export function Sync() {
             </div>
           </>
         ) : (
-          <button className="btn btn-primary" disabled={busy} onClick={() => run(async () => { const acc = await signIn(); setEmail(acc.username); }, "Ingelogd.")}>
+          <button className="btn btn-primary" disabled={busy} onClick={() => run(async () => { const acc = await signIn(); setEmail(acc.username); await setAccountMeta({ email: acc.username, name: acc.name }); }, "Ingelogd.")}>
             <Ic name="cloud" size={16} /> Inloggen met Microsoft
           </button>
         )}
