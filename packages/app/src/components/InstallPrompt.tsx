@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Ic } from "./Ic";
+import goatLogo from "../assets/ibex-orange.png";
 
 /* Het 'beforeinstallprompt'-event (Chromium/Android/Edge). iOS/Safari kent dit
  * niet — daar tonen we handmatige instructies. */
@@ -93,9 +94,7 @@ export function InstallPrompt() {
     <div className="modal-overlay" onClick={later}>
       <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-          <span style={{ width: 44, height: 44, borderRadius: 12, background: "var(--blue-soft)", color: "var(--blue)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
-            <Ic name="download" size={24} />
-          </span>
+          <img src={goatLogo} width={44} height={44} alt="" aria-hidden="true" style={{ display: "block", objectFit: "contain", flex: "none" }} />
           <h3 style={{ margin: 0 }}>bokkiep installeren</h3>
         </div>
 
