@@ -12,6 +12,7 @@ import { Transactions } from "./views/Transactions";
 import { Budgets } from "./views/Budgets";
 import { Savings } from "./views/Savings";
 import { Payees } from "./views/Payees";
+import { Steun } from "./views/Steun";
 
 // Lazy: Import laadt SheetJS (xlsx), Sync laadt MSAL — pas inladen wanneer nodig.
 const Import = lazy(() => import("./views/Import").then((m) => ({ default: m.Import })));
@@ -27,6 +28,7 @@ const META: Record<ViewId, { title: string; month: boolean }> = {
   import: { title: "Importeren", month: false },
   sync: { title: "Synchroniseren", month: false },
   beheer: { title: "Beheer", month: false },
+  steun: { title: "Steun bokkiep", month: false },
 };
 
 const VIEWS: Record<ViewId, ComponentType> = {
@@ -38,6 +40,7 @@ const VIEWS: Record<ViewId, ComponentType> = {
   import: Import,
   sync: Sync,
   beheer: Manage,
+  steun: Steun,
 };
 
 export default function App() {
@@ -86,7 +89,7 @@ export default function App() {
           )}
           <div className="spacer"></div>
           {meta.month && <div className="month-slot"><MonthPicker /></div>}
-          {view !== "import" && (
+          {view !== "import" && view !== "steun" && (
             <button className="btn btn-primary" onClick={() => setView("import")} title="Importeren">
               <Ic name="upload" size={16} /> <span className="btn-label">Importeren</span>
             </button>

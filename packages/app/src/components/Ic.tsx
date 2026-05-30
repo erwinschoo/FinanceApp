@@ -44,6 +44,7 @@ export function Ic({ name, size = 20, className, style, strokeWidth = 1.8 }: Pro
     grip: <>{[8, 12, 16].flatMap((y) => [9, 15].map((x) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.3" fill="currentColor" stroke="none" />))}</>,
     menu: <><line x1="4" y1="7" x2="20" y2="7" {...p} /><line x1="4" y1="12" x2="20" y2="12" {...p} /><line x1="4" y1="17" x2="20" y2="17" {...p} /></>,
     download: <><path d="M12 4v12" {...p} /><path d="m7 11 5 5 5-5" {...p} /><path d="M5 18v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1" {...p} /></>,
+    heart: <path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z" {...p} />,
     share: <><path d="M12 14V4" {...p} /><path d="m8.5 7 3.5-3.5L15.5 7" {...p} /><path d="M7 10H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" {...p} /></>,
   };
   return (

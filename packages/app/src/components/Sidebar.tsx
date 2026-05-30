@@ -20,6 +20,7 @@ const DATA: NavItem[] = [
   { id: "sync", label: "Synchroniseren", icon: "cloud", tip: "Back-up en sync via je eigen OneDrive" },
   { id: "beheer", label: "Beheer", icon: "sliders", tip: "Categorieën en categoriseer-regels onderhouden" },
 ];
+const STEUN: NavItem = { id: "steun", label: "Steun bokkiep", icon: "heart", tip: "Steun de ontwikkeling van bokkiep" };
 
 /* "gesynct 14:32" (vandaag) of "gesynct 28 mei" (anders). */
 function syncedLabel(iso: string): string {
@@ -80,6 +81,8 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
 
       <div className="sb-sec">Data</div>
       <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{DATA.map(item)}</nav>
+
+      <nav style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 8 }}>{item(STEUN)}</nav>
 
       <div className="sb-actions">
         <button
