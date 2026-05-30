@@ -73,7 +73,8 @@ export function Sync() {
   return (
     <div className="content-inner fade-in" style={{ maxWidth: 760 }}>
       {msg && (
-        <div className="notice" style={{ marginBottom: 18, background: msg.kind === "ok" ? "var(--pos-soft)" : "var(--over-soft)", borderColor: msg.kind === "ok" ? "#CFE6DD" : "#F3D9D5" }}>
+        <div className="notice sync-msg" role="status" onClick={() => setMsg(null)} title="Verbergen"
+          style={{ marginBottom: 18, cursor: "pointer", background: msg.kind === "ok" ? "var(--pos-soft)" : "var(--over-soft)", borderColor: msg.kind === "ok" ? "#CFE6DD" : "#F3D9D5" }}>
           <span className="ni" style={{ color: msg.kind === "ok" ? "var(--pos)" : "var(--over)" }}><Ic name={msg.kind === "ok" ? "check" : "info"} size={20} /></span>
           <div className="nt">{msg.text}</div>
         </div>
