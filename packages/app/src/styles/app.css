@@ -212,6 +212,8 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 .cat-opt .dot { width:9px; height:9px; border-radius:50%; flex:none; }
 .cat-opt.sel { color:var(--ink); font-weight:700; }
 .cat-opt .ck { margin-left:auto; width:15px; height:15px; color:var(--blue); }
+.cat-group { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); padding:8px 10px 4px; }
+.cat-menu > div > .cat-opt { padding-left:18px; }
 
 /* import dropzone */
 .drop { border:2px dashed var(--line); border-radius:18px; background:var(--bg); padding:54px 40px; text-align:center; transition:all .2s var(--ease); }
