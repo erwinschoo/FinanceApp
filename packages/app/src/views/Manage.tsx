@@ -165,18 +165,17 @@ function RulesTab() {
   const byName = (a: Category, b: Category) => a.name.localeCompare(b.name, "nl");
   const sorted = [...rules].sort((a, b) => a.priority - b.priority);
 
-  // categorie-opties (gegroepeerd) voor de <select>
+  // categorie-opties (gegroepeerd) voor de gestylede Dropdown
   const tops = categories.filter((c) => !c.parentId).sort(byName);
   const childrenOf = (id: string) => categories.filter((c) => c.parentId === id).sort(byName);
-  function catOptions() {
-    return tops.flatMap((t) => {
+  const catDropdownOptions = () =>
+    tops.flatMap((t) => {
       const kids = childrenOf(t.id);
-      if (kids.length === 0) return [<option key={t.id} value={t.id}>{t.name}</option>];
-      return [<optgroup key={t.id} label={t.name}>{kids.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}</optgroup>];
+      if (kids.length === 0) return [{ value: t.id, label: t.name, color: t.color }];
+      return kids.map((k) => ({ value: k.id, label: k.name, color: k.color, group: t.name }));
     });
-  }
 
-  const sel = { border: "1px solid var(--line)", borderRadius: 8, padding: "6px 8px", fontSize: 13, background: "#fff" } as const;
+  const sel = { border: "1px solid var(--line)", borderRadius: 8, padding: "6px 8px", fontSize: 13, background: "var(--surface)" } as const;
 
   return (
     <div className="card card-pad">
@@ -199,25 +198,23 @@ function RulesTab() {
           {sorted.map((r: RuleRow) => (
             <tr key={r.id}>
               <td style={{ paddingLeft: 0 }}>
-                <select style={sel} value={r.field} onChange={(e) => updateRule(r.id, { field: e.target.value as RuleRow["field"] })}>
-                  <option value="rawDescription">Omschrijving</option>
-                  <option value="merchant">Naam (merchant)</option>
-                </select>
+                <Dropdown fullWidth ariaLabel="Veld" value={r.field}
+                  onChange={(v) => updateRule(r.id, { field: v as RuleRow["field"] })}
+                  options={[{ value: "rawDescription", label: "Omschrijving" }, { value: "merchant", label: "Naam (merchant)" }]} />
               </td>
               <td>
-                <select style={sel} value={r.matchType} onChange={(e) => updateRule(r.id, { matchType: e.target.value as RuleRow["matchType"] })}>
-                  <option value="contains">bevat</option>
-                  <option value="regex">regex</option>
-                </select>
+                <Dropdown fullWidth ariaLabel="Type" value={r.matchType}
+                  onChange={(v) => updateRule(r.id, { matchType: v as RuleRow["matchType"] })}
+                  options={[{ value: "contains", label: "bevat" }, { value: "regex", label: "regex" }]} />
               </td>
               <td>
                 <input defaultValue={r.pattern} onBlur={(e) => updateRule(r.id, { pattern: e.target.value })} placeholder="bijv. ALBERT HEIJN"
                   style={{ ...sel, width: "100%", minWidth: 160 }} />
               </td>
               <td>
-                <select style={sel} value={r.categoryId} onChange={(e) => updateRule(r.id, { categoryId: e.target.value })}>
-                  {catOptions()}
-                </select>
+                <Dropdown fullWidth ariaLabel="Categorie" value={r.categoryId} minWidth={210}
+                  onChange={(v) => updateRule(r.id, { categoryId: v })}
+                  options={catDropdownOptions()} />
               </td>
               <td>
                 <input type="number" defaultValue={r.priority} onBlur={(e) => updateRule(r.id, { priority: Number(e.target.value) || 50 })}
