@@ -147,7 +147,7 @@ export function Savings() {
             const on = g.categoryId === selId;
             return (
               <button key={g.categoryId} onClick={() => setSelId(g.categoryId)}
-                style={{ flex: "1 1 0", minWidth: 160, textAlign: "left", cursor: "pointer", border: "1px solid " + (on ? g.color : "var(--line)"), background: on ? g.tint : "var(--surface)", borderRadius: 12, padding: "12px 14px", boxShadow: on ? "inset 0 0 0 1px " + g.color : "none", transition: "all .15s var(--ease)" }}>
+                style={{ flex: "0 0 168px", width: 168, textAlign: "left", cursor: "pointer", border: "1px solid " + (on ? g.color : "var(--line)"), background: on ? g.tint : "var(--surface)", borderRadius: 12, padding: "12px 14px", boxShadow: on ? "inset 0 0 0 1px " + g.color : "none", transition: "all .15s var(--ease)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 9 }}>
                   <CatIcon group={g} />
                   <div style={{ minWidth: 0 }}>
