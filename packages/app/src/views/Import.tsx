@@ -24,6 +24,9 @@ export function Import() {
   const [added, setAdded] = useState<number | null>(null);
   // tegenpartijen die in de preview handmatig zijn ingedeeld → mapping opslaan bij toevoegen
   const [manual, setManual] = useState<Map<string, { cat: string; counterIban: string; merchant: string }>>(new Map());
+  const [filterUncat, setFilterUncat] = useState(true);
+  const [page, setPage] = useState(0);
+  const PAGE = 25;
   const fileRef = useRef<HTMLInputElement>(null);
 
   const history = useLiveQuery(
@@ -45,6 +48,8 @@ export function Import() {
         return;
       }
       setRows(parsed);
+      setPage(0);
+      setFilterUncat(true);
       setStage("done");
     } catch (e) {
       setError("Inlezen mislukt: " + (e instanceof Error ? e.message : String(e)));
@@ -85,9 +90,20 @@ export function Import() {
 
   const newRows = rows.filter((r) => !r.duplicate);
   const autoCount = newRows.filter((r) => r.category).length;
-  const uncatCount = newRows.length - autoCount;
+  const uncatCount = newRows.length - autoCount; // = resterend in te delen
   const dupCount = rows.length - newRows.length;
-  const preview = rows.slice(0, 12);
+
+  // werklijst: niet-ingedeeld (non-dup) eerst, dan ingedeeld, dan duplicaten; daarbinnen nieuwste eerst
+  const rank = (r: ParsedRow) => (r.duplicate ? 2 : r.category ? 1 : 0);
+  const sorted = [...rows].sort((a, b) => rank(a) - rank(b) || (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  const filtered = filterUncat ? sorted.filter((r) => !r.duplicate && !r.category) : sorted;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE));
+  const cur = Math.min(page, pageCount - 1);
+  const visible = filtered.slice(cur * PAGE, cur * PAGE + PAGE);
+
+  function assignRestToOverig() {
+    setRows((prev) => prev.map((r) => (!r.duplicate && !r.category ? { ...r, category: "overig" } : r)));
+  }
 
   return (
     <div className="content-inner fade-in" style={{ maxWidth: 940 }}>
@@ -169,8 +185,22 @@ export function Import() {
 
           <div className="card">
             <div className="card-pad" style={{ display: "flex", alignItems: "center", borderBottom: "1px solid var(--line)" }}>
-              <div className="card-h" style={{ marginBottom: 0 }}><h3>Voorbeeld van de import</h3></div>
+              <div className="card-h" style={{ marginBottom: 0 }}><h3>Controleer en deel in</h3></div>
               <span className="chip" style={{ marginLeft: "auto" }}><Ic name="file" /> {filename}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 18px", borderBottom: "1px solid var(--line)", flexWrap: "wrap" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, color: "var(--body)", cursor: "pointer" }}>
+                <input type="checkbox" checked={filterUncat} onChange={(e) => { setFilterUncat(e.target.checked); setPage(0); }} style={{ accentColor: "var(--blue)", width: 16, height: 16 }} />
+                Alleen controle nodig
+              </label>
+              <span style={{ fontSize: 13, color: "var(--muted)" }} className="tnum">{autoCount} van {newRows.length} ingedeeld{uncatCount > 0 ? ` · ${uncatCount} te gaan` : " ✓"}</span>
+              {pageCount > 1 && (
+                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+                  <button className="btn btn-ghost" style={{ padding: "5px 9px" }} disabled={cur === 0} onClick={() => setPage(cur - 1)} aria-label="Vorige pagina"><Ic name="chevronLeft" size={16} /></button>
+                  <span className="tnum" style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)", minWidth: 84, textAlign: "center" }}>pagina {cur + 1} / {pageCount}</span>
+                  <button className="btn btn-ghost" style={{ padding: "5px 9px" }} disabled={cur >= pageCount - 1} onClick={() => setPage(cur + 1)} aria-label="Volgende pagina"><Ic name="chevronRight" size={16} /></button>
+                </div>
+              )}
             </div>
             <div style={{ padding: "8px 10px" }}>
               <table className="tbl">
@@ -178,8 +208,11 @@ export function Import() {
                   <th style={{ paddingLeft: 14 }}>Omschrijving (bank)</th><th>Datum</th><th>Herkende categorie</th><th style={{ textAlign: "right", paddingRight: 14 }}>Bedrag</th>
                 </tr></thead>
                 <tbody>
-                  {preview.map((r, i) => (
-                    <tr className="row" key={i} style={r.duplicate ? { opacity: 0.5 } : !r.category ? { background: "var(--orange-tint)" } : undefined}>
+                  {visible.length === 0 && (
+                    <tr><td colSpan={4}><div className="empty">{filterUncat ? "Alles ingedeeld ✓" : "Geen regels."}</div></td></tr>
+                  )}
+                  {visible.map((r) => (
+                    <tr className="row" key={r.dedupeHash} style={r.duplicate ? { opacity: 0.5 } : !r.category ? { background: "var(--orange-tint)" } : undefined}>
                       <td style={{ width: "44%" }}>
                         <div className="mn">{r.merchant}{r.duplicate ? " · al aanwezig" : ""}</div>
                         <div className="md" style={{ fontFamily: "monospace", fontSize: 11.5, color: "var(--faint)" }}>{r.rawDescription.slice(0, 52)}</div>
@@ -196,13 +229,22 @@ export function Import() {
                 </tbody>
               </table>
             </div>
-            <div style={{ display: "flex", gap: 12, padding: "16px 22px", borderTop: "1px solid var(--line)", alignItems: "center" }}>
-              <span style={{ fontSize: 13, color: "var(--muted)" }}>
-                {preview.length < rows.length ? `Eerste ${preview.length} van ${rows.length} regels — ` : ""}{newRows.length} nieuwe transacties klaar om toe te voegen.
-              </span>
+            <div style={{ display: "flex", gap: 12, padding: "16px 22px", borderTop: "1px solid var(--line)", alignItems: "center", flexWrap: "wrap" }}>
+              {uncatCount > 0 ? (
+                <span style={{ fontSize: 13, color: "var(--orange)", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <Ic name="info" size={16} /> <b>{uncatCount}</b> nog niet ingedeeld
+                  <button className="btn btn-ghost" style={{ padding: "3px 10px", color: "var(--blue)", marginLeft: 6 }} onClick={assignRestToOverig}>Zet resterende op Overig</button>
+                </span>
+              ) : (
+                <span style={{ fontSize: 13, color: "var(--pos)", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <Ic name="check" size={16} /> Alles ingedeeld — {newRows.length} transacties klaar
+                </span>
+              )}
               <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
                 <button className="btn" onClick={() => { setStage("idle"); setRows([]); }}>Annuleren</button>
-                <button className="btn btn-primary" disabled={newRows.length === 0} onClick={commit}><Ic name="check" size={16} /> Voeg toe aan overzicht</button>
+                <button className="btn btn-primary" disabled={newRows.length === 0} onClick={commit}>
+                  <Ic name="check" size={16} /> Voeg {newRows.length} toe aan overzicht
+                </button>
               </div>
             </div>
           </div>
