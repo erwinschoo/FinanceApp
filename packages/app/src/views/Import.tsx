@@ -4,7 +4,8 @@ import { useApp } from "../state/AppContext";
 import { db } from "../db/schema";
 import { eurSign, fmtDate } from "../lib/format";
 import { parseFile } from "../import/sheetParser";
-import { commitImport } from "../db/repo";
+import { commitImport, assignPayeeCategory } from "../db/repo";
+import { payeeKey } from "../helpers/payees";
 import { CatTag } from "../components/CatTag";
 import { CatSelect } from "../components/CatSelect";
 import { Ic } from "../components/Ic";
@@ -21,6 +22,8 @@ export function Import() {
   const [filename, setFilename] = useState("");
   const [error, setError] = useState("");
   const [added, setAdded] = useState<number | null>(null);
+  // tegenpartijen die in de preview handmatig zijn ingedeeld → mapping opslaan bij toevoegen
+  const [manual, setManual] = useState<Map<string, { cat: string; counterIban: string; merchant: string }>>(new Map());
   const fileRef = useRef<HTMLInputElement>(null);
 
   const history = useLiveQuery(
@@ -56,8 +59,25 @@ export function Import() {
     if (f) handleFile(f);
   }
 
+  // Categorie in de preview wijzigen: pas toe op ALLE regels van dezelfde tegenpartij
+  // (IBAN indien aanwezig, anders winkelnaam) en onthoud de keuze als mapping.
+  function changeRowCategory(row: ParsedRow, cat: string) {
+    const key = payeeKey(row);
+    setRows((prev) => prev.map((x) => (payeeKey(x) === key ? { ...x, category: cat } : x)));
+    setManual((prev) => {
+      const m = new Map(prev);
+      m.set(key, { cat, counterIban: row.counterIban, merchant: row.merchant });
+      return m;
+    });
+  }
+
   async function commit() {
     const n = await commitImport(rows, filename);
+    // bewaar mappings voor handmatig ingedeelde tegenpartijen (geldt ook voor toekomstige imports)
+    for (const { cat, counterIban, merchant } of manual.values()) {
+      await assignPayeeCategory({ counterIban, merchant }, cat);
+    }
+    setManual(new Map());
     setAdded(n);
     setRows([]);
     setStage("idle");
@@ -168,7 +188,7 @@ export function Import() {
                       <td>
                         {r.duplicate || r.category === "inkomen" || r.category === "sparen"
                           ? <CatTag catId={r.category} small />
-                          : <CatSelect value={r.category} onChange={(c) => setRows((prev) => prev.map((x) => (x === r ? { ...x, category: c } : x)))} />}
+                          : <CatSelect value={r.category} onChange={(c) => changeRowCategory(r, c)} />}
                       </td>
                       <td className={"amt tnum " + (r.amount >= 0 ? "pos" : "neg")} style={{ paddingRight: 14 }}>{eurSign(r.amount, 2)}</td>
                     </tr>
