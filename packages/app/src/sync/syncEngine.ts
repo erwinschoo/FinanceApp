@@ -14,25 +14,26 @@ export interface Snapshot {
   goals: unknown[];
   importBatches: unknown[];
   importProfiles: unknown[];
+  pots?: unknown[];
 }
 
 export async function exportAll(): Promise<Snapshot> {
-  const [categories, transactions, budgets, rules, goals, importBatches, importProfiles] = await Promise.all([
+  const [categories, transactions, budgets, rules, goals, importBatches, importProfiles, pots] = await Promise.all([
     db.categories.toArray(), db.transactions.toArray(), db.budgets.toArray(),
-    db.rules.toArray(), db.goals.toArray(), db.importBatches.toArray(), db.importProfiles.toArray(),
+    db.rules.toArray(), db.goals.toArray(), db.importBatches.toArray(), db.importProfiles.toArray(), db.pots.toArray(),
   ]);
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
-    categories, transactions, budgets, rules, goals, importBatches, importProfiles,
+    categories, transactions, budgets, rules, goals, importBatches, importProfiles, pots,
   };
 }
 
 export async function importAll(snap: Snapshot): Promise<void> {
-  await db.transaction("rw", [db.categories, db.transactions, db.budgets, db.rules, db.goals, db.importBatches, db.importProfiles], async () => {
+  await db.transaction("rw", [db.categories, db.transactions, db.budgets, db.rules, db.goals, db.importBatches, db.importProfiles, db.pots], async () => {
     await Promise.all([
       db.categories.clear(), db.transactions.clear(), db.budgets.clear(),
-      db.rules.clear(), db.goals.clear(), db.importBatches.clear(), db.importProfiles.clear(),
+      db.rules.clear(), db.goals.clear(), db.importBatches.clear(), db.importProfiles.clear(), db.pots.clear(),
     ]);
     await Promise.all([
       db.categories.bulkPut(snap.categories as never[]),
@@ -42,6 +43,7 @@ export async function importAll(snap: Snapshot): Promise<void> {
       db.goals.bulkPut(snap.goals as never[]),
       db.importBatches.bulkPut(snap.importBatches as never[]),
       db.importProfiles.bulkPut(snap.importProfiles as never[]),
+      db.pots.bulkPut((snap.pots ?? []) as never[]),
     ]);
   });
 }

@@ -1,7 +1,8 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db/schema";
-import { rowToTx, rowToGoal } from "../db/map";
+import { rowToTx, rowToGoal, rowToPot, type Pot } from "../db/map";
+import { allocateGoals, type GoalAllocation } from "../goals/allocate";
 import { lastTwelveMonthKeys } from "../helpers/aggregations";
 import { fromCents } from "../lib/money";
 import type { Category, Transaction, Goal, RuleRow, PayeeRow } from "../db/types";
@@ -15,6 +16,8 @@ interface AppState {
   transactions: Transaction[];
   budgets: Record<string, number>; // categoryId -> euro (recurring)
   goals: Goal[];
+  goalAlloc: Map<string, GoalAllocation>;
+  pots: Pot[];
   rules: RuleRow[];
   payees: PayeeRow[];
   payeeMap: Map<string, string>; // key -> categoryId
@@ -45,8 +48,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const goalRows = useLiveQuery(() => db.goals.toArray(), [], undefined);
   const ruleRows = useLiveQuery(() => db.rules.toArray(), [], undefined);
   const payeeRows = useLiveQuery(() => db.payees.toArray(), [], undefined);
+  const potRows = useLiveQuery(() => db.pots.toArray(), [], undefined);
 
-  const ready = !!categories && !!txRows && !!budgetRows && !!goalRows && !!ruleRows && !!payeeRows;
+  const ready = !!categories && !!txRows && !!budgetRows && !!goalRows && !!ruleRows && !!payeeRows && !!potRows;
 
   const value = useMemo<AppState>(() => {
     const cats = categories ?? [];
@@ -58,17 +62,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     for (const b of budgetRows ?? []) {
       if (b.month === null) budgets[b.categoryId] = fromCents(b.amountCents);
     }
-    const goals: Goal[] = (goalRows ?? []).map(rowToGoal).sort((a, b) => a.priority - b.priority);
+    const goalsBase: Goal[] = (goalRows ?? []).map(rowToGoal).sort((a, b) => a.priority - b.priority);
+    const pots = (potRows ?? []).map(rowToPot);
+    const goalAlloc = allocateGoals(goalsBase, transactions, pots);
+    // voortgang afleiden: vervang current door de aan dit doel toegekende waarde (val terug op opgeslagen current)
+    const goals: Goal[] = goalsBase.map((g) => ({ ...g, current: goalAlloc.get(g.id)?.current ?? g.current }));
     const rules = (ruleRows ?? []) as RuleRow[];
     const payees = (payeeRows ?? []) as PayeeRow[];
     const payeeMap = new Map(payees.filter((p) => p.categoryId).map((p) => [p.key, p.categoryId]));
     const uncategorizedCount = transactions.filter((t) => !t.category).length;
 
     return {
-      ready, categories: cats, catMap, transactions, budgets, goals, rules, payees, payeeMap,
+      ready, categories: cats, catMap, transactions, budgets, goals, goalAlloc, pots, rules, payees, payeeMap,
       months, monthIdx, setMonthIdx, view, setView, uncategorizedCount,
     };
-  }, [categories, txRows, budgetRows, goalRows, ruleRows, payeeRows, ready, months, monthIdx, view]);
+  }, [categories, txRows, budgetRows, goalRows, ruleRows, payeeRows, potRows, ready, months, monthIdx, view]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

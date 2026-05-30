@@ -23,6 +23,7 @@ export function Ic({ name, size = 20, className, style, strokeWidth = 1.8 }: Pro
     chevronLeft: <path d="m15 6-6 6 6 6" {...p} />,
     chevronRight: <path d="m9 6 6 6-6 6" {...p} />,
     chevronDown: <path d="m6 9 6 6 6-6" {...p} />,
+    chevronUp: <path d="m6 15 6-6 6 6" {...p} />,
     arrowUp: <><path d="M12 19V5" {...p} /><path d="m6 11 6-6 6 6" {...p} /></>,
     arrowDown: <><path d="M12 5v14" {...p} /><path d="m6 13 6 6 6-6" {...p} /></>,
     trendUp: <><path d="M3 17 9 11l4 4 8-8" {...p} /><path d="M15 7h6v6" {...p} /></>,

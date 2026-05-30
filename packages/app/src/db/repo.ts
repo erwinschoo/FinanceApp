@@ -61,12 +61,13 @@ export async function setRecurringBudget(categoryId: string, euros: number): Pro
 
 /* Spaardoel toevoegen of bijwerken (euro's in). */
 export async function upsertGoal(g: {
-  id?: string; name: string; target: number; current: number; monthly: number;
+  id?: string; name: string; categoryId: string; target: number; current: number; monthly: number;
   startDate: string; targetDate: string; priority: number; color: string;
 }): Promise<void> {
   const row: GoalRow = {
     id: g.id ?? uid("g"),
     name: g.name,
+    categoryId: g.categoryId,
     targetCents: toCents(g.target),
     currentCents: toCents(g.current),
     monthlyCents: toCents(g.monthly),
@@ -79,8 +80,38 @@ export async function upsertGoal(g: {
   scheduleSync();
 }
 
+/* Verwijder een doel en hernummer de resterende prioriteiten naar 1…N (geen gaten). */
 export async function deleteGoal(id: string): Promise<void> {
-  await db.goals.delete(id);
+  await db.transaction("rw", db.goals, async () => {
+    await db.goals.delete(id);
+    const rest = (await db.goals.toArray()).sort((a, b) => a.priority - b.priority);
+    await db.goals.bulkPut(rest.map((g, i) => ({ ...g, priority: i + 1 })));
+  });
+  scheduleSync();
+}
+
+/* Verschuif een doel één plek omhoog/omlaag door de prioriteit met de buur te wisselen. */
+export async function moveGoalPriority(id: string, dir: "up" | "down"): Promise<void> {
+  await db.transaction("rw", db.goals, async () => {
+    const sorted = (await db.goals.toArray()).sort((a, b) => a.priority - b.priority);
+    const idx = sorted.findIndex((g) => g.id === id);
+    const swapWith = dir === "up" ? idx - 1 : idx + 1;
+    if (idx < 0 || swapWith < 0 || swapWith >= sorted.length) return;
+    const a = sorted[idx], b = sorted[swapWith];
+    await db.goals.bulkPut([{ ...a, priority: b.priority }, { ...b, priority: a.priority }]);
+  });
+  scheduleSync();
+}
+
+/* ── Spaarpot per categorie (startsaldo / nul lijn + tekenrichting) ── */
+export async function setPotOpening(categoryId: string, euros: number): Promise<void> {
+  const cur = await db.pots.get(categoryId);
+  await db.pots.put({ categoryId, openingCents: toCents(euros), inverted: cur?.inverted ?? false });
+  scheduleSync();
+}
+export async function setPotInverted(categoryId: string, inverted: boolean): Promise<void> {
+  const cur = await db.pots.get(categoryId);
+  await db.pots.put({ categoryId, openingCents: cur?.openingCents ?? 0, inverted });
   scheduleSync();
 }
 

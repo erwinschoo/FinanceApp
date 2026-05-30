@@ -289,6 +289,11 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 .dd-trigger .dd-lbl { line-height:1; }
 .dd-trigger svg { color:var(--faint); margin-left:2px; flex:none; }
 
+/* reorder-pijltjes (spaardoelen) */
+.reorder { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:6px; color:var(--muted); cursor:pointer; transition:all .12s var(--ease); }
+.reorder:hover { background:var(--subtle); color:var(--ink); }
+.reorder[data-disabled="true"] { opacity:.3; pointer-events:none; }
+
 /* import dropzone */
 .drop { border:2px dashed var(--line); border-radius:18px; background:var(--bg); padding:54px 40px; text-align:center; transition:all .2s var(--ease); }
 .drop.over { border-color:var(--blue); background:var(--blue-tint); }

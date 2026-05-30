@@ -50,13 +50,21 @@ export interface RuleRow {
 export interface GoalRow {
   id: string;
   name: string;
+  categoryId: string;       // gekoppelde categorie (voortgang afgeleid uit transacties)
   targetCents: number;
-  currentCents: number;
+  currentCents: number;     // legacy; genegeerd wanneer categoryId gezet is
   monthlyCents: number;
   startDate: string;        // ISO
   targetDate: string;       // ISO
   priority: number;         // lager = hoger
   color: string;
+}
+
+/* Spaarpot-config per categorie: nul lijn (startsaldo) + tekenrichting van de inleg. */
+export interface PotRow {
+  categoryId: string;       // PK
+  openingCents: number;     // startsaldo / nul lijn
+  inverted: boolean;        // true = inleg staat als afschrijving (−) op de betaalrekening
 }
 
 export interface ImportBatchRow {
@@ -109,8 +117,9 @@ export interface Transaction {
 export interface Goal {
   id: string;
   name: string;
+  categoryId: string;
   target: number;
-  current: number;
+  current: number;          // afgeleide voortgang (euro) wanneer categoryId gezet is
   monthly: number;
   startDate: string;
   targetDate: string;

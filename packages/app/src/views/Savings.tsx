@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useApp } from "../state/AppContext";
 import { eur } from "../lib/format";
 import { calcGoal } from "../goals/goalCalc";
-import { upsertGoal, deleteGoal } from "../db/repo";
+import { upsertGoal, deleteGoal, moveGoalPriority, setPotOpening, setPotInverted } from "../db/repo";
 import { ProgressRing } from "../charts/ProgressRing";
 import { TrendChart, type TrendSeries } from "../charts/TrendChart";
+import { Dropdown } from "../components/Dropdown";
 import { Ic } from "../components/Ic";
 import type { Goal } from "../db/types";
 import focusTarget from "../assets/focus-target.svg";
@@ -12,7 +13,7 @@ import focusTarget from "../assets/focus-target.svg";
 const GOAL_COLORS = ["var(--blue)", "var(--orange)", "var(--pos)", "var(--cat-4)", "var(--cat-6)"];
 
 export function Savings() {
-  const { goals } = useApp();
+  const { goals, categories } = useApp();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -28,8 +29,9 @@ export function Savings() {
     const color = GOAL_COLORS[goals.length % GOAL_COLORS.length];
     const today = new Date();
     const target = new Date(today.getFullYear() + 2, today.getMonth(), 1);
+    const defaultCat = categories.find((c) => c.type === "sparen")?.id ?? categories[0]?.id ?? "";
     await upsertGoal({
-      name: "Nieuw doel", target: 5000, current: 0, monthly: 200,
+      name: "Nieuw doel", categoryId: defaultCat, target: 5000, current: 0, monthly: 200,
       startDate: today.toISOString().slice(0, 10),
       targetDate: target.toISOString().slice(0, 10),
       priority, color,
@@ -51,17 +53,25 @@ export function Savings() {
         {goals.length === 0 ? (
           <div className="empty">Nog geen spaardoelen. Maak er een aan om je voortgang te volgen.</div>
         ) : (
-          <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
-            {goals.map((g) => {
+          <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
+            {goals.map((g, i) => {
               const c = calcGoal(g);
               const active = g.id === goal?.id;
               return (
                 <button key={g.id} onClick={() => setSelectedId(g.id)}
-                  style={{ textAlign: "left", border: active ? `1px solid ${g.color}` : "1px solid var(--line)", background: active ? "var(--subtle)" : "#fff", borderRadius: 12, padding: "14px 16px", cursor: "pointer" }}>
+                  style={{ textAlign: "left", border: active ? `1px solid ${g.color}` : "1px solid var(--line)", background: active ? "var(--subtle)" : "var(--surface)", borderRadius: 12, padding: "14px 16px", cursor: "pointer" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                    <span style={{ width: 9, height: 9, borderRadius: "50%", background: g.color }}></span>
-                    <span style={{ fontWeight: 800, color: "var(--ink)", fontSize: 14 }}>{g.name}</span>
-                    <span style={{ marginLeft: "auto", fontSize: 11.5, color: "var(--muted)", fontWeight: 700 }}>#{g.priority}</span>
+                    <span style={{ width: 9, height: 9, borderRadius: "50%", background: g.color, flex: "none" }}></span>
+                    <span style={{ fontWeight: 800, color: "var(--ink)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.name}</span>
+                    <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 2 }}>
+                      <span style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 700, marginRight: 4 }}>#{g.priority}</span>
+                      <span className="reorder" title="Omhoog" aria-label="Omhoog"
+                        onClick={(e) => { e.stopPropagation(); if (i > 0) moveGoalPriority(g.id, "up"); }}
+                        data-disabled={i === 0}><Ic name="chevronUp" size={14} /></span>
+                      <span className="reorder" title="Omlaag" aria-label="Omlaag"
+                        onClick={(e) => { e.stopPropagation(); if (i < goals.length - 1) moveGoalPriority(g.id, "down"); }}
+                        data-disabled={i === goals.length - 1}><Ic name="chevronDown" size={14} /></span>
+                    </span>
                   </div>
                   <div className="bar" style={{ height: 8 }}><span style={{ width: c.pct + "%", background: g.color }}></span></div>
                   <div className="tnum" style={{ marginTop: 8, fontSize: 12.5, color: "var(--muted)" }}>
@@ -74,16 +84,23 @@ export function Savings() {
         )}
       </div>
 
-      {goal && <GoalDetail key={goal.id} goal={goal} canDelete={goals.length > 1} onSave={save} onDelete={() => deleteGoal(goal.id)} />}
+      {goal && <GoalDetail key={goal.id} goal={goal} onSave={save} onDelete={() => deleteGoal(goal.id)} />}
     </div>
   );
 }
 
-function GoalDetail({ goal, canDelete, onSave, onDelete }: {
-  goal: Goal; canDelete: boolean;
+function GoalDetail({ goal, onSave, onDelete }: {
+  goal: Goal;
   onSave: (g: Goal, patch: Partial<Goal>) => void; onDelete: () => void;
 }) {
+  const { categories, catMap, pots, goalAlloc } = useApp();
   const c = calcGoal(goal);
+  const alloc = goalAlloc.get(goal.id);
+  const pot = pots.find((p) => p.categoryId === goal.categoryId);
+  const linkedCat = catMap[goal.categoryId];
+
+  const catOptions = categories.map((cat) => ({ value: cat.id, label: cat.name, color: cat.color }));
+
   const projSeries: TrendSeries[] = [
     { key: "doel", name: "Doel", color: "var(--orange)", data: c.projection.target, noArea: true, dashed: true },
     { key: "groei", name: "Verwachte groei", color: "var(--blue)", data: c.projection.growth },
@@ -95,11 +112,9 @@ function GoalDetail({ goal, canDelete, onSave, onDelete }: {
         <div style={{ alignSelf: "stretch", display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
           <img src={focusTarget} alt="" style={{ width: 26, height: 26 }} />
           <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--ink)" }}>Dit doel</h3>
-          {canDelete && (
-            <button className="btn btn-ghost" style={{ marginLeft: "auto", padding: "5px 9px" }} title="Doel verwijderen" onClick={onDelete}>
-              <Ic name="trash" size={16} />
-            </button>
-          )}
+          <button className="btn btn-ghost" style={{ marginLeft: "auto", padding: "5px 9px" }} title="Doel verwijderen" onClick={onDelete}>
+            <Ic name="trash" size={16} />
+          </button>
         </div>
         <div className="ring-wrap" style={{ margin: "14px 0 8px" }}>
           <ProgressRing value={goal.current} max={goal.target} size={208} thickness={18} color={goal.color} />
@@ -109,9 +124,11 @@ function GoalDetail({ goal, canDelete, onSave, onDelete }: {
             <div style={{ fontSize: 13, color: "var(--muted)" }}>van {eur(goal.target)}</div>
           </div>
         </div>
-        <input value={goal.name} onChange={(e) => onSave(goal, { name: e.target.value })}
-          style={{ textAlign: "center", border: "1px solid transparent", borderRadius: 8, padding: "6px 10px", fontSize: 17, fontWeight: 800, color: "var(--ink)", width: "100%", background: "transparent" }}
-          onFocus={(e) => (e.target.style.background = "var(--subtle)")} onBlur={(e) => (e.target.style.background = "transparent")} />
+        <div style={{ position: "relative", width: "100%", marginTop: 6 }}>
+          <input value={goal.name} placeholder="Naam je doel" onChange={(e) => onSave(goal, { name: e.target.value })}
+            style={{ width: "100%", textAlign: "center", border: "1px solid var(--line)", borderRadius: 10, padding: "8px 34px", fontSize: 17, fontWeight: 800, color: "var(--ink)", background: "var(--surface)", outline: "none" }} />
+          <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "var(--faint)", pointerEvents: "none", lineHeight: 0 }}><Ic name="edit" size={15} /></span>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, width: "100%", marginTop: 14 }}>
           <div style={{ background: "var(--subtle)", borderRadius: 12, padding: "12px 14px", textAlign: "left" }}>
             <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700 }}>Nog te gaan</div>
@@ -127,25 +144,38 @@ function GoalDetail({ goal, canDelete, onSave, onDelete }: {
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         <div className="card card-pad">
           <div className="card-h" style={{ marginBottom: 16 }}><h3>Doel afstemmen</h3></div>
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
+            <div>
+              <label style={{ fontSize: 12.5, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 8 }}>Gekoppelde categorie</label>
+              <Dropdown value={goal.categoryId} onChange={(v) => onSave(goal, { categoryId: v })} options={catOptions} ariaLabel="Kies categorie" minWidth={200} />
+            </div>
+            <Field label="Startsaldo (nul lijn)" value={pot?.opening ?? 0} step={50} min={0} max={Math.max(40000, goal.target)} sliderMin={0}
+              onChange={(v) => { if (goal.categoryId) setPotOpening(goal.categoryId, v); }} />
+          </div>
+
+          <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
             <Field label="Doelbedrag" value={goal.target} step={500} min={0} max={40000} sliderMin={2000}
               onChange={(v) => onSave(goal, { target: v })} />
             <Field label="Maandelijkse inleg" value={goal.monthly} step={10} min={0} max={1500} sliderMin={0}
               onChange={(v) => onSave(goal, { monthly: v })} />
           </div>
-          <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
-            <Field label="Al gespaard" value={goal.current} step={50} min={0} max={Math.max(40000, goal.target)} sliderMin={0}
-              onChange={(v) => onSave(goal, { current: v })} />
-            <div>
-              <label style={{ fontSize: 12.5, fontWeight: 700, color: "var(--muted)" }}>Prioriteit</label>
-              <input type="number" value={goal.priority} min={1} step={1} onChange={(e) => onSave(goal, { priority: Number(e.target.value) || 1 })}
-                className="tnum" style={{ display: "block", width: "100%", marginTop: 8, border: "1px solid var(--line)", borderRadius: 10, padding: "9px 12px", fontSize: 17, fontWeight: 800, color: "var(--ink)", outline: "none" }} />
-            </div>
-          </div>
+
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 16, fontSize: 13, fontWeight: 600, color: "var(--body)", cursor: "pointer" }}>
+            <input type="checkbox" checked={!!pot?.inverted} disabled={!goal.categoryId}
+              onChange={(e) => { if (goal.categoryId) setPotInverted(goal.categoryId, e.target.checked); }}
+              style={{ accentColor: "var(--blue)", width: 16, height: 16 }} />
+            Inleg staat als afschrijving (−) op de betaalrekening
+          </label>
+
           <div className="notice" style={{ marginTop: 18 }}>
             <span className="ni"><Ic name="info" size={20} /></span>
             <div className="nt">
-              Met <b>{eur(goal.monthly)}</b> per maand bereik je <b>{eur(goal.target)}</b> in ongeveer <b>{isFinite(c.monthsNeeded) ? c.monthsNeeded + " maanden" : "—"}</b>, rond <b>{c.endLabel}</b>.
+              Voortgang = startsaldo + alle transacties in <b>{linkedCat?.name ?? "—"}</b>.
+              {alloc && alloc.countInCat > 1 && (
+                <> Deze categorie heeft een pot van <b>{eur(alloc.potTotal)}</b>; dit doel krijgt <b>{eur(goal.current)}</b> (#{alloc.position} van {alloc.countInCat}){alloc.buffer > 0 ? <> · buffer <b>{eur(alloc.buffer)}</b></> : null}.</>
+              )}
+              {" "}Met <b>{eur(goal.monthly)}</b> per maand bereik je <b>{eur(goal.target)}</b> in ongeveer <b>{isFinite(c.monthsNeeded) ? c.monthsNeeded + " maanden" : "—"}</b>, rond <b>{c.endLabel}</b>.
             </div>
           </div>
         </div>
@@ -174,7 +204,7 @@ function Field({ label, value, step, min, max, sliderMin, onChange }: {
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
         <span style={{ fontSize: 18, fontWeight: 800, color: "var(--ink)" }}>€</span>
         <input type="number" value={value} step={step} min={min} onChange={(e) => onChange(Number(e.target.value) || 0)}
-          className="tnum" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 10, padding: "9px 12px", fontSize: 17, fontWeight: 800, color: "var(--ink)", outline: "none" }} />
+          className="tnum" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 10, padding: "9px 12px", fontSize: 17, fontWeight: 800, color: "var(--ink)", outline: "none", background: "var(--surface)" }} />
       </div>
       <input type="range" className="rng" min={sliderMin} max={max} step={step} value={Math.min(max, value)} onChange={(e) => onChange(Number(e.target.value))} style={{ marginTop: 14 }} />
     </div>

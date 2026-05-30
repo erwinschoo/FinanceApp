@@ -1,7 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import type {
   Category, TxRow, BudgetRow, RuleRow, GoalRow,
-  ImportBatchRow, ImportProfileRow, MetaRow, PayeeRow,
+  ImportBatchRow, ImportProfileRow, MetaRow, PayeeRow, PotRow,
 } from "./types";
 import { DEFAULT_CATEGORIES, ADDED_IN_V3, V3_PARENTING } from "../categories";
 
@@ -15,6 +15,7 @@ export class FinanceDB extends Dexie {
   importProfiles!: Table<ImportProfileRow, string>;
   meta!: Table<MetaRow, string>;
   payees!: Table<PayeeRow, string>;
+  pots!: Table<PotRow, string>;
 
   constructor() {
     super("financeapp");
@@ -56,6 +57,10 @@ export class FinanceDB extends Dexie {
         else if (V3_PARENTING[c.id] && !c.parentId) patch.parentId = V3_PARENTING[c.id];
         if ("parentId" in patch) await table.update(c.id, patch);
       }
+    });
+    // v4: spaarpotten (startsaldo + tekenrichting per categorie) voor doel-tracking
+    this.version(4).stores({
+      pots: "categoryId",
     });
   }
 }
