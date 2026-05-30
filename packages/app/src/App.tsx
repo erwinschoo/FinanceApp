@@ -16,15 +16,15 @@ const Import = lazy(() => import("./views/Import").then((m) => ({ default: m.Imp
 const Sync = lazy(() => import("./views/Sync").then((m) => ({ default: m.Sync })));
 const Manage = lazy(() => import("./views/Manage").then((m) => ({ default: m.Manage })));
 
-const META: Record<ViewId, { title: string; sub: string; month: boolean }> = {
-  dashboard: { title: "Overzicht", sub: "Je financiële beeld in één oogopslag", month: true },
-  transacties: { title: "Transacties", sub: "Controleer en deel je uitgaven in", month: false },
-  budgetten: { title: "Budgetten", sub: "Stem je budget af per categorie", month: true },
-  spaardoel: { title: "Spaardoelen", sub: "Stel doelen en volg je voortgang", month: false },
-  tegenpartijen: { title: "Tegenpartijen", sub: "Wijs per winkel of rekening één keer een categorie toe", month: false },
-  import: { title: "Importeren", sub: "Laad je banktransacties in via Excel", month: false },
-  sync: { title: "Synchroniseren", sub: "Back-up en sync via je eigen OneDrive", month: false },
-  beheer: { title: "Beheer", sub: "Categorieën en categoriseer-regels onderhouden", month: false },
+const META: Record<ViewId, { title: string; month: boolean }> = {
+  dashboard: { title: "Overzicht", month: true },
+  transacties: { title: "Transacties", month: false },
+  budgetten: { title: "Budgetten", month: true },
+  spaardoel: { title: "Spaardoelen", month: false },
+  tegenpartijen: { title: "Tegenpartijen", month: false },
+  import: { title: "Importeren", month: false },
+  sync: { title: "Synchroniseren", month: false },
+  beheer: { title: "Beheer", month: false },
 };
 
 const VIEWS: Record<ViewId, ComponentType> = {
@@ -60,7 +60,6 @@ export default function App() {
         <header className="topbar">
           <div>
             <h1>{meta.title}</h1>
-            <div className="sub">{meta.sub}</div>
           </div>
           {(view === "transacties" || view === "tegenpartijen") && (
             <button className="btn" style={{ marginLeft: 4 }} onClick={() => setConfirm(view)} title="Alle records permanent verwijderen">
