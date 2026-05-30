@@ -19,7 +19,7 @@ export class FinanceDB extends Dexie {
   pots!: Table<PotRow, string>;
 
   constructor() {
-    super("financeapp");
+    super("bokkiep");
     this.version(1).stores({
       categories: "id",
       transactions: "id, date, category, dedupeHash, importBatchId",

@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 
 export type Theme = "light" | "dark";
 
-const STORAGE_KEY = "financeapp:theme";
+const STORAGE_KEY = "bokkiep:theme";
+const LEGACY_KEY = "financeapp:theme"; // voorkeur van vóór de rebrand
 const THEME_COLOR: Record<Theme, string> = { light: "#5E81B5", dark: "#1F1F1F" };
 
 function readStored(): Theme {
   try {
-    return localStorage.getItem(STORAGE_KEY) === "dark" ? "dark" : "light";
+    const v = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_KEY);
+    return v === "dark" ? "dark" : "light";
   } catch {
     return "light";
   }

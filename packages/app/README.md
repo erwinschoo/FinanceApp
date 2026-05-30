@@ -1,4 +1,4 @@
-# FinanceApp
+# bokkiep
 
 Persoonlijke financiële Progressive Web App: importeer ING-transacties via Excel/CSV, categoriseer ze, stel budgetten per categorie op en volg meerdere spaardoelen. **Local-first** (alles lokaal in de browser via IndexedDB) met optionele **sync naar je eigen OneDrive** via Microsoft Graph.
 
@@ -14,7 +14,7 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-Bij de eerste start wordt de database gevuld met **voorbeelddata** zodat alle schermen meteen werken. Verwijder de IndexedDB ("financeapp") via DevTools → Application om opnieuw te seeden.
+Bij de eerste start wordt de database gevuld met **voorbeelddata** zodat alle schermen meteen werken. Verwijder de IndexedDB ("bokkiep") via DevTools → Application om opnieuw te seeden.
 
 ```bash
 npm run build      # productie-build (typecheck + vite build)
@@ -35,9 +35,10 @@ In **Transacties** kun je een categorie handmatig aanpassen en met **regel maken
 Volledig los van een werk-/delaware-account — gebruik een **persoonlijk** Microsoft-account.
 
 1. [Microsoft Entra admin center](https://entra.microsoft.com) → **App registrations → New registration**.
+   - Naam: **bokkiep** (bepaalt de mapnaam `Apps/bokkiep` in OneDrive).
    - Supported account types: **Personal Microsoft accounts only**.
    - Platform: **Single-page application (SPA)**.
-   - Redirect URI: `http://localhost:5173` (en later je GitHub Pages-URL, bv. `https://<gebruiker>.github.io/FinanceApp/`).
+   - Redirect URI: `http://localhost:5173/` (en later je GitHub Pages-URL, bv. `https://<gebruiker>.github.io/bokkiep/`).
 2. **API permissions** → Microsoft Graph → **Delegated**: `Files.ReadWrite.AppFolder` en `User.Read`.
 3. Kopieer de **Application (client) ID**.
 4. Maak `packages/app/.env` (zie `.env.example`):
@@ -46,7 +47,7 @@ Volledig los van een werk-/delaware-account — gebruik een **persoonlijk** Micr
    ```
 5. Herstart `npm run dev`. Ga naar **Synchroniseren** → **Inloggen met Microsoft**.
 
-Je data komt in een eigen mapje `Apps/FinanceApp/data.json` in jouw OneDrive; de app krijgt alléén toegang tot dat mapje. **Sync nu** kiest automatisch op-/afhalen (last-write-wins op basis van wijzigingsdatum); met **Uploaden**/**Ophalen** stuur je het bewust.
+Je data komt in een eigen mapje `Apps/bokkiep/data.json` in jouw OneDrive; de app krijgt alléén toegang tot dat mapje. **Sync nu** kiest automatisch op-/afhalen (last-write-wins op basis van wijzigingsdatum); met **Uploaden**/**Ophalen** stuur je het bewust.
 
 ## Hosten op GitHub Pages
 
@@ -54,7 +55,7 @@ Je data komt in een eigen mapje `Apps/FinanceApp/data.json` in jouw OneDrive; de
 2. De workflow [`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml) bouwt en publiceert automatisch bij elke push naar `main`.
 3. Voor sync in productie: zet de client-ID als repository-**variable** `MS_CLIENT_ID` (Settings → Secrets and variables → Actions → Variables), en voeg de Pages-URL toe als redirect URI in de app-registratie.
 
-> De build gebruikt `base: "/FinanceApp/"` (zie `vite.config.ts`). Heet je repo anders, pas dat pad dan aan.
+> De build gebruikt `base: "/bokkiep/"` (zie `vite.config.ts`). Heet je repo anders, pas dat pad dan aan.
 
 ## Structuur
 

@@ -2,9 +2,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-// GitHub Pages serveert op een subpad: https://<gebruiker>.github.io/FinanceApp/
+// GitHub Pages serveert op een subpad: https://<gebruiker>.github.io/bokkiep/
 // Pas dit aan als de repo anders heet. Lokaal (dev) gebruikt altijd "/".
-const base = process.env.GITHUB_PAGES === "true" ? "/FinanceApp/" : "/";
+const base = process.env.GITHUB_PAGES === "true" ? "/bokkiep/" : "/";
 
 export default defineConfig({
   base,

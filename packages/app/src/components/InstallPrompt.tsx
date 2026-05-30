@@ -8,7 +8,7 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-const SNOOZE_KEY = "financeapp:install-snooze";
+const SNOOZE_KEY = "bokkiep:install-snooze";
 const SNOOZE_DAYS = 7;
 
 function isStandalone(): boolean {

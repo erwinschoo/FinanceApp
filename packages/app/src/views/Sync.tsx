@@ -55,7 +55,7 @@ export function Sync() {
             Sync is nog niet geconfigureerd. Eenmalige setup met je <b>persoonlijke</b> Microsoft-account (los van werk):
           </p>
           <ol style={{ color: "var(--body)", fontSize: 14, lineHeight: 1.7, paddingLeft: 20 }}>
-            <li>Ga naar <b>Microsoft Entra admin center → App registrations → New registration</b>.</li>
+            <li>Ga naar <b>Microsoft Entra admin center → App registrations → New registration</b>. Geef de registratie de naam <b>bokkiep</b> — zo heet straks ook je OneDrive-mapje <code>Apps/bokkiep</code>.</li>
             <li>Kies <b>"Personal Microsoft accounts only"</b> en platform <b>Single-page application (SPA)</b>.</li>
             <li>Redirect URI: <code>{window.location.origin + import.meta.env.BASE_URL}</code></li>
             <li>API permissions → Microsoft Graph → <b>delegated</b>: <code>Files.ReadWrite.AppFolder</code> en <code>User.Read</code>.</li>
@@ -63,7 +63,7 @@ export function Sync() {
           </ol>
           <div className="notice" style={{ marginTop: 8 }}>
             <span className="ni"><Ic name="info" size={20} /></span>
-            <div className="nt">Je data komt in een eigen mapje <b>Apps/FinanceApp</b> in jouw OneDrive. De app krijgt alleen toegang tot dat mapje.</div>
+            <div className="nt">Je data komt in een eigen mapje <b>Apps/bokkiep</b> in jouw OneDrive. De app krijgt alleen toegang tot dat mapje.</div>
           </div>
         </div>
       </div>
