@@ -1,5 +1,6 @@
-import { lazy, Suspense, useState, type ComponentType } from "react";
+import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
 import { useApp, type ViewId } from "./state/AppContext";
+import { runStartupSync } from "./sync/autoSync";
 import { Sidebar } from "./components/Sidebar";
 import { MonthPicker } from "./components/MonthPicker";
 import { Ic } from "./components/Ic";
@@ -41,6 +42,9 @@ const VIEWS: Record<ViewId, ComponentType> = {
 export default function App() {
   const { ready, view, setView } = useApp();
   const [confirm, setConfirm] = useState<null | "transacties" | "tegenpartijen">(null);
+
+  // Bij app-start: stil de nieuwste cloud-versie ophalen (alleen indien ingelogd).
+  useEffect(() => { void runStartupSync(); }, []);
 
   if (!ready) {
     return (

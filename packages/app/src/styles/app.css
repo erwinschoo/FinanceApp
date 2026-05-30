@@ -169,6 +169,8 @@ input { font-family:inherit; }
 .sb-user .em { display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--muted); margin-top:1px; }
 .sb-user .em svg { width:13px; height:13px; flex:none; }
 .sb-user .em.online svg { color:#0078D4; }
+.sb-user .em.syncing svg { animation:syncPulse 1.1s var(--ease) infinite; }
+@keyframes syncPulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
 .sb-user .em .em-txt { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .theme-toggle { flex:none; width:36px; height:36px; display:flex; align-items:center; justify-content:center;
   border:1px solid var(--line); background:transparent; border-radius:var(--radius-xs); color:var(--muted); transition:all .15s var(--ease); }

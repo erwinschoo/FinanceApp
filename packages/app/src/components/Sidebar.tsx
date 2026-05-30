@@ -1,6 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useApp, type ViewId } from "../state/AppContext";
 import { useTheme } from "../state/useTheme";
+import { useAutoSyncStatus } from "../sync/autoSync";
 import { db } from "../db/schema";
 import { Ic } from "./Ic";
 
@@ -34,15 +35,29 @@ export function Sidebar() {
   const { view, setView, uncategorizedCount } = useApp();
   const { theme, toggle } = useTheme();
 
+  const syncState = useAutoSyncStatus();
   const account = useLiveQuery(() => db.meta.get("account"), [], undefined);
   const syncMeta = useLiveQuery(() => db.meta.get("sync"), [], undefined);
   const acc = account?.value as { email?: string; name?: string } | undefined;
   const connected = !!acc?.email;
   const lastSynced = (syncMeta?.value as { lastSyncedAt?: string } | undefined)?.lastSyncedAt;
-  const status = connected
-    ? (lastSynced ? syncedLabel(lastSynced) : "OneDrive verbonden")
-    : "Lokaal opgeslagen";
   const displayName = connected ? (acc?.email ?? acc?.name ?? "Verbonden") : "Niet verbonden";
+
+  // Status-regel onder de naam: toont achtergrond-sync-activiteit/fouten of de laatste sync-tijd.
+  let status: string;
+  let statusColor: string | undefined;
+  if (!connected) {
+    status = "Lokaal opgeslagen";
+  } else if (syncState === "syncing") {
+    status = "Synchroniseren…";
+  } else if (syncState === "error") {
+    status = "Sync mislukt"; statusColor = "var(--over)";
+  } else if (syncState === "offline") {
+    status = "Offline – wacht"; statusColor = "var(--warn)";
+  } else {
+    status = lastSynced ? syncedLabel(lastSynced) : "OneDrive verbonden";
+  }
+  const iconStyle = !connected ? { color: "var(--faint)" } : statusColor ? { color: statusColor } : undefined;
 
   const item = (it: NavItem) => (
     <button key={it.id} className={"nav-item" + (view === it.id ? " active" : "")} onClick={() => setView(it.id)}>
@@ -80,8 +95,8 @@ export function Sidebar() {
           <div className="av">ES</div>
           <div className="meta">
             <div className="nm" title={displayName}>{displayName}</div>
-            <div className={"em" + (connected ? " online" : "")} title={connected ? "Verbonden met OneDrive" : "Alleen op dit apparaat opgeslagen"}>
-              <Ic name="onedrive" style={!connected ? { color: "var(--faint)" } : undefined} />
+            <div className={"em" + (connected ? " online" : "") + (connected && syncState === "syncing" ? " syncing" : "")} title={connected ? "Verbonden met OneDrive" : "Alleen op dit apparaat opgeslagen"}>
+              <Ic name="onedrive" style={iconStyle} />
               <span className="em-txt">{status}</span>
             </div>
           </div>

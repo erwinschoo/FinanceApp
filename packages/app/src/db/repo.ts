@@ -2,11 +2,13 @@ import { db } from "./schema";
 import { toCents } from "../lib/money";
 import { uid } from "../lib/id";
 import { payeeKey, type PayeeRef } from "../helpers/payees";
+import { scheduleSync } from "../sync/autoSync";
 import type { Category, CategoryType, GoalRow, ParsedRow, RuleRow, TxRow } from "./types";
 
 /* Categorie van een transactie wijzigen (handmatig → auto:false). */
 export async function updateTxCategory(id: string, category: string): Promise<void> {
   await db.transactions.update(id, { category, auto: false });
+  scheduleSync();
 }
 
 /* Ken een categorie toe aan een hele tegenpartij: bewaar de mapping én pas 'm
@@ -35,6 +37,7 @@ export async function assignPayeeCategory(
       updated = matches.length;
     }
   });
+  scheduleSync();
   return updated;
 }
 
@@ -53,6 +56,7 @@ export async function setRecurringBudget(categoryId: string, euros: number): Pro
     amountCents: toCents(euros),
     carryOver: false,
   });
+  scheduleSync();
 }
 
 /* Spaardoel toevoegen of bijwerken (euro's in). */
@@ -72,10 +76,12 @@ export async function upsertGoal(g: {
     color: g.color,
   };
   await db.goals.put(row);
+  scheduleSync();
 }
 
 export async function deleteGoal(id: string): Promise<void> {
   await db.goals.delete(id);
+  scheduleSync();
 }
 
 /* Geïmporteerde rijen vastleggen: nieuwe transacties + een import-batch.
@@ -115,6 +121,7 @@ export async function commitImport(rows: ParsedRow[], filename: string): Promise
       }
     }
   });
+  scheduleSync();
   return fresh.length;
 }
 
@@ -139,6 +146,7 @@ export async function addCategory(c: { name: string; color: string; type: Catego
     parentId: c.parentId,
   };
   await db.categories.put(row);
+  scheduleSync();
   return id;
 }
 
@@ -146,6 +154,7 @@ export async function updateCategory(id: string, patch: Partial<Pick<Category, "
   const clean: Partial<Category> = { ...patch };
   if (patch.name != null) clean.initial = (patch.name.trim()[0] || "?").toUpperCase();
   await db.categories.update(id, clean);
+  scheduleSync();
 }
 
 /* Hoeveel transacties gebruiken deze categorie (voor veilig verwijderen). */
@@ -168,6 +177,7 @@ export async function deleteCategory(id: string, reassignTo = "overig"): Promise
     if (payees.length) await db.payees.bulkPut(payees.map((p) => ({ ...p, categoryId: reassignTo })));
     await db.categories.delete(id);
   });
+  scheduleSync();
 }
 
 /* ── Permanent wissen ── */
@@ -177,19 +187,24 @@ export async function clearTransactions(): Promise<void> {
     await db.transactions.clear();
     await db.importBatches.clear();
   });
+  scheduleSync();
 }
 /* Verwijder ALLE tegenpartij-koppelingen (opgeslagen categorie per tegenpartij). Onomkeerbaar. */
 export async function clearPayees(): Promise<void> {
   await db.payees.clear();
+  scheduleSync();
 }
 
 /* ── Regel-beheer ── */
 export async function addRule(r: Omit<RuleRow, "id">): Promise<void> {
   await db.rules.put({ ...r, id: uid("r") });
+  scheduleSync();
 }
 export async function updateRule(id: string, patch: Partial<Omit<RuleRow, "id">>): Promise<void> {
   await db.rules.update(id, patch);
+  scheduleSync();
 }
 export async function deleteRule(id: string): Promise<void> {
   await db.rules.delete(id);
+  scheduleSync();
 }
