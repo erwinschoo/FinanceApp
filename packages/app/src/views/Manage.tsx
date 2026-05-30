@@ -7,7 +7,13 @@ import {
 import { Ic } from "../components/Ic";
 import type { Category, CategoryType, RuleRow } from "../db/types";
 
-const COLORS = ["var(--blue)", "var(--orange)", "var(--pos)", "var(--cat-4)", "var(--cat-5)", "var(--cat-6)", "#C7584B", "#7A6FA8", "#5AA0A8", "var(--cat-8)"];
+/* Suggesties die "luisteren" met de rest: afgeleid van de huisstijl-tokens
+ * (passen automatisch mee in dark mode). Daarnaast kan de gebruiker een
+ * eigen kleur kiezen via de color picker (zie CatEditor). */
+const COLORS = [
+  "var(--blue)", "var(--orange)", "var(--pos)", "var(--cat-5)", "var(--cat-4)", "var(--cat-6)",
+  "var(--warn)", "var(--over)", "#7A6FA8", "#5AA0A8", "#8A9A5B", "var(--cat-8)",
+];
 const TYPE_LABEL: Record<CategoryType, string> = { uitgave: "Uitgave", inkomen: "Inkomen", sparen: "Sparen", overboeking: "Overboeking" };
 
 export function Manage() {
@@ -104,6 +110,7 @@ function CatEditor({ initial, parents, onSave, onCancel }: {
   const [type, setType] = useState<CategoryType>(initial?.type ?? "uitgave");
   const [parentId, setParentId] = useState<string | null>(initial?.parentId ?? null);
   const selectableParents = parents.filter((p) => p.id !== initial?.id);
+  const isCustom = !COLORS.includes(color); // gekozen kleur valt buiten de suggesties
   return (
     <div style={{ background: "var(--subtle)", borderRadius: 12, padding: 16, margin: "4px 0 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
       <div>
@@ -128,11 +135,20 @@ function CatEditor({ initial, parents, onSave, onCancel }: {
       </div>
       <div>
         <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Kleur</label>
-        <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
           {COLORS.map((col) => (
             <button key={col} onClick={() => setColor(col)} title={col}
-              style={{ width: 22, height: 22, borderRadius: "50%", background: col, border: color === col ? "2px solid var(--ink)" : "2px solid #fff", boxShadow: "0 0 0 1px var(--line)", cursor: "pointer" }} />
+              style={{ width: 22, height: 22, borderRadius: "50%", background: col, border: color === col ? "2px solid var(--ink)" : "2px solid var(--surface)", boxShadow: "0 0 0 1px var(--line)", cursor: "pointer" }} />
           ))}
+          {/* eigen kleur kiezen */}
+          <label title="Eigen kleur kiezen" style={{
+            position: "relative", width: 22, height: 22, borderRadius: "50%", cursor: "pointer", display: "inline-flex",
+            background: isCustom ? color : "conic-gradient(from 0deg, #e15b4c, #e0a23a, #4e8c7a, #5e81b5, #9a86be, #e15b4c)",
+            border: isCustom ? "2px solid var(--ink)" : "2px solid var(--surface)", boxShadow: "0 0 0 1px var(--line)",
+          }}>
+            <input type="color" value={isCustom ? color : "#5E81B5"} onChange={(e) => setColor(e.target.value)}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer", border: 0, padding: 0 }} />
+          </label>
         </div>
       </div>
       <div style={{ gridColumn: "1 / -1", display: "flex", gap: 10, justifyContent: "flex-end" }}>
