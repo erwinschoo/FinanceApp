@@ -58,13 +58,27 @@ function budgetColor(r) {
 }
 window.budgetColor = budgetColor;
 
+/* ── savings allocation: cascade a category's balance into its goals by priority ── */
+function allocateGoals(group) {
+  let rem = group.balance;
+  const ordered = group.goals.slice().sort((a, b) => a.priority - b.priority);
+  const rows = ordered.map(g => {
+    const filled = Math.max(0, Math.min(rem, g.target));
+    rem -= filled;
+    return { ...g, filled, done: filled >= g.target - 0.5, pct: g.target ? filled / g.target : 0 };
+  });
+  const activeIdx = rows.findIndex(r => !r.done);
+  return { rows, activeIdx: activeIdx === -1 ? rows.length - 1 : activeIdx, allDone: activeIdx === -1 };
+}
+window.allocateGoals = allocateGoals;
+
 /* ── Sidebar ── */
 function Sidebar({ view, setView, uncategorizedCount }) {
   const items = [
     { id: "dashboard", label: "Overzicht", icon: "dashboard" },
     { id: "transacties", label: "Transacties", icon: "list", badge: uncategorizedCount || 0 },
     { id: "budgetten", label: "Budgetten", icon: "sliders" },
-    { id: "spaardoel", label: "Spaardoel", icon: "target" },
+    { id: "spaardoel", label: "Spaardoelen", icon: "target" },
   ];
   return (
     <aside className="sb">

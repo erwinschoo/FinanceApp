@@ -1,7 +1,7 @@
 /* FinanceApp — Dashboard (Overzicht) view */
 function DashboardView() {
   const ctx = React.useContext(FAContext);
-  const { transactions, months, monthIdx, budgets, savings, setView } = ctx;
+  const { transactions, months, monthIdx, budgets, savingsGroups, setView } = ctx;
   const H = window.FAhelpers;
   const START_BALANCE = 4200;
   const [donutActive, setDonutActive] = React.useState(null);
@@ -63,6 +63,22 @@ function DashboardView() {
   const recent = monthTxs.slice(0, 6);
 
   const netMonth = cur.income - cur.expense;
+
+  // savings summary across all groups + primary active goal
+  const sav = React.useMemo(() => {
+    const totalBalance = savingsGroups.reduce((s, g) => s + g.balance, 0);
+    const totalTarget = savingsGroups.reduce((s, g) => s + g.goals.reduce((a, x) => a + x.target, 0), 0);
+    let primary = null;
+    for (const g of savingsGroups) {
+      const a = allocateGoals(g);
+      if (!a.allDone) { primary = { g, goal: a.rows[a.activeIdx] }; break; }
+    }
+    if (!primary && savingsGroups[0]) {
+      const a = allocateGoals(savingsGroups[0]);
+      primary = { g: savingsGroups[0], goal: a.rows[a.rows.length - 1] };
+    }
+    return { totalBalance, totalTarget, primary };
+  }, [savingsGroups]);
 
   return (
     <div className="content-inner fade-in">
@@ -161,26 +177,31 @@ function DashboardView() {
         </div>
 
         <div className="card card-pad" style={{ display: "flex", flexDirection: "column" }}>
-          <div className="card-h"><h3>Spaardoel</h3>
+          <div className="card-h"><h3>Spaardoelen</h3>
             <button className="btn btn-ghost" style={{ marginLeft: "auto", padding: "5px 10px" }} onClick={() => setView("spaardoel")}>
               Details <Ic name="chevronRight" size={15} />
             </button>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: "8px 0 4px" }}>
             <div className="ring-wrap">
-              <ProgressRing value={savings.current} max={savings.target} size={150} thickness={14} color="var(--blue)" />
+              <ProgressRing value={sav.totalBalance} max={sav.totalTarget} size={150} thickness={14} color="var(--blue)" />
               <div className="ring-center">
-                <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700 }}>{Math.round((savings.current / savings.target) * 100)}%</div>
-                <div className="tnum" style={{ fontSize: 21, fontWeight: 800, color: "var(--ink)" }}>{eur(savings.current)}</div>
-                <div style={{ fontSize: 12, color: "var(--muted)" }}>van {eur(savings.target)}</div>
+                <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700 }}>{sav.totalTarget ? Math.round((sav.totalBalance / sav.totalTarget) * 100) : 0}%</div>
+                <div className="tnum" style={{ fontSize: 21, fontWeight: 800, color: "var(--ink)" }}>{eur(sav.totalBalance)}</div>
+                <div style={{ fontSize: 12, color: "var(--muted)" }}>van {eur(sav.totalTarget)}</div>
               </div>
             </div>
-            <div style={{ marginTop: 16, textAlign: "center" }}>
-              <div style={{ fontWeight: 800, color: "var(--ink)", fontSize: 14.5 }}>{savings.goalName}</div>
-              <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>
-                Nog {eur(savings.target - savings.current)} · {eur(savings.monthly)}/maand
+            {sav.primary && (
+              <div style={{ marginTop: 16, textAlign: "center" }}>
+                <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: sav.primary.g.color }}></span>{sav.primary.g.name} · actief
+                </div>
+                <div style={{ fontWeight: 800, color: "var(--ink)", fontSize: 14.5, marginTop: 3 }}>{sav.primary.goal.name}</div>
+                <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }} className="tnum">
+                  {eur(sav.primary.goal.filled)} van {eur(sav.primary.goal.target)}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

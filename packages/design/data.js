@@ -139,7 +139,7 @@
     gezondheid: 90, vrijetijd: 320, verzekeringen: 230, overig: 80,
   };
 
-  // ── savings ──
+  // ── savings ── kept for backward-compat (primary goal mirror)
   const SAVINGS = {
     goalName: "Verbouwing keuken",
     target: 18000,
@@ -147,11 +147,51 @@
     monthly: 520,
     startDate: "2024-09-01",
     targetDate: "2027-03-01",
-    accountStart: 5400, // balance baseline a year ago
+    accountStart: 5400,
   };
 
+  // ── savings GROUPS — categories, each with prioritised goals ──
+  // The category "balance" (already saved) cascades into goals by priority:
+  // goal #1 fills first, the overflow flows into #2, etc.
+  let _gid = 1; const gid = () => "g" + (_gid++);
+  const SAVINGS_GROUPS = [
+    {
+      id: "sparen", name: "Sparen", color: "var(--blue)", tint: "var(--blue-soft)", icon: "piggy",
+      monthly: 520, balance: 11250,
+      goals: [
+        { id: gid(), name: "Noodbuffer (3 mnd)", target: 5000, priority: 1 },
+        { id: gid(), name: "Verbouwing keuken", target: 18000, priority: 2 },
+        { id: gid(), name: "Nieuwe auto", target: 12000, priority: 3 },
+      ],
+    },
+    {
+      id: "beleggen", name: "Beleggen", color: "var(--cat-3)", tint: "#ECF3F1", icon: "trendUp",
+      monthly: 220, balance: 7600,
+      goals: [
+        { id: gid(), name: "Wereld ETF — basis", target: 10000, priority: 1 },
+        { id: gid(), name: "Dividendportefeuille", target: 20000, priority: 2 },
+      ],
+    },
+    {
+      id: "pensioen", name: "Pensioen", color: "var(--cat-4)", tint: "#F2EFF7", icon: "wallet",
+      monthly: 150, balance: 6800,
+      goals: [
+        { id: gid(), name: "Lijfrente aanvulling", target: 25000, priority: 1 },
+      ],
+    },
+  ];
+
+  // categories the user can still ADD (not yet in use)
+  const SAVINGS_LIBRARY = [
+    { id: "vakantie", name: "Vakantie",     color: "var(--cat-1)", tint: "var(--orange-soft)", icon: "calendar" },
+    { id: "buffer",   name: "Extra buffer", color: "var(--cat-5)", tint: "#EBF1F2",            icon: "wallet" },
+    { id: "studie",   name: "Studie kind",  color: "var(--cat-6)", tint: "#F7EEF1",            icon: "award" },
+    { id: "schenken", name: "Schenken",     color: "var(--cat-7)", tint: "#FAF1E6",            icon: "sparkle" },
+    { id: "auto",     name: "Auto & vervoer", color: "var(--cat-2)", tint: "var(--blue-soft)", icon: "target" },
+  ];
+
   window.FA_DATA = {
-    CATS, CAT, BUDGETS, SAVINGS,
+    CATS, CAT, BUDGETS, SAVINGS, SAVINGS_GROUPS, SAVINGS_LIBRARY,
     transactions: all,
     months: monthsList,
     MONTHS_NL, MONTHS_SH,

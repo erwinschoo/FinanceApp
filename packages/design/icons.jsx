@@ -28,6 +28,8 @@ function Ic({ name, size = 20, className, style, strokeWidth = 1.8 }) {
     file: <><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" {...p} /><path d="M14 3v5h5" {...p} /></>,
     filter: <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" {...p} />,
     piggy: <><path d="M19 9V7a2 2 0 0 0-2-2h-1l-1-2-2 2H9a6 6 0 0 0-6 6 5 5 0 0 0 2 4v3h3v-2h4v2h3v-3a5 5 0 0 0 2-4z" {...p} /><circle cx="15.5" cy="11" r="1" fill="currentColor" stroke="none" /></>,
+    award: <><circle cx="12" cy="9" r="6" {...p} /><path d="M8.5 14 7 22l5-3 5 3-1.5-8" {...p} /></>,
+    trophy: <><path d="M7 4h10v4a5 5 0 0 1-10 0V4z" {...p} /><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M9 17h6M10 21h4M12 14v3" {...p} /></>,
   };
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} className={className} style={style}>
