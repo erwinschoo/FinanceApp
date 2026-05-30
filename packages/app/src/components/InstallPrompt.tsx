@@ -21,9 +21,6 @@ function isStandalone(): boolean {
 function isIos(): boolean {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
-function isMobile(): boolean {
-  return window.matchMedia("(max-width: 860px)").matches;
-}
 function snoozed(): boolean {
   try {
     const t = Number(localStorage.getItem(SNOOZE_KEY) || 0);
@@ -40,15 +37,15 @@ function snooze(): void {
   }
 }
 
-/* Toont bij het openen een popup om bokkiep als app te installeren, mits:
- * nog niet geïnstalleerd, op een mobiel scherm en niet recent weggeklikt. */
+/* Toont bij het openen een popup om bokkiep als app te installeren (desktop én
+ * mobiel), mits: nog niet geïnstalleerd en niet recent weggeklikt. */
 export function InstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
   const [iosHelp, setIosHelp] = useState(false);
 
   useEffect(() => {
-    if (isStandalone() || !isMobile() || snoozed()) return;
+    if (isStandalone() || snoozed()) return;
 
     const onBeforeInstall = (e: Event) => {
       e.preventDefault(); // onderdruk de standaard mini-infobar; wij tonen eigen UI
@@ -114,7 +111,7 @@ export function InstallPrompt() {
           </>
         ) : (
           <>
-            <p>Gebruik bokkiep als een echte app op je telefoon — sneller te openen en zonder browserbalk.</p>
+            <p>Gebruik bokkiep als een echte app — sneller te openen en zonder browserbalk.</p>
             <div style={{ display: "flex", gap: 10 }}>
               <button className="btn" style={{ flex: 1, justifyContent: "center" }} onClick={later}>Niet nu</button>
               <button className="btn btn-primary" style={{ flex: 1, justifyContent: "center" }} onClick={install}>
