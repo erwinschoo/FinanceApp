@@ -37,6 +37,10 @@ export function Sidebar() {
           <Ic name="cloud" />
           <span>Synchroniseren</span>
         </button>
+        <button className={"nav-item" + (view === "beheer" ? " active" : "")} onClick={() => setView("beheer")}>
+          <Ic name="sliders" />
+          <span>Beheer</span>
+        </button>
       </nav>
 
       <div className="sb-foot">

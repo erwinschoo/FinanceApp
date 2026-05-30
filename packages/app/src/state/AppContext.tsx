@@ -6,7 +6,7 @@ import { lastTwelveMonthKeys } from "../helpers/aggregations";
 import { fromCents } from "../lib/money";
 import type { Category, Transaction, Goal, RuleRow, PayeeRow } from "../db/types";
 
-export type ViewId = "dashboard" | "transacties" | "budgetten" | "spaardoel" | "tegenpartijen" | "import" | "sync";
+export type ViewId = "dashboard" | "transacties" | "budgetten" | "spaardoel" | "tegenpartijen" | "import" | "sync" | "beheer";
 
 interface AppState {
   ready: boolean;

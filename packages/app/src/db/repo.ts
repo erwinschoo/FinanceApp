@@ -2,7 +2,7 @@ import { db } from "./schema";
 import { toCents } from "../lib/money";
 import { uid } from "../lib/id";
 import { payeeKey, type PayeeRef } from "../helpers/payees";
-import type { GoalRow, ParsedRow, TxRow } from "./types";
+import type { Category, CategoryType, GoalRow, ParsedRow, RuleRow, TxRow } from "./types";
 
 /* Categorie van een transactie wijzigen (handmatig → auto:false). */
 export async function updateTxCategory(id: string, category: string): Promise<void> {
@@ -122,4 +122,61 @@ export async function commitImport(rows: ParsedRow[], filename: string): Promise
 export async function existingHashes(): Promise<Set<string>> {
   const all = await db.transactions.toArray();
   return new Set(all.map((t) => t.dedupeHash));
+}
+
+/* ── Categorie-beheer ── */
+const TINTS = ["var(--blue-soft)", "var(--orange-soft)", "#F2EFF7", "#ECF3F1", "#EBF1F2", "#F7EEF1", "#FAF1E6", "#F1F2F4", "#EAF3F4"];
+
+export async function addCategory(c: { name: string; color: string; type: CategoryType; parentId: string | null }): Promise<string> {
+  const id = uid("c");
+  const row: Category = {
+    id,
+    name: c.name.trim() || "Naamloos",
+    color: c.color,
+    tint: TINTS[Math.floor(Math.random() * TINTS.length)],
+    initial: (c.name.trim()[0] || "?").toUpperCase(),
+    type: c.type,
+    parentId: c.parentId,
+  };
+  await db.categories.put(row);
+  return id;
+}
+
+export async function updateCategory(id: string, patch: Partial<Pick<Category, "name" | "color" | "type" | "parentId">>): Promise<void> {
+  const clean: Partial<Category> = { ...patch };
+  if (patch.name != null) clean.initial = (patch.name.trim()[0] || "?").toUpperCase();
+  await db.categories.update(id, clean);
+}
+
+/* Hoeveel transacties gebruiken deze categorie (voor veilig verwijderen). */
+export async function categoryUsage(id: string): Promise<{ txCount: number; childCount: number }> {
+  const txCount = await db.transactions.where("category").equals(id).count();
+  const childCount = await db.categories.where("parentId").equals(id).count();
+  return { txCount, childCount };
+}
+
+/* Verwijder een categorie. Transacties + payee-mappings die ernaar wijzen worden
+ * naar 'reassignTo' verplaatst (default 'overig'). Groepen met kinderen kunnen niet
+ * worden verwijderd zolang er kinderen zijn. */
+export async function deleteCategory(id: string, reassignTo = "overig"): Promise<void> {
+  const childCount = await db.categories.where("parentId").equals(id).count();
+  if (childCount > 0) throw new Error("Verplaats of verwijder eerst de subcategorieën.");
+  await db.transaction("rw", db.categories, db.transactions, db.payees, async () => {
+    const txs = await db.transactions.where("category").equals(id).toArray();
+    if (txs.length) await db.transactions.bulkPut(txs.map((t) => ({ ...t, category: reassignTo })));
+    const payees = await db.payees.where("categoryId").equals(id).toArray();
+    if (payees.length) await db.payees.bulkPut(payees.map((p) => ({ ...p, categoryId: reassignTo })));
+    await db.categories.delete(id);
+  });
+}
+
+/* ── Regel-beheer ── */
+export async function addRule(r: Omit<RuleRow, "id">): Promise<void> {
+  await db.rules.put({ ...r, id: uid("r") });
+}
+export async function updateRule(id: string, patch: Partial<Omit<RuleRow, "id">>): Promise<void> {
+  await db.rules.update(id, patch);
+}
+export async function deleteRule(id: string): Promise<void> {
+  await db.rules.delete(id);
 }
