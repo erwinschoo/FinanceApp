@@ -1,0 +1,20 @@
+# dependencies & build output
+node_modules/
+dist/
+dist-ssr/
+
+# env (client-ID e.d.) — behalve het voorbeeld
+.env
+.env.*
+!.env.example
+
+# PERSOONLIJKE BANKDATA — nooit committen
+packages/csv_outputs/
+
+# lokale Claude Code-instellingen
+.claude/
+
+# misc
+*.local
+.DS_Store
+Thumbs.db
