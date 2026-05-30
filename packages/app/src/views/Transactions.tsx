@@ -80,7 +80,7 @@ export function Transactions() {
         </div>
 
         <div style={{ padding: "8px 10px" }}>
-          <table className="tbl">
+          <table className="tbl tbl-cards">
             <thead>
               <tr>
                 <th style={{ paddingLeft: 14 }}>Transactie</th>
@@ -95,7 +95,7 @@ export function Transactions() {
               )}
               {rows.map((t) => (
                 <tr className="row" key={t.id} style={!t.category ? { background: "var(--orange-tint)" } : undefined}>
-                  <td style={{ width: "42%" }}>
+                  <td className="td-primary" style={{ width: "42%" }}>
                     <div className="merchant">
                       <MerchantAv t={t} />
                       <div>
@@ -104,8 +104,8 @@ export function Transactions() {
                       </div>
                     </div>
                   </td>
-                  <td style={{ color: "var(--muted)", fontWeight: 600 }} className="tnum">{fmtDate(t.date)}</td>
-                  <td>
+                  <td style={{ color: "var(--muted)", fontWeight: 600 }} className="tnum" data-label="Datum">{fmtDate(t.date)}</td>
+                  <td data-label="Categorie">
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       {t.category === "inkomen" ? (
                         <CatTag catId="inkomen" />
@@ -119,14 +119,14 @@ export function Transactions() {
                       )}
                     </div>
                   </td>
-                  <td className={"amt tnum " + (t.amount >= 0 ? "pos" : "neg")} style={{ paddingRight: 14 }}>{eurSign(t.amount, 2)}</td>
+                  <td className={"amt tnum " + (t.amount >= 0 ? "pos" : "neg")} style={{ paddingRight: 14 }} data-label="Bedrag">{eurSign(t.amount, 2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <div style={{ display: "flex", gap: 28, padding: "14px 24px", borderTop: "1px solid var(--line)", fontSize: 13.5 }}>
+        <div className="tbl-foot" style={{ display: "flex", gap: 28, padding: "14px 24px", borderTop: "1px solid var(--line)", fontSize: 13.5 }}>
           <span style={{ color: "var(--muted)" }}>{rows.length} transacties</span>
           <span style={{ marginLeft: "auto", color: "var(--muted)" }}>Inkomsten <b className="tnum" style={{ color: "var(--pos)" }}>{eur(totalIn, 2)}</b></span>
           <span style={{ color: "var(--muted)" }}>Uitgaven <b className="tnum" style={{ color: "var(--ink)" }}>{eur(totalOut, 2)}</b></span>

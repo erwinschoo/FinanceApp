@@ -60,7 +60,7 @@ export function Payees() {
         </div>
 
         <div style={{ padding: "8px 10px" }}>
-          <table className="tbl">
+          <table className="tbl tbl-cards">
             <thead>
               <tr>
                 <th style={{ paddingLeft: 14 }}>Tegenpartij</th>
@@ -78,7 +78,7 @@ export function Payees() {
                 const c = catMap[p.categoryId];
                 return (
                   <tr className="row" key={p.key} style={!p.categoryId ? { background: "var(--orange-tint)" } : undefined}>
-                    <td style={{ width: "40%" }}>
+                    <td className="td-primary" style={{ width: "40%" }}>
                       <div className="merchant">
                         <span className="mi" style={{ background: c ? c.tint : "var(--subtle)", color: c ? c.color : "var(--muted)" }}>
                           {(p.name[0] || "?").toUpperCase()}
@@ -91,10 +91,10 @@ export function Payees() {
                         </div>
                       </div>
                     </td>
-                    <td className="tnum" style={{ textAlign: "right", color: "var(--muted)", fontWeight: 600 }}>{p.count}</td>
-                    <td className={"amt tnum " + (p.total >= 0 ? "pos" : "neg")} style={{ textAlign: "right" }}>{eurSign(p.total, 2)}</td>
-                    <td className="tnum" style={{ color: "var(--muted)", fontWeight: 600 }}>{fmtDate(p.lastDate)}</td>
-                    <td>
+                    <td className="tnum" style={{ textAlign: "right", color: "var(--muted)", fontWeight: 600 }} data-label="Transacties">{p.count}</td>
+                    <td className={"amt tnum " + (p.total >= 0 ? "pos" : "neg")} style={{ textAlign: "right" }} data-label="Totaal">{eurSign(p.total, 2)}</td>
+                    <td className="tnum" style={{ color: "var(--muted)", fontWeight: 600 }} data-label="Laatste">{fmtDate(p.lastDate)}</td>
+                    <td data-label="Categorie">
                       <CatSelect value={p.categoryId} includeIncome onChange={(cat) => assignPayeeCategory({ counterIban: p.iban, merchant: p.name }, cat)} />
                     </td>
                   </tr>
@@ -104,7 +104,7 @@ export function Payees() {
           </table>
         </div>
 
-        <div style={{ display: "flex", gap: 28, padding: "14px 24px", borderTop: "1px solid var(--line)", fontSize: 13.5 }}>
+        <div className="tbl-foot" style={{ display: "flex", gap: 28, padding: "14px 24px", borderTop: "1px solid var(--line)", fontSize: 13.5 }}>
           <span style={{ color: "var(--muted)" }}>{rows.length} tegenpartijen</span>
           {uncatCount > 0 && <span style={{ marginLeft: "auto", color: "var(--muted)" }}>{uncatCount} zonder categorie</span>}
         </div>

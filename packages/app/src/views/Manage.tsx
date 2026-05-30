@@ -207,7 +207,7 @@ function CatEditor({ initial, groups, defaultGroupId, onSave, onCancel }: {
   const [type, setType] = useState<CategoryType>(initial?.type ?? "uitgave");
   const [groupId, setGroupId] = useState(initial?.groupId ?? defaultGroupId ?? groups[0]?.id ?? "");
   return (
-    <div style={{ background: "var(--subtle)", borderRadius: 12, padding: 16, margin: "4px 0 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+    <div className="editor-grid" style={{ background: "var(--subtle)", borderRadius: 12, padding: 16, margin: "4px 0 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
       <div>
         <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Naam</label>
         <input value={name} onChange={(e) => setName(e.target.value)} autoFocus
@@ -245,7 +245,7 @@ function GroupEditor({ group, onSave, onCancel }: {
   const [name, setName] = useState(group.name);
   const [color, setColor] = useState(group.color);
   return (
-    <div style={{ background: "var(--subtle)", borderRadius: 12, padding: 16, margin: "4px 0 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+    <div className="editor-grid" style={{ background: "var(--subtle)", borderRadius: 12, padding: 16, margin: "4px 0 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
       <div>
         <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Groepsnaam</label>
         <input value={name} onChange={(e) => setName(e.target.value)} autoFocus
@@ -289,6 +289,7 @@ function RulesTab() {
       <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
         Regels vullen automatisch een categorie in bij import. Een toewijzing per tegenpartij wint altijd van een regel. Lagere prioriteit = eerst toegepast.
       </p>
+      <div className="tbl-wrap">
       <table className="tbl">
         <thead><tr>
           <th style={{ paddingLeft: 0 }}>Veld</th><th>Type</th><th>Patroon (tekst)</th><th>Categorie</th><th style={{ width: 70 }}>Prio</th><th></th>
@@ -327,6 +328,7 @@ function RulesTab() {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

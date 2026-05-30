@@ -160,7 +160,7 @@ export function Import() {
 
       {stage === "done" && (
         <div className="fade-in">
-          <div className="grid" style={{ gridTemplateColumns: "repeat(4,1fr)", marginBottom: 18 }}>
+          <div className="grid grid-kpi" style={{ gridTemplateColumns: "repeat(4,1fr)", marginBottom: 18 }}>
             <div className="card card-pad">
               <div className="k-lbl" style={{ marginBottom: 6 }}>Nieuw</div>
               <div className="k-val tnum">{newRows.length}</div>
@@ -203,7 +203,7 @@ export function Import() {
               )}
             </div>
             <div style={{ padding: "8px 10px" }}>
-              <table className="tbl">
+              <table className="tbl tbl-cards">
                 <thead><tr>
                   <th style={{ paddingLeft: 14 }}>Omschrijving (bank)</th><th>Datum</th><th>Herkende categorie</th><th style={{ textAlign: "right", paddingRight: 14 }}>Bedrag</th>
                 </tr></thead>
@@ -213,23 +213,23 @@ export function Import() {
                   )}
                   {visible.map((r) => (
                     <tr className="row" key={r.dedupeHash} style={r.duplicate ? { opacity: 0.5 } : !r.category ? { background: "var(--orange-tint)" } : undefined}>
-                      <td style={{ width: "44%" }}>
+                      <td className="td-primary" style={{ width: "44%" }}>
                         <div className="mn">{r.merchant}{r.duplicate ? " · al aanwezig" : ""}</div>
                         <div className="md" style={{ fontFamily: "monospace", fontSize: 11.5, color: "var(--faint)" }}>{r.rawDescription.slice(0, 52)}</div>
                       </td>
-                      <td className="tnum" style={{ color: "var(--muted)", fontWeight: 600 }}>{fmtDate(r.date)}</td>
-                      <td>
+                      <td className="tnum" style={{ color: "var(--muted)", fontWeight: 600 }} data-label="Datum">{fmtDate(r.date)}</td>
+                      <td data-label="Categorie">
                         {r.duplicate || r.category === "inkomen" || r.category === "sparen"
                           ? <CatTag catId={r.category} small />
                           : <CatSelect value={r.category} onChange={(c) => changeRowCategory(r, c)} />}
                       </td>
-                      <td className={"amt tnum " + (r.amount >= 0 ? "pos" : "neg")} style={{ paddingRight: 14 }}>{eurSign(r.amount, 2)}</td>
+                      <td className={"amt tnum " + (r.amount >= 0 ? "pos" : "neg")} style={{ paddingRight: 14 }} data-label="Bedrag">{eurSign(r.amount, 2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <div style={{ display: "flex", gap: 12, padding: "16px 22px", borderTop: "1px solid var(--line)", alignItems: "center", flexWrap: "wrap" }}>
+            <div className="import-actions" style={{ display: "flex", gap: 12, padding: "16px 22px", borderTop: "1px solid var(--line)", alignItems: "center", flexWrap: "wrap" }}>
               {uncatCount > 0 ? (
                 <span style={{ fontSize: 13, color: "var(--orange)", display: "inline-flex", alignItems: "center", gap: 6 }}>
                   <Ic name="info" size={16} /> <b>{uncatCount}</b> nog niet ingedeeld

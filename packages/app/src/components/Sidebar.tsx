@@ -31,7 +31,7 @@ function syncedLabel(iso: string): string {
   return `gesynct ${when}`;
 }
 
-export function Sidebar() {
+export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNavigate?: () => void } = {}) {
   const { view, setView, uncategorizedCount } = useApp();
   const { theme, toggle } = useTheme();
 
@@ -60,7 +60,7 @@ export function Sidebar() {
   const iconStyle = !connected ? { color: "var(--faint)" } : statusColor ? { color: statusColor } : undefined;
 
   const item = (it: NavItem) => (
-    <button key={it.id} className={"nav-item" + (view === it.id ? " active" : "")} onClick={() => setView(it.id)}>
+    <button key={it.id} className={"nav-item" + (view === it.id ? " active" : "")} onClick={() => { setView(it.id); onNavigate?.(); }}>
       <Ic name={it.icon} />
       <span>{it.label}</span>
       {it.id === "transacties" && uncategorizedCount ? <span className="nav-badge">{uncategorizedCount}</span> : null}
@@ -69,7 +69,7 @@ export function Sidebar() {
   );
 
   return (
-    <aside className="sb">
+    <aside className={"sb" + (open ? " open" : "")}>
       <div className="sb-brand">
         <span className="wm">Finance<b>App</b></span>
       </div>

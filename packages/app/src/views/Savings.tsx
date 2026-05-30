@@ -7,6 +7,7 @@ import {
 } from "../db/repo";
 import { ProgressRing } from "../charts/ProgressRing";
 import { TrendChart, type TrendSeries } from "../charts/TrendChart";
+import { useMediaQuery } from "../charts/useMediaQuery";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { Ic } from "../components/Ic";
 import type { SavingsGroup, SavingsRow } from "../goals/savings";
@@ -38,7 +39,7 @@ function GoalRow({ group, row, idx, count }: { group: SavingsGroup; row: Savings
       : { label: "In wachtrij", color: "var(--muted)", bg: "var(--subtle)" };
   const c = group.color;
   return (
-    <div style={{
+    <div className="goal-grid" style={{
       display: "grid", gridTemplateColumns: "34px 1fr auto", gap: 14, alignItems: "center",
       padding: "14px 14px", borderRadius: 12, marginBottom: 8,
       background: isActive ? "var(--subtle)" : "var(--surface)",
@@ -71,7 +72,7 @@ function GoalRow({ group, row, idx, count }: { group: SavingsGroup; row: Savings
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div className="goal-actions" style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>doel €</span>
           <input type="number" value={row.goal.target} step={500} min={0}
@@ -92,6 +93,7 @@ function GoalRow({ group, row, idx, count }: { group: SavingsGroup; row: Savings
 
 export function Savings() {
   const { savingsGroups, savingsLibrary } = useApp();
+  const isPhone = useMediaQuery("(max-width: 560px)");
   const [selId, setSelId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<SavingsGroup | null>(null);
@@ -183,7 +185,7 @@ export function Savings() {
       {!group ? (
         <div className="card card-pad"><div className="empty">Nog geen spaarcategorieën. Voeg er één toe om te beginnen.</div></div>
       ) : (
-        <div className="grid" style={{ gridTemplateColumns: "minmax(0,0.95fr) minmax(0,1.35fr)", alignItems: "start" }}>
+        <div className="grid grid-2to1" style={{ gridTemplateColumns: "minmax(0,0.95fr) minmax(0,1.35fr)", alignItems: "start" }}>
           {/* links — actief doel */}
           <div className="card card-pad" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
             <div style={{ alignSelf: "stretch", display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
@@ -201,7 +203,7 @@ export function Savings() {
             ) : active ? (
               <>
                 <div className="ring-wrap" style={{ margin: "16px 0 8px" }}>
-                  <ProgressRing value={active.filled} max={active.goal.target} size={206} thickness={18} color={group.color} />
+                  <ProgressRing value={active.filled} max={active.goal.target} size={isPhone ? 168 : 206} thickness={18} color={group.color} />
                   <div className="ring-center">
                     <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700 }}>actief doel · {Math.round(active.pct * 100)}%</div>
                     <div className="tnum" style={{ fontSize: 28, fontWeight: 800, color: "var(--ink)", lineHeight: 1.1 }}>{eur(active.filled)}</div>

@@ -26,7 +26,7 @@ export function Budgets() {
     const r = budget ? spent / budget : 0;
     const over = budget > 0 && spent > budget;
     return (
-      <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 150px", alignItems: "center", gap: 22, padding: "14px 0", paddingLeft: indent ? 18 : 0, borderBottom: "1px solid var(--line-soft)" }}>
+      <div className="bud-grid" style={{ display: "grid", gridTemplateColumns: "180px 1fr 150px", alignItems: "center", gap: 22, padding: "14px 0", paddingLeft: indent ? 18 : 0, borderBottom: "1px solid var(--line-soft)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ width: 10, height: 10, borderRadius: "50%", background: c.color, flex: "none" }}></span>
           <div>
@@ -60,7 +60,7 @@ export function Budgets() {
     const sp = members.reduce((s, k) => s + (spend[k.id] || 0), 0);
     const r = b ? sp / b : 0;
     return (
-      <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 150px", alignItems: "center", gap: 22, padding: "16px 0 8px" }}>
+      <div className="bud-grid" style={{ display: "grid", gridTemplateColumns: "180px 1fr 150px", alignItems: "center", gap: 22, padding: "16px 0 8px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ width: 11, height: 11, borderRadius: 3, background: g.color, flex: "none" }}></span>
           <div style={{ fontWeight: 800, color: "var(--ink)", fontSize: 14.5 }}>{g.name}</div>
@@ -73,7 +73,7 @@ export function Budgets() {
 
   return (
     <div className="content-inner fade-in">
-      <div className="grid" style={{ gridTemplateColumns: "repeat(3,1fr)", marginBottom: 18 }}>
+      <div className="grid grid-3" style={{ gridTemplateColumns: "repeat(3,1fr)", marginBottom: 18 }}>
         <div className="card card-pad">
           <div className="k-lbl" style={{ marginBottom: 8 }}>Maandinkomen</div>
           <div className="k-val tnum">{eur(income)}</div>

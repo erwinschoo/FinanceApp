@@ -10,6 +10,7 @@ import { Ic } from "../components/Ic";
 import { TrendChart, type TrendSeries } from "../charts/TrendChart";
 import { DonutChart } from "../charts/DonutChart";
 import { ProgressRing } from "../charts/ProgressRing";
+import { useMediaQuery } from "../charts/useMediaQuery";
 
 const START_BALANCE = 4200;
 
@@ -17,6 +18,7 @@ export function Dashboard() {
   const { transactions, months, monthIdx, budgets, goals, categories, catMap, setView } = useApp();
   const [donutActive, setDonutActive] = useState<number | null>(null);
   const [trendMode, setTrendMode] = useState<"beide" | "netto">("beide");
+  const isPhone = useMediaQuery("(max-width: 560px)");
 
   const key = months[monthIdx];
 
@@ -85,7 +87,7 @@ export function Dashboard() {
 
   return (
     <div className="content-inner fade-in">
-      <div className="grid stagger" style={{ gridTemplateColumns: "repeat(4,1fr)", marginBottom: 18 }}>
+      <div className="grid stagger grid-kpi" style={{ gridTemplateColumns: "repeat(4,1fr)", marginBottom: 18 }}>
         <KpiCard icon="wallet" iconColor="var(--blue)" iconBg="var(--blue-soft)"
           label="Saldo betaalrekening" value={eur(balance)} delta={prevBalance ? pct(balance, prevBalance) : null}
           deltaNote="vs. vorige maand" spark={last6((s) => s.income - s.expense)} sparkColor="var(--blue)" />
@@ -100,7 +102,7 @@ export function Dashboard() {
           deltaNote="naar spaardoel" spark={last6((s) => s.saved)} sparkColor="var(--cat-4)" />
       </div>
 
-      <div className="grid" style={{ gridTemplateColumns: "1.62fr 1fr", marginBottom: 18 }}>
+      <div className="grid grid-2to1" style={{ gridTemplateColumns: "1.62fr 1fr", marginBottom: 18 }}>
         <div className="card card-pad">
           <div className="card-h">
             <h3>Inkomsten &amp; uitgaven</h3>
@@ -124,7 +126,7 @@ export function Dashboard() {
           <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 14 }}>{monthKeyLabelFull(key)}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             <div className="ring-wrap" style={{ flex: "none" }}>
-              <DonutChart data={donutData} size={158} thickness={22} active={donutActive} onHover={setDonutActive} />
+              <DonutChart data={donutData} size={isPhone ? 124 : 158} thickness={22} active={donutActive} onHover={setDonutActive} />
               <div className="ring-center">
                 <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 700 }}>
                   {donutActive != null ? donutData[donutActive].label : "Totaal"}
@@ -150,7 +152,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div className="grid" style={{ gridTemplateColumns: "1.62fr 1fr" }}>
+      <div className="grid grid-2to1" style={{ gridTemplateColumns: "1.62fr 1fr" }}>
         <div className="card card-pad">
           <div className="card-h">
             <h3>Budgetstatus</h3>
@@ -184,7 +186,7 @@ export function Dashboard() {
           {goal ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: "8px 0 4px" }}>
               <div className="ring-wrap">
-                <ProgressRing value={goal.current} max={goal.target} size={150} thickness={14} color="var(--blue)" />
+                <ProgressRing value={goal.current} max={goal.target} size={isPhone ? 124 : 150} thickness={14} color="var(--blue)" />
                 <div className="ring-center">
                   <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700 }}>{Math.round((goal.current / goal.target) * 100)}%</div>
                   <div className="tnum" style={{ fontSize: 21, fontWeight: 800, color: "var(--ink)" }}>{eur(goal.current)}</div>
@@ -214,11 +216,11 @@ export function Dashboard() {
           </div>
         </div>
         <div style={{ padding: "0 10px 8px" }}>
-          <table className="tbl">
+          <table className="tbl tbl-cards">
             <tbody>
               {recent.map((t) => (
                 <tr className="row" key={t.id}>
-                  <td style={{ width: "50%" }}>
+                  <td className="td-primary" style={{ width: "50%" }}>
                     <div className="merchant">
                       <MerchantAv t={t} />
                       <div>
@@ -227,8 +229,8 @@ export function Dashboard() {
                       </div>
                     </div>
                   </td>
-                  <td><CatTag catId={t.category} small /></td>
-                  <td className={"amt tnum " + (t.amount >= 0 ? "pos" : "neg")}>{eurSign(t.amount, 2)}</td>
+                  <td data-label="Categorie"><CatTag catId={t.category} small /></td>
+                  <td className={"amt tnum " + (t.amount >= 0 ? "pos" : "neg")} data-label="Bedrag">{eurSign(t.amount, 2)}</td>
                 </tr>
               ))}
             </tbody>

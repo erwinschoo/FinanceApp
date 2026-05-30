@@ -353,21 +353,110 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 .notice .nt { font-size:13.5px; color:var(--body); }
 .notice .nt b { color:var(--ink); }
 
-/* ── responsive (mobile / tablet) ── */
+/* ── shell-helpers voor mobiel (op desktop neutraal) ── */
+.topbar-burger { display:none; flex:none; align-items:center; justify-content:center; width:40px; height:40px;
+  border:0; background:transparent; color:var(--ink); border-radius:var(--radius-xs); margin-left:-4px; }
+.topbar-burger:hover { background:var(--subtle); }
+.topbar-title { cursor:default; min-width:0; }
+.month-slot { display:contents; }     /* desktop: maandkiezer blijft gewoon in de topbar */
+.drawer-scrim { display:none; }
+
+/* ── responsive: drawer-tier (telefoon + tablet) ── */
 @media (max-width: 860px) {
+  /* shell wordt één kolom; de sidebar wordt een uitschuif-drawer links */
   .app { grid-template-columns:1fr; }
-  .sb { position:fixed; bottom:0; left:0; right:0; top:auto; z-index:50; flex-direction:row; align-items:center;
-    border-right:0; border-top:1px solid var(--line); padding:6px 8px; height:60px; }
-  .sb-brand, .sb-sec, .sb-foot, .sb-actions { display:none; }
-  .sb nav { flex-direction:row !important; flex:1; justify-content:space-around; }
-  .nav-item { flex-direction:column; gap:3px; padding:6px 8px; font-size:11px; }
-  .nav-item span:not(.nav-badge) { font-size:11px; }
-  .nav-badge { position:absolute; margin:0; top:2px; right:8px; }
+  .sb { position:fixed; top:0; left:0; bottom:0; width:min(86vw,300px); z-index:60;
+    transform:translateX(-100%); transition:transform .22s var(--ease);
+    border-right:1px solid var(--line); overflow-y:auto; box-shadow:var(--shadow-pop);
+    padding:20px 16px calc(20px + env(safe-area-inset-bottom)); }
+  .sb.open { transform:none; }
+  .drawer-scrim { display:block; position:fixed; inset:0; background:var(--overlay); z-index:55;
+    animation:fadeIn .16s var(--ease) both; }
+
   .main { overflow:visible; }
-  .content { padding:16px 14px 80px; }
-  .topbar { padding:14px 16px; }
+  /* backdrop-filter op de topbar zou een containing block maken voor de
+     fixed maandbalk (die in de topbar staat) → zet 'm uit op mobiel zodat
+     .month-slot t.o.v. de viewport onderaan pint. */
+  .topbar { padding:12px 14px; gap:12px; backdrop-filter:none; }
+  .topbar-burger { display:inline-flex; }
+  .topbar-title { cursor:pointer; }
   .topbar h1 { font-size:19px; }
-  .grid[style*="repeat(4"] { grid-template-columns:repeat(2,1fr) !important; }
-  .grid[style*="repeat(3"] { grid-template-columns:1fr !important; }
-  .grid[style*="1.62fr"], .grid[style*="1.5fr"], .grid[style*="1fr 1.5fr"] { grid-template-columns:1fr !important; }
+  .nav-tip { display:none; }                 /* hover-tooltips niet bruikbaar op touch */
+
+  /* topbar-knoppen compact: alleen icoon */
+  .topbar .btn .btn-label { display:none; }
+  .topbar .btn { padding:9px 11px; }
+
+  /* maandselector onderaan vastgezet (opent opwaarts) */
+  .month-slot { display:flex; justify-content:center; position:fixed; left:0; right:0; bottom:0; z-index:45;
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+    background:var(--topbar-bg); backdrop-filter:blur(8px); border-top:1px solid var(--line); }
+  .month-slot .cat-select { width:100%; max-width:420px; }
+  .month-slot .dd-trigger { width:100%; justify-content:center; }
+  .month-slot .cat-menu { top:auto; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); }
+
+  .content { padding:18px 16px 96px; }       /* ruimte onder de maandbalk */
+
+  /* grids inklappen — benoemde classes i.p.v. fragiele [style*]-selectors */
+  .grid-kpi { grid-template-columns:repeat(2,1fr) !important; }
+  .grid-2to1 { grid-template-columns:1fr !important; }
+  .grid-3 { grid-template-columns:1fr !important; }
+  .bud-grid { grid-template-columns:1fr !important; gap:12px !important; padding-left:0 !important; }
+  .goal-grid { grid-template-columns:34px 1fr !important; }
+  .goal-actions { grid-column:1 / -1; justify-content:flex-end; flex-wrap:wrap; }
+  .editor-grid { grid-template-columns:1fr !important; }
+
+  /* brede tabellen → horizontaal scrollen (fallback voor o.a. Beheer/Regels) */
+  .tbl-wrap { overflow-x:auto; }
+  .tbl-wrap .tbl { min-width:600px; }
+}
+
+/* ── responsive: telefoon-tier ── */
+@media (max-width: 560px) {
+  .topbar h1 { font-size:18px; }
+  .content { padding:14px 12px 96px; }
+  .grid { gap:14px; }
+
+  /* tabellen → kaarten (label-waarde gestapeld) */
+  .tbl-cards thead { display:none; }
+  .tbl-cards, .tbl-cards tbody, .tbl-cards tr, .tbl-cards td { display:block; width:auto !important; }
+  .tbl-cards tr.row { border:1px solid var(--line); border-radius:12px; margin-bottom:10px; padding:6px 14px; }
+  .tbl-cards tr.row td { background:transparent !important; }
+  .tbl-cards td { border:0 !important; padding:9px 0 !important; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+  .tbl-cards td[data-label]::before { content:attr(data-label); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--faint); flex:none; }
+  .tbl-cards .td-primary { display:block; padding:10px 0 12px !important; margin-bottom:2px; border-bottom:1px solid var(--line-soft) !important; }
+  .tbl-cards td.amt { font-size:15px; }
+  .tbl-cards td[colspan] { display:block; }
+  .tbl-cards td[colspan]::before { content:none; }
+
+  /* footer-samenvattingen onder tabellen */
+  .tbl-foot { flex-wrap:wrap; gap:10px 18px !important; }
+
+  /* kaart-headers met meerdere knoppen mogen wrappen */
+  .card-h { flex-wrap:wrap; row-gap:8px; }
+
+  /* Beheer: categorie-rij wrapt, sleep-grip weg (touch gebruikt de pijltjes) */
+  .cat-row { flex-wrap:wrap; }
+  .cat-row .cat-grip { display:none; }
+
+  /* touch-targets */
+  .nav-item { min-height:48px; }
+  .btn { min-height:42px; }
+  .seg button { padding:9px 14px; }
+  .cat-opt { padding:11px 12px; }
+  .reorder { width:30px; height:30px; }
+
+  /* dropdownmenu's binnen het scherm houden */
+  .cat-menu { min-width:min(80vw,260px) !important; max-width:92vw; max-height:54vh; }
+
+  /* modal als bottom-sheet (duim-bereik) */
+  .modal-overlay { align-items:flex-end; padding:12px; }
+
+  /* import: dropzone compacter + actiebalk vol breedte */
+  .drop { padding:30px 18px; }
+  .drop .di { width:54px; height:54px; margin-bottom:14px; }
+  .drop h2 { font-size:18px; }
+  .import-actions { flex-direction:column; align-items:stretch !important; }
+  .import-actions > div { margin-left:0 !important; width:100%; flex-direction:column; }
+  .import-actions .btn { width:100%; justify-content:center; }
 }

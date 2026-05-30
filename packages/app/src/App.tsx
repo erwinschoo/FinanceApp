@@ -42,9 +42,18 @@ const VIEWS: Record<ViewId, ComponentType> = {
 export default function App() {
   const { ready, view, setView } = useApp();
   const [confirm, setConfirm] = useState<null | "transacties" | "tegenpartijen">(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Bij app-start: stil de nieuwste cloud-versie ophalen (alleen indien ingelogd).
   useEffect(() => { void runStartupSync(); }, []);
+
+  // Mobiel: drawer sluiten met Escape.
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") setDrawerOpen(false); };
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
+  }, [drawerOpen]);
 
   if (!ready) {
     return (
@@ -59,22 +68,26 @@ export default function App() {
 
   return (
     <div className="app">
-      <Sidebar />
+      <Sidebar open={drawerOpen} onNavigate={() => setDrawerOpen(false)} />
+      {drawerOpen && <div className="drawer-scrim" onClick={() => setDrawerOpen(false)} />}
       <div className="main">
         <header className="topbar">
-          <div>
+          <button className="topbar-burger" onClick={() => setDrawerOpen(true)} aria-label="Menu openen">
+            <Ic name="menu" size={22} />
+          </button>
+          <div className="topbar-title" onClick={() => setDrawerOpen(true)}>
             <h1>{meta.title}</h1>
           </div>
           {(view === "transacties" || view === "tegenpartijen") && (
             <button className="btn" style={{ marginLeft: 4 }} onClick={() => setConfirm(view)} title="Alle records permanent verwijderen">
-              <Ic name="trash" size={16} /> Alles wissen
+              <Ic name="trash" size={16} /> <span className="btn-label">Alles wissen</span>
             </button>
           )}
           <div className="spacer"></div>
-          {meta.month && <MonthPicker />}
+          {meta.month && <div className="month-slot"><MonthPicker /></div>}
           {view !== "import" && (
-            <button className="btn btn-primary" onClick={() => setView("import")}>
-              <Ic name="upload" size={16} /> Importeren
+            <button className="btn btn-primary" onClick={() => setView("import")} title="Importeren">
+              <Ic name="upload" size={16} /> <span className="btn-label">Importeren</span>
             </button>
           )}
         </header>
