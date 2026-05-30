@@ -41,8 +41,10 @@ export function makeRule(
 export const DEFAULT_RULES: Omit<RuleRow, "id">[] = [
   // inkomen / sparen (specifiek → lage priority)
   { field: "rawDescription", pattern: "SALARIS", matchType: "contains", categoryId: "inkomen", priority: 10 },
-  { field: "rawDescription", pattern: "BELASTINGDIENST", matchType: "contains", categoryId: "inkomen", priority: 10 },
   { field: "rawDescription", pattern: "SPAARREKENING", matchType: "contains", categoryId: "sparen", priority: 10 },
+  // aflossingen / studieschuld
+  { field: "rawDescription", pattern: "DUO", matchType: "contains", categoryId: "aflossingen", priority: 15 },
+  { field: "rawDescription", pattern: "STUDIEFINANCIERING", matchType: "contains", categoryId: "aflossingen", priority: 15 },
   // wonen
   { field: "rawDescription", pattern: "HUUR", matchType: "contains", categoryId: "wonen", priority: 20 },
   { field: "rawDescription", pattern: "VESTEDA", matchType: "contains", categoryId: "wonen", priority: 20 },

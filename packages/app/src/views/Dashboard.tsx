@@ -14,7 +14,7 @@ import { ProgressRing } from "../charts/ProgressRing";
 const START_BALANCE = 4200;
 
 export function Dashboard() {
-  const { transactions, months, monthIdx, budgets, goals, categories, setView } = useApp();
+  const { transactions, months, monthIdx, budgets, goals, categories, catMap, setView } = useApp();
   const [donutActive, setDonutActive] = useState<number | null>(null);
   const [trendMode, setTrendMode] = useState<"beide" | "netto">("beide");
 
@@ -24,9 +24,9 @@ export function Dashboard() {
     () =>
       months.map((mk) => {
         const txs = txInMonth(transactions, mk);
-        return { key: mk, income: incomeOf(txs), expense: expensesOf(txs), saved: savingsOf(txs) };
+        return { key: mk, income: incomeOf(txs, catMap), expense: expensesOf(txs, catMap), saved: savingsOf(txs, catMap) };
       }),
-    [transactions, months],
+    [transactions, months, catMap],
   );
 
   const cur = series[monthIdx];
@@ -46,7 +46,7 @@ export function Dashboard() {
   const prevBalance = monthIdx > 0 ? balanceAt(monthIdx - 1) : null;
 
   const monthTxs = txInMonth(transactions, key);
-  const spend = spendByCat(monthTxs);
+  const spend = spendByCat(monthTxs, catMap);
   const donutData = categories
     .filter((c) => c.id !== "inkomen" && c.id !== "sparen" && spend[c.id])
     .map((c) => ({ label: c.name, value: spend[c.id], color: c.color, id: c.id }))

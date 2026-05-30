@@ -5,11 +5,11 @@ import { budgetColor } from "../helpers/budgetColor";
 import { setRecurringBudget } from "../db/repo";
 
 export function Budgets() {
-  const { transactions, months, monthIdx, budgets, categories } = useApp();
+  const { transactions, months, monthIdx, budgets, categories, catMap } = useApp();
   const key = months[monthIdx];
   const monthTxs = txInMonth(transactions, key);
-  const spend = spendByCat(monthTxs);
-  const income = incomeOf(monthTxs);
+  const spend = spendByCat(monthTxs, catMap);
+  const income = incomeOf(monthTxs, catMap);
 
   const cats = categories.filter((c) => budgets[c.id] != null);
   const totalBudget = cats.reduce((s, c) => s + budgets[c.id], 0);

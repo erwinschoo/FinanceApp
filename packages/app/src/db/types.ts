@@ -1,15 +1,16 @@
 /* Datamodel. In de DB worden bedragen als integer-centen (signed) opgeslagen;
  * in de app-/view-laag werken we met euro's (float) zodat de geporte UI 1-op-1 blijft. */
 
-export type CategoryType = "inkomen" | "uitgave" | "sparen";
+export type CategoryType = "inkomen" | "uitgave" | "sparen" | "overboeking";
 
 export interface Category {
   id: string;
   name: string;
-  color: string;   // CSS var() of hex
-  tint: string;    // achtergrondtint
-  initial: string; // letter in merchant-avatar fallback
+  color: string;          // CSS var() of hex
+  tint: string;           // achtergrondtint
+  initial: string;        // letter in merchant-avatar fallback
   type: CategoryType;
+  parentId: string | null; // null = hoofdcategorie; anders id van de groep
 }
 
 /* ── DB-rijen (centen) ── */
