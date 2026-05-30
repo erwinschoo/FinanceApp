@@ -5,6 +5,7 @@ import { Sidebar } from "./components/Sidebar";
 import { MonthPicker } from "./components/MonthPicker";
 import { Ic } from "./components/Ic";
 import { ConfirmDialog } from "./components/ConfirmDialog";
+import { InstallPrompt } from "./components/InstallPrompt";
 import { clearTransactions, clearPayees } from "./db/repo";
 import { Dashboard } from "./views/Dashboard";
 import { Transactions } from "./views/Transactions";
@@ -114,6 +115,8 @@ export default function App() {
         onCancel={() => setConfirm(null)}
         onConfirm={async () => { await clearPayees(); setConfirm(null); }}
       />
+
+      <InstallPrompt />
     </div>
   );
 }

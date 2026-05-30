@@ -43,6 +43,8 @@ export function Ic({ name, size = 20, className, style, strokeWidth = 1.8 }: Pro
     piggy: <><path d="M19 9V7a2 2 0 0 0-2-2h-1l-1-2-2 2H9a6 6 0 0 0-6 6 5 5 0 0 0 2 4v3h3v-2h4v2h3v-3a5 5 0 0 0 2-4z" {...p} /><circle cx="15.5" cy="11" r="1" fill="currentColor" stroke="none" /></>,
     grip: <>{[8, 12, 16].flatMap((y) => [9, 15].map((x) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.3" fill="currentColor" stroke="none" />))}</>,
     menu: <><line x1="4" y1="7" x2="20" y2="7" {...p} /><line x1="4" y1="12" x2="20" y2="12" {...p} /><line x1="4" y1="17" x2="20" y2="17" {...p} /></>,
+    download: <><path d="M12 4v12" {...p} /><path d="m7 11 5 5 5-5" {...p} /><path d="M5 18v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1" {...p} /></>,
+    share: <><path d="M12 14V4" {...p} /><path d="m8.5 7 3.5-3.5L15.5 7" {...p} /><path d="M7 10H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" {...p} /></>,
   };
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} className={className} style={style}>
