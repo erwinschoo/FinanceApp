@@ -5,6 +5,7 @@ import {
   addRule, updateRule, deleteRule,
 } from "../db/repo";
 import { Ic } from "../components/Ic";
+import { Dropdown } from "../components/Dropdown";
 import type { Category, CategoryType, RuleRow } from "../db/types";
 
 /* Suggesties die "luisteren" met de rest: afgeleid van de huisstijl-tokens
@@ -120,18 +121,17 @@ function CatEditor({ initial, parents, onSave, onCancel }: {
       </div>
       <div>
         <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Type</label>
-        <select value={type} onChange={(e) => setType(e.target.value as CategoryType)}
-          style={{ display: "block", width: "100%", marginTop: 6, border: "1px solid var(--line)", borderRadius: 10, padding: "9px 12px", fontSize: 14, background: "#fff" }}>
-          {(["uitgave", "inkomen", "sparen", "overboeking"] as CategoryType[]).map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
-        </select>
+        <div style={{ marginTop: 6 }}>
+          <Dropdown fullWidth ariaLabel="Type" value={type} onChange={(v) => setType(v as CategoryType)}
+            options={(["uitgave", "inkomen", "sparen", "overboeking"] as CategoryType[]).map((t) => ({ value: t, label: TYPE_LABEL[t] }))} />
+        </div>
       </div>
       <div>
         <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Hoofdgroep</label>
-        <select value={parentId ?? ""} onChange={(e) => setParentId(e.target.value || null)}
-          style={{ display: "block", width: "100%", marginTop: 6, border: "1px solid var(--line)", borderRadius: 10, padding: "9px 12px", fontSize: 14, background: "#fff" }}>
-          <option value="">— geen (hoofdcategorie) —</option>
-          {selectableParents.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+        <div style={{ marginTop: 6 }}>
+          <Dropdown fullWidth ariaLabel="Hoofdgroep" value={parentId ?? ""} onChange={(v) => setParentId(v || null)}
+            options={[{ value: "", label: "— geen (hoofdcategorie) —" }, ...selectableParents.map((p) => ({ value: p.id, label: p.name, color: p.color }))]} />
+        </div>
       </div>
       <div>
         <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Kleur</label>

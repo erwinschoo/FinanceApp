@@ -11,13 +11,14 @@ export interface DropdownOption {
 /* Gestylede dropdown in dezelfde stijl als de categorie-dropdown (cat-menu).
  * Generiek bruikbaar voor maand- en categorie-selectie. */
 export function Dropdown({
-  value, onChange, options, ariaLabel, minWidth = 188,
+  value, onChange, options, ariaLabel, minWidth = 188, fullWidth = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: DropdownOption[];
   ariaLabel?: string;
   minWidth?: number;
+  fullWidth?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -34,11 +35,14 @@ export function Dropdown({
 
   let lastGroup: string | undefined;
   return (
-    <div className="cat-select" ref={ref}>
-      <button type="button" className="dd-trigger" aria-label={ariaLabel} onClick={() => setOpen((o) => !o)}>
-        {selected?.color && <span className="dd-dot" style={{ background: selected.color }}></span>}
-        <span className="dd-lbl">{selected?.label ?? ""}</span>
-        <Ic name="chevronDown" size={15} />
+    <div className="cat-select" ref={ref} style={fullWidth ? { width: "100%" } : undefined}>
+      <button type="button" className="dd-trigger" aria-label={ariaLabel} onClick={() => setOpen((o) => !o)}
+        style={fullWidth ? { width: "100%" } : undefined}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          {selected?.color && <span className="dd-dot" style={{ background: selected.color }}></span>}
+          <span className="dd-lbl" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selected?.label ?? ""}</span>
+        </span>
+        <Ic name="chevronDown" size={15} style={fullWidth ? { marginLeft: "auto" } : undefined} />
       </button>
       {open && (
         <div className="cat-menu scroll" style={{ minWidth }}>
