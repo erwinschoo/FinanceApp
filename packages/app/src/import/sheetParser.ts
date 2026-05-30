@@ -46,6 +46,7 @@ export async function parseFile(file: File, rules: RuleRow[]): Promise<ParsedRow
       category,
       dedupeHash: hash,
       duplicate,
+      balance: m.balance,
     });
   }
   // nieuwste eerst

@@ -27,6 +27,7 @@ export interface TxRow {
   accountIban: string;      // eigen rekening
   importBatchId: string;
   dedupeHash: string;       // uniek; voorkomt dubbele import
+  balanceCents?: number;    // saldo na deze transactie (uit ING 'Resulting balance')
 }
 
 export interface BudgetRow {
@@ -102,6 +103,7 @@ export interface Transaction {
   accountIban: string;
   importBatchId: string;
   dedupeHash: string;
+  balance?: number;          // saldo na deze transactie (euro's)
 }
 
 export interface Goal {
@@ -127,4 +129,5 @@ export interface ParsedRow {
   category: string;         // door regels herkend, "" indien onbekend
   dedupeHash: string;
   duplicate: boolean;       // bestaat al in de DB?
+  balance: number | null;   // saldo na transactie (uit ING), null indien onbekend
 }

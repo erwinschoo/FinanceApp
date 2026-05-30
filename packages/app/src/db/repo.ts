@@ -79,35 +79,43 @@ export async function deleteGoal(id: string): Promise<void> {
 }
 
 /* Geïmporteerde rijen vastleggen: nieuwe transacties + een import-batch.
- * Duplicaten (op dedupeHash) worden overgeslagen. Retourneert het aantal toegevoegd. */
+ * Duplicaten (op dedupeHash) worden overgeslagen, maar hun saldo wordt nog wel
+ * bijgewerkt (backfill) zodat herimport oudere transacties van een saldo voorziet.
+ * Retourneert het aantal toegevoegd. */
 export async function commitImport(rows: ParsedRow[], filename: string): Promise<number> {
   const fresh = rows.filter((r) => !r.duplicate);
-  if (fresh.length === 0) return 0;
-  const batchId = uid("b");
-  const txs: TxRow[] = fresh.map((r) => ({
-    id: uid("t"),
-    date: r.date,
-    merchant: r.merchant,
-    rawDescription: r.rawDescription,
-    category: r.category,
-    amountCents: toCents(r.amount),
-    auto: r.category !== "",
-    note: "",
-    counterIban: r.counterIban,
-    accountIban: r.accountIban,
-    importBatchId: batchId,
-    dedupeHash: r.dedupeHash,
-  }));
+  const dups = rows.filter((r) => r.duplicate && r.balance != null);
+
   await db.transaction("rw", db.transactions, db.importBatches, async () => {
-    await db.transactions.bulkPut(txs);
-    await db.importBatches.put({
-      id: batchId,
-      filename,
-      importedAt: new Date().toISOString(),
-      count: txs.length,
-    });
+    if (fresh.length > 0) {
+      const batchId = uid("b");
+      const txs: TxRow[] = fresh.map((r) => ({
+        id: uid("t"),
+        date: r.date,
+        merchant: r.merchant,
+        rawDescription: r.rawDescription,
+        category: r.category,
+        amountCents: toCents(r.amount),
+        auto: r.category !== "",
+        note: "",
+        counterIban: r.counterIban,
+        accountIban: r.accountIban,
+        importBatchId: batchId,
+        dedupeHash: r.dedupeHash,
+        balanceCents: r.balance != null ? toCents(r.balance) : undefined,
+      }));
+      await db.transactions.bulkPut(txs);
+      await db.importBatches.put({ id: batchId, filename, importedAt: new Date().toISOString(), count: txs.length });
+    }
+    // backfill saldo op bestaande duplicaten zonder saldo
+    for (const r of dups) {
+      const existing = await db.transactions.where("dedupeHash").equals(r.dedupeHash).first();
+      if (existing && existing.balanceCents == null) {
+        await db.transactions.update(existing.id, { balanceCents: toCents(r.balance as number) });
+      }
+    }
   });
-  return txs.length;
+  return fresh.length;
 }
 
 /* Bestaande dedupe-hashes ophalen (voor duplicaatdetectie tijdens parsing). */

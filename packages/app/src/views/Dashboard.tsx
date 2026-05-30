@@ -33,14 +33,20 @@ export function Dashboard() {
   const prev = monthIdx > 0 ? series[monthIdx - 1] : null;
   const pct = (a: number, b: number) => (b ? ((a - b) / b) * 100 : 0);
 
+  const hasBalances = useMemo(() => transactions.some((t) => t.balance != null), [transactions]);
   const balanceAt = useCallback(
     (idx: number) => {
       const end = months[idx];
+      // transacties zijn aflopend op datum gesorteerd → eerste match = meest recente ≤ maandeinde
+      if (hasBalances) {
+        const t = transactions.find((t) => t.date.slice(0, 7) <= end && t.balance != null);
+        if (t) return t.balance as number;
+      }
       let b = START_BALANCE;
       transactions.forEach((t) => { if (t.date.slice(0, 7) <= end) b += t.amount; });
       return b;
     },
-    [transactions, months],
+    [transactions, months, hasBalances],
   );
   const balance = balanceAt(monthIdx);
   const prevBalance = monthIdx > 0 ? balanceAt(monthIdx - 1) : null;

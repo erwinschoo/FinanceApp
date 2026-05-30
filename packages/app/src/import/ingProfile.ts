@@ -10,6 +10,7 @@ export interface MappedRow {
   amount: number;        // euro's, signed
   counterIban: string;
   accountIban: string;
+  balance: number | null; // saldo na transactie (euro's), null indien niet aanwezig
 }
 
 /* Mogelijke kolomnamen per veld — ING varieert soms licht. */
@@ -21,6 +22,7 @@ const COLS = {
   debitCredit: ["Af Bij", "Af/Bij", "Debit/credit"],
   amount: ["Bedrag (EUR)", "Bedrag", "Amount (EUR)", "Amount"],
   memo: ["Mededelingen", "Mededeling", "Notifications"],
+  balance: ["Resulting balance", "Saldo na mutatie", "Resulting Balance", "Saldo"],
 };
 
 function get(rec: RawRecord, names: string[]): string {
@@ -65,6 +67,8 @@ export function mapIngRow(rec: RawRecord): MappedRow {
   let amount = Math.abs(parseAmount(get(rec, COLS.amount)));
   if (af.startsWith("af") || af.startsWith("d")) amount = -amount;
   const rawDescription = [name, memo].filter(Boolean).join(" — ").trim() || name;
+  const rawBalance = get(rec, COLS.balance);
+  const balance = rawBalance ? parseAmount(rawBalance) : null;
   return {
     date: parseDate(rawDate),
     rawDescription,
@@ -72,5 +76,6 @@ export function mapIngRow(rec: RawRecord): MappedRow {
     amount,
     counterIban: get(rec, COLS.counter),
     accountIban: get(rec, COLS.account),
+    balance,
   };
 }
