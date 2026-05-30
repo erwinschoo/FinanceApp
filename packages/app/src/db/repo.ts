@@ -170,6 +170,19 @@ export async function deleteCategory(id: string, reassignTo = "overig"): Promise
   });
 }
 
+/* ── Permanent wissen ── */
+/* Verwijder ALLE transacties (en de bijbehorende import-historie). Onomkeerbaar. */
+export async function clearTransactions(): Promise<void> {
+  await db.transaction("rw", db.transactions, db.importBatches, async () => {
+    await db.transactions.clear();
+    await db.importBatches.clear();
+  });
+}
+/* Verwijder ALLE tegenpartij-koppelingen (opgeslagen categorie per tegenpartij). Onomkeerbaar. */
+export async function clearPayees(): Promise<void> {
+  await db.payees.clear();
+}
+
 /* ── Regel-beheer ── */
 export async function addRule(r: Omit<RuleRow, "id">): Promise<void> {
   await db.rules.put({ ...r, id: uid("r") });

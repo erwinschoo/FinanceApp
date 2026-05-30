@@ -133,6 +133,8 @@ input { font-family:inherit; }
 .btn-primary:hover { background:#4f719f; border-color:#4f719f; }
 .btn-orange { background:var(--orange); border-color:var(--orange); color:#fff; }
 .btn-orange:hover { background:#c5602a; border-color:#c5602a; }
+.btn-danger { background:var(--over); border-color:var(--over); color:#fff; }
+.btn-danger:hover { background:#b34a3e; border-color:#b34a3e; }
 .btn-ghost { border-color:transparent; background:transparent; color:var(--muted); }
 .btn-ghost:hover { background:var(--subtle); color:var(--ink); }
 
@@ -250,6 +252,12 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 .fade-in { animation:fadeIn .32s var(--ease) both; }
 @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 .stagger > * { animation:fadeIn .4s var(--ease) both; }
+
+/* modal / bevestiging */
+.modal-overlay { position:fixed; inset:0; background:rgba(16,24,32,.42); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; animation:fadeIn .16s var(--ease) both; }
+.modal { background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow-pop); max-width:420px; width:100%; padding:24px; }
+.modal h3 { margin:0 0 8px; font-size:18px; font-weight:800; color:var(--ink); letter-spacing:-.01em; }
+.modal p { margin:0 0 20px; font-size:14px; color:var(--body); line-height:1.55; }
 
 /* notice banner */
 .notice { display:flex; align-items:flex-start; gap:12px; background:var(--blue-tint); border:1px solid #DCE6F1; border-radius:12px; padding:14px 16px; }

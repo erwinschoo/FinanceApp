@@ -1,8 +1,10 @@
-import { lazy, Suspense, type ComponentType } from "react";
+import { lazy, Suspense, useState, type ComponentType } from "react";
 import { useApp, type ViewId } from "./state/AppContext";
 import { Sidebar } from "./components/Sidebar";
 import { MonthPicker } from "./components/MonthPicker";
 import { Ic } from "./components/Ic";
+import { ConfirmDialog } from "./components/ConfirmDialog";
+import { clearTransactions, clearPayees } from "./db/repo";
 import { Dashboard } from "./views/Dashboard";
 import { Transactions } from "./views/Transactions";
 import { Budgets } from "./views/Budgets";
@@ -38,6 +40,7 @@ const VIEWS: Record<ViewId, ComponentType> = {
 
 export default function App() {
   const { ready, view, setView } = useApp();
+  const [confirm, setConfirm] = useState<null | "transacties" | "tegenpartijen">(null);
 
   if (!ready) {
     return (
@@ -59,6 +62,11 @@ export default function App() {
             <h1>{meta.title}</h1>
             <div className="sub">{meta.sub}</div>
           </div>
+          {(view === "transacties" || view === "tegenpartijen") && (
+            <button className="btn" style={{ marginLeft: 4 }} onClick={() => setConfirm(view)} title="Alle records permanent verwijderen">
+              <Ic name="trash" size={16} /> Alles wissen
+            </button>
+          )}
           <div className="spacer"></div>
           {meta.month && <MonthPicker />}
           {view !== "import" && (
@@ -73,6 +81,23 @@ export default function App() {
           </Suspense>
         </main>
       </div>
+
+      <ConfirmDialog
+        open={confirm === "transacties"}
+        title="Alle transacties verwijderen?"
+        message="Hiermee worden ál je transacties en de import-historie permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt."
+        confirmLabel="Verwijder transacties"
+        onCancel={() => setConfirm(null)}
+        onConfirm={async () => { await clearTransactions(); setConfirm(null); }}
+      />
+      <ConfirmDialog
+        open={confirm === "tegenpartijen"}
+        title="Alle tegenpartijen verwijderen?"
+        message="Hiermee worden alle opgeslagen tegenpartij-categorieën permanent verwijderd. Je transacties blijven staan, maar de onthouden koppelingen verdwijnen. Deze actie kan niet ongedaan worden gemaakt."
+        confirmLabel="Verwijder tegenpartijen"
+        onCancel={() => setConfirm(null)}
+        onConfirm={async () => { await clearPayees(); setConfirm(null); }}
+      />
     </div>
   );
 }
