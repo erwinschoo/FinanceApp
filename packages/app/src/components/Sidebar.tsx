@@ -1,6 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useApp, type ViewId } from "../state/AppContext";
 import { useTheme } from "../state/useTheme";
+import { useInstallState } from "../pwa/install";
 import { useAutoSyncStatus } from "../sync/autoSync";
 import { db } from "../db/schema";
 import { Ic } from "./Ic";
@@ -20,7 +21,11 @@ const DATA: NavItem[] = [
   { id: "sync", label: "Synchroniseren", icon: "cloud", tip: "Back-up en sync via je eigen OneDrive" },
   { id: "beheer", label: "Beheer", icon: "sliders", tip: "Categorieën en categoriseer-regels onderhouden" },
 ];
-const STEUN: NavItem = { id: "steun", label: "Steun bokkiep", icon: "heart", tip: "Steun de ontwikkeling van bokkiep" };
+const OVERIG: NavItem[] = [
+  { id: "steun", label: "Steun bokkiep", icon: "heart", tip: "Steun de ontwikkeling van bokkiep" },
+  { id: "download", label: "Download app", icon: "download", tip: "Installeer bokkiep als app" },
+  { id: "informatie", label: "Informatie", icon: "info", tip: "Over bokkiep: uitleg en veelgestelde vragen" },
+];
 
 /* "gesynct 14:32" (vandaag) of "gesynct 28 mei" (anders). */
 function syncedLabel(iso: string): string {
@@ -36,6 +41,10 @@ function syncedLabel(iso: string): string {
 export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNavigate?: () => void } = {}) {
   const { view, setView, uncategorizedCount } = useApp();
   const { theme, toggle } = useTheme();
+  const { installed } = useInstallState();
+
+  // "Download app" alleen tonen zolang de app niet geïnstalleerd is.
+  const overig = installed ? OVERIG.filter((it) => it.id !== "download") : OVERIG;
 
   const syncState = useAutoSyncStatus();
   const account = useLiveQuery(() => db.meta.get("account"), [], undefined);
@@ -82,7 +91,8 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
       <div className="sb-sec">Data</div>
       <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{DATA.map(item)}</nav>
 
-      <nav style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 8 }}>{item(STEUN)}</nav>
+      <div className="sb-sec">Overig</div>
+      <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{overig.map(item)}</nav>
 
       <div className="sb-actions">
         <button

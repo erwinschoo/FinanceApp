@@ -1,93 +1,33 @@
 import { useEffect, useState } from "react";
 import { Ic } from "./Ic";
 import goatLogo from "../assets/ibex-orange.png";
-
-/* Het 'beforeinstallprompt'-event (Chromium/Android/Edge). iOS/Safari kent dit
- * niet — daar tonen we handmatige instructies. */
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
-
-const SNOOZE_KEY = "bokkiep:install-snooze";
-const SNOOZE_DAYS = 7;
-
-function isStandalone(): boolean {
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    // iOS Safari
-    (navigator as unknown as { standalone?: boolean }).standalone === true
-  );
-}
-function isIos(): boolean {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
-}
-function snoozed(): boolean {
-  try {
-    const t = Number(localStorage.getItem(SNOOZE_KEY) || 0);
-    return Date.now() - t < SNOOZE_DAYS * 86_400_000;
-  } catch {
-    return false;
-  }
-}
-function snooze(): void {
-  try {
-    localStorage.setItem(SNOOZE_KEY, String(Date.now()));
-  } catch {
-    /* genegeerd */
-  }
-}
+import { useInstallState, promptInstall, snooze, snoozed } from "../pwa/install";
 
 /* Toont bij het openen een popup om bokkiep als app te installeren (desktop én
- * mobiel), mits: nog niet geïnstalleerd en niet recent weggeklikt. */
+ * mobiel), mits: nog niet geïnstalleerd en niet recent weggeklikt. De install-
+ * logica zelf zit gedeeld in ../pwa/install. */
 export function InstallPrompt() {
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [show, setShow] = useState(false);
-  const [iosHelp, setIosHelp] = useState(false);
+  const { installed, canInstall, isIos } = useInstallState();
+  const [dismissed, setDismissed] = useState(() => snoozed());
+  const [iosReady, setIosReady] = useState(false);
 
+  // iOS kent geen beforeinstallprompt → na een korte vertraging instructies tonen.
   useEffect(() => {
-    if (isStandalone() || snoozed()) return;
+    if (!isIos) return;
+    const t = window.setTimeout(() => setIosReady(true), 1200);
+    return () => clearTimeout(t);
+  }, [isIos]);
 
-    const onBeforeInstall = (e: Event) => {
-      e.preventDefault(); // onderdruk de standaard mini-infobar; wij tonen eigen UI
-      setDeferred(e as BeforeInstallPromptEvent);
-      setShow(true);
-    };
-    const onInstalled = () => {
-      setShow(false);
-      setDeferred(null);
-    };
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    window.addEventListener("appinstalled", onInstalled);
-
-    // iOS heeft geen beforeinstallprompt → na een korte vertraging instructies tonen.
-    let t: number | undefined;
-    if (isIos()) {
-      t = window.setTimeout(() => {
-        setIosHelp(true);
-        setShow(true);
-      }, 1200);
-    }
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-      window.removeEventListener("appinstalled", onInstalled);
-      if (t) clearTimeout(t);
-    };
-  }, []);
-
-  if (!show) return null;
+  if (installed || dismissed) return null;
+  const iosHelp = isIos && iosReady;
+  if (!canInstall && !iosHelp) return null;
 
   async function install() {
-    if (!deferred) return;
-    await deferred.prompt();
-    await deferred.userChoice; // 'accepted' → appinstalled volgt; 'dismissed' → niets
-    setShow(false);
-    setDeferred(null);
+    await promptInstall(); // bij 'accepted' volgt appinstalled → popup verdwijnt
   }
   function later() {
     snooze();
-    setShow(false);
+    setDismissed(true);
   }
 
   return (

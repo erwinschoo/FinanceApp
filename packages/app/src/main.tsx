@@ -4,6 +4,7 @@ import { AppProvider } from "./state/AppContext";
 import App from "./App";
 import { migrateFromLegacyDb } from "./db/migrateLegacy";
 import { seedIfEmpty } from "./db/seed";
+import "./pwa/install"; // side-effect: vang 'beforeinstallprompt' vroeg op
 import "./styles/app.css";
 
 async function bootstrap() {
