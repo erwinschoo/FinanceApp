@@ -397,12 +397,6 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 
   .content { padding:18px 16px 96px; }       /* ruimte onder de maandbalk */
 
-  /* sync-bevestiging als zwevende banner bovenaan zodat hij ook op mobiel
-     opvalt (op desktop blijft hij inline in de Sync-view) */
-  .sync-msg { position:fixed; top:calc(54px + env(safe-area-inset-top)); left:14px; right:14px;
-    max-width:520px; margin:0 auto !important; z-index:120; box-shadow:var(--shadow-pop);
-    animation:fadeIn .2s var(--ease) both; }
-
   /* grids inklappen — benoemde classes i.p.v. fragiele [style*]-selectors */
   .grid-kpi { grid-template-columns:repeat(2,1fr) !important; }
   .grid-2to1 { grid-template-columns:1fr !important; }
