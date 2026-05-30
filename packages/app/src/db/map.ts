@@ -20,7 +20,7 @@ export function rowToGoal(r: GoalRow): Goal {
   };
 }
 
-export interface Pot { categoryId: string; opening: number; inverted: boolean }
+export interface Pot { categoryId: string; opening: number; monthly: number; inverted: boolean }
 export function rowToPot(r: PotRow): Pot {
-  return { categoryId: r.categoryId, opening: fromCents(r.openingCents), inverted: !!r.inverted };
+  return { categoryId: r.categoryId, opening: fromCents(r.openingCents), monthly: fromCents(r.monthlyCents ?? 0), inverted: !!r.inverted };
 }

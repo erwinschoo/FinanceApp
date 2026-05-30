@@ -59,59 +59,105 @@ export async function setRecurringBudget(categoryId: string, euros: number): Pro
   scheduleSync();
 }
 
-/* Spaardoel toevoegen of bijwerken (euro's in). */
-export async function upsertGoal(g: {
-  id?: string; name: string; categoryId: string; target: number; current: number; monthly: number;
-  startDate: string; targetDate: string; priority: number; color: string;
-}): Promise<void> {
-  const row: GoalRow = {
-    id: g.id ?? uid("g"),
-    name: g.name,
-    categoryId: g.categoryId,
-    targetCents: toCents(g.target),
-    currentCents: toCents(g.current),
-    monthlyCents: toCents(g.monthly),
-    startDate: g.startDate,
-    targetDate: g.targetDate,
-    priority: g.priority,
-    color: g.color,
-  };
-  await db.goals.put(row);
-  scheduleSync();
+/* ── Spaardoelen (per categorie geprioriteerd) ── */
+
+async function goalsInCategory(categoryId: string): Promise<GoalRow[]> {
+  const all = await db.goals.toArray();
+  return all.filter((g) => g.categoryId === categoryId).sort((a, b) => a.priority - b.priority);
 }
 
-/* Verwijder een doel en hernummer de resterende prioriteiten naar 1…N (geen gaten). */
-export async function deleteGoal(id: string): Promise<void> {
-  await db.transaction("rw", db.goals, async () => {
-    await db.goals.delete(id);
-    const rest = (await db.goals.toArray()).sort((a, b) => a.priority - b.priority);
-    await db.goals.bulkPut(rest.map((g, i) => ({ ...g, priority: i + 1 })));
+/* Voeg een doel toe aan een categorie (achteraan in de prioriteit). */
+export async function addGoalToCategory(categoryId: string): Promise<void> {
+  const cat = await db.categories.get(categoryId);
+  const today = new Date();
+  const targetDate = new Date(today.getFullYear() + 2, today.getMonth(), 1);
+  await db.transaction("rw", db.goals, db.categories, async () => {
+    const inCat = await goalsInCategory(categoryId);
+    const priority = (inCat.at(-1)?.priority ?? 0) + 1;
+    await db.goals.put({
+      id: uid("g"), name: "Nieuw doel", categoryId,
+      targetCents: toCents(5000), currentCents: 0, monthlyCents: 0,
+      startDate: today.toISOString().slice(0, 10), targetDate: targetDate.toISOString().slice(0, 10),
+      priority, color: cat?.color ?? "var(--blue)",
+    });
   });
   scheduleSync();
 }
 
-/* Verschuif een doel één plek omhoog/omlaag door de prioriteit met de buur te wisselen. */
+/* Naam/doelbedrag van een doel bijwerken. */
+export async function updateGoal(id: string, patch: { name?: string; target?: number }): Promise<void> {
+  const p: Partial<GoalRow> = {};
+  if (patch.name !== undefined) p.name = patch.name;
+  if (patch.target !== undefined) p.targetCents = toCents(patch.target);
+  await db.goals.update(id, p);
+  scheduleSync();
+}
+
+/* Verwijder een doel en hernummer de prioriteiten binnen díe categorie naar 1…N. */
+export async function deleteGoal(id: string): Promise<void> {
+  await db.transaction("rw", db.goals, async () => {
+    const goal = await db.goals.get(id);
+    await db.goals.delete(id);
+    if (goal) {
+      const rest = await goalsInCategory(goal.categoryId);
+      await db.goals.bulkPut(rest.map((g, i) => ({ ...g, priority: i + 1 })));
+    }
+  });
+  scheduleSync();
+}
+
+/* Verschuif een doel binnen zijn categorie één plek omhoog/omlaag (prioriteit-swap met de buur). */
 export async function moveGoalPriority(id: string, dir: "up" | "down"): Promise<void> {
   await db.transaction("rw", db.goals, async () => {
-    const sorted = (await db.goals.toArray()).sort((a, b) => a.priority - b.priority);
-    const idx = sorted.findIndex((g) => g.id === id);
+    const goal = await db.goals.get(id);
+    if (!goal) return;
+    const ordered = await goalsInCategory(goal.categoryId);
+    const idx = ordered.findIndex((g) => g.id === id);
     const swapWith = dir === "up" ? idx - 1 : idx + 1;
-    if (idx < 0 || swapWith < 0 || swapWith >= sorted.length) return;
-    const a = sorted[idx], b = sorted[swapWith];
+    if (idx < 0 || swapWith < 0 || swapWith >= ordered.length) return;
+    const a = ordered[idx], b = ordered[swapWith];
     await db.goals.bulkPut([{ ...a, priority: b.priority }, { ...b, priority: a.priority }]);
   });
   scheduleSync();
 }
 
-/* ── Spaarpot per categorie (startsaldo / nul lijn + tekenrichting) ── */
-export async function setPotOpening(categoryId: string, euros: number): Promise<void> {
+/* ── Spaarpot per categorie (een categorie met pot = spaarcategorie in de ribbon) ── */
+async function putPot(categoryId: string, patch: Partial<{ openingCents: number; monthlyCents: number; inverted: boolean }>): Promise<void> {
   const cur = await db.pots.get(categoryId);
-  await db.pots.put({ categoryId, openingCents: toCents(euros), inverted: cur?.inverted ?? false });
+  await db.pots.put({
+    categoryId,
+    openingCents: patch.openingCents ?? cur?.openingCents ?? 0,
+    monthlyCents: patch.monthlyCents ?? cur?.monthlyCents ?? 0,
+    inverted: patch.inverted ?? cur?.inverted ?? false,
+  });
+}
+
+export async function setPotOpening(categoryId: string, euros: number): Promise<void> {
+  await putPot(categoryId, { openingCents: toCents(euros) });
+  scheduleSync();
+}
+export async function setPotMonthly(categoryId: string, euros: number): Promise<void> {
+  await putPot(categoryId, { monthlyCents: toCents(euros) });
   scheduleSync();
 }
 export async function setPotInverted(categoryId: string, inverted: boolean): Promise<void> {
-  const cur = await db.pots.get(categoryId);
-  await db.pots.put({ categoryId, openingCents: cur?.openingCents ?? 0, inverted });
+  await putPot(categoryId, { inverted });
+  scheduleSync();
+}
+
+/* Voeg een bestaande categorie toe als spaarcategorie (pot + één startdoel). */
+export async function addPotCategory(categoryId: string): Promise<void> {
+  await db.pots.put({ categoryId, openingCents: 0, monthlyCents: toCents(100), inverted: false });
+  await addGoalToCategory(categoryId);
+}
+
+/* Verwijder een spaarcategorie: de pot én alle doelen van die categorie. */
+export async function removePotCategory(categoryId: string): Promise<void> {
+  await db.transaction("rw", db.goals, db.pots, async () => {
+    const ids = (await db.goals.toArray()).filter((g) => g.categoryId === categoryId).map((g) => g.id);
+    await db.goals.bulkDelete(ids);
+    await db.pots.delete(categoryId);
+  });
   scheduleSync();
 }
 

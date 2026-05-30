@@ -1,8 +1,8 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db/schema";
-import { rowToTx, rowToGoal, rowToPot, type Pot } from "../db/map";
-import { allocateGoals, type GoalAllocation } from "../goals/allocate";
+import { rowToTx, rowToGoal, rowToPot } from "../db/map";
+import { buildSavings, type SavingsGroup } from "../goals/savings";
 import { lastTwelveMonthKeys } from "../helpers/aggregations";
 import { fromCents } from "../lib/money";
 import type { Category, Transaction, Goal, RuleRow, PayeeRow } from "../db/types";
@@ -16,8 +16,8 @@ interface AppState {
   transactions: Transaction[];
   budgets: Record<string, number>; // categoryId -> euro (recurring)
   goals: Goal[];
-  goalAlloc: Map<string, GoalAllocation>;
-  pots: Pot[];
+  savingsGroups: SavingsGroup[];
+  savingsLibrary: Category[];
   rules: RuleRow[];
   payees: PayeeRow[];
   payeeMap: Map<string, string>; // key -> categoryId
@@ -64,16 +64,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     const goalsBase: Goal[] = (goalRows ?? []).map(rowToGoal).sort((a, b) => a.priority - b.priority);
     const pots = (potRows ?? []).map(rowToPot);
-    const goalAlloc = allocateGoals(goalsBase, transactions, pots);
-    // voortgang afleiden: vervang current door de aan dit doel toegekende waarde (val terug op opgeslagen current)
-    const goals: Goal[] = goalsBase.map((g) => ({ ...g, current: goalAlloc.get(g.id)?.current ?? g.current }));
+    const { groups: savingsGroups, library: savingsLibrary, filledById } = buildSavings(cats, goalsBase, transactions, pots);
+    // voortgang afleiden: vervang current door de via waterfall toegekende waarde
+    const goals: Goal[] = goalsBase.map((g) => ({ ...g, current: filledById.get(g.id) ?? g.current }));
     const rules = (ruleRows ?? []) as RuleRow[];
     const payees = (payeeRows ?? []) as PayeeRow[];
     const payeeMap = new Map(payees.filter((p) => p.categoryId).map((p) => [p.key, p.categoryId]));
     const uncategorizedCount = transactions.filter((t) => !t.category).length;
 
     return {
-      ready, categories: cats, catMap, transactions, budgets, goals, goalAlloc, pots, rules, payees, payeeMap,
+      ready, categories: cats, catMap, transactions, budgets, goals, savingsGroups, savingsLibrary, rules, payees, payeeMap,
       months, monthIdx, setMonthIdx, view, setView, uncategorizedCount,
     };
   }, [categories, txRows, budgetRows, goalRows, ruleRows, payeeRows, potRows, ready, months, monthIdx, view]);

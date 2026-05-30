@@ -60,10 +60,12 @@ export interface GoalRow {
   color: string;
 }
 
-/* Spaarpot-config per categorie: nul lijn (startsaldo) + tekenrichting van de inleg. */
+/* Spaarpot-config per categorie: een categorie met een pot is een "spaarcategorie".
+ * Bevat de nul lijn (startsaldo), de maandelijkse inleg en de tekenrichting. */
 export interface PotRow {
   categoryId: string;       // PK
   openingCents: number;     // startsaldo / nul lijn
+  monthlyCents: number;     // maandelijkse inleg (planning, per categorie)
   inverted: boolean;        // true = inleg staat als afschrijving (−) op de betaalrekening
 }
 

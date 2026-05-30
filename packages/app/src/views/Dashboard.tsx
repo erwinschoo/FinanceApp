@@ -195,7 +195,7 @@ export function Dashboard() {
               <div style={{ marginTop: 16, textAlign: "center" }}>
                 <div style={{ fontWeight: 800, color: "var(--ink)", fontSize: 14.5 }}>{goal.name}</div>
                 <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>
-                  Nog {eur(goal.target - goal.current)} · {eur(goal.monthly)}/maand
+                  Nog {eur(Math.max(0, goal.target - goal.current))} te gaan
                 </div>
               </div>
             </div>
