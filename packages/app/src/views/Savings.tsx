@@ -183,7 +183,7 @@ export function Savings() {
       {!group ? (
         <div className="card card-pad"><div className="empty">Nog geen spaarcategorieën. Voeg er één toe om te beginnen.</div></div>
       ) : (
-        <div className="grid" style={{ gridTemplateColumns: "0.95fr 1.35fr", alignItems: "start" }}>
+        <div className="grid" style={{ gridTemplateColumns: "minmax(0,0.95fr) minmax(0,1.35fr)", alignItems: "start" }}>
           {/* links — actief doel */}
           <div className="card card-pad" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
             <div style={{ alignSelf: "stretch", display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
