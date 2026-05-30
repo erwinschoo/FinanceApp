@@ -31,6 +31,7 @@ export function buildPayeeOverview(
   payeeMap: Map<string, string>,
 ): PayeeOverview[] {
   const byKey = new Map<string, PayeeOverview>();
+  const catCounts = new Map<string, Map<string, number>>(); // key -> (categoryId -> count)
   for (const t of transactions) {
     const key = payeeKey(t);
     let p = byKey.get(key);
@@ -43,9 +44,10 @@ export function buildPayeeOverview(
         count: 0,
         total: 0,
         lastDate: t.date,
-        categoryId: payeeMap.get(key) ?? "",
+        categoryId: "",
       };
       byKey.set(key, p);
+      catCounts.set(key, new Map());
     }
     p.count += 1;
     p.total += t.amount;
@@ -53,6 +55,20 @@ export function buildPayeeOverview(
       p.lastDate = t.date;
       if (t.merchant) p.name = t.merchant; // nieuwste naam
     }
+    if (t.category) {
+      const cc = catCounts.get(key)!;
+      cc.set(t.category, (cc.get(t.category) ?? 0) + 1);
+    }
+  }
+  // categorie = opgeslagen mapping, anders de meest voorkomende categorie van de transacties
+  for (const [key, p] of byKey) {
+    const mapped = payeeMap.get(key);
+    if (mapped) { p.categoryId = mapped; continue; }
+    let best = "", bestN = 0;
+    for (const [cat, n] of catCounts.get(key)!) {
+      if (n > bestN) { best = cat; bestN = n; }
+    }
+    p.categoryId = best;
   }
   return [...byKey.values()];
 }
