@@ -1,18 +1,27 @@
+import { useMemo } from "react";
 import { useApp } from "../state/AppContext";
 import { monthKeyLabelFull } from "../lib/format";
-import { Ic } from "./Ic";
+import { txKey } from "../helpers/aggregations";
+import { Dropdown } from "./Dropdown";
 
 export function MonthPicker() {
-  const { months, monthIdx, setMonthIdx } = useApp();
+  const { months, monthIdx, setMonthIdx, transactions } = useApp();
+
+  // Maanden mét data binnen het 12-maands-venster (nieuwste eerst); val terug op alle maanden.
+  const options = useMemo(() => {
+    const dataKeys = new Set(transactions.map((t) => txKey(t)));
+    const withData = months.filter((mk) => dataKeys.has(mk));
+    const list = (withData.length ? withData : months).slice().reverse();
+    return list.map((mk) => ({ value: mk, label: monthKeyLabelFull(mk) }));
+  }, [months, transactions]);
+
   return (
-    <div className="month-pick">
-      <button onClick={() => setMonthIdx(Math.max(0, monthIdx - 1))} disabled={monthIdx === 0} aria-label="Vorige maand">
-        <Ic name="chevronLeft" size={18} />
-      </button>
-      <span className="lbl tnum">{monthKeyLabelFull(months[monthIdx])}</span>
-      <button onClick={() => setMonthIdx(Math.min(months.length - 1, monthIdx + 1))} disabled={monthIdx === months.length - 1} aria-label="Volgende maand">
-        <Ic name="chevronRight" size={18} />
-      </button>
-    </div>
+    <Dropdown
+      value={months[monthIdx]}
+      onChange={(mk) => { const i = months.indexOf(mk); if (i >= 0) setMonthIdx(i); }}
+      options={options}
+      ariaLabel="Kies maand"
+      minWidth={170}
+    />
   );
 }

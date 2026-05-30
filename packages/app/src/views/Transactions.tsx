@@ -5,6 +5,7 @@ import { txKey } from "../helpers/aggregations";
 import { assignPayeeCategory } from "../db/repo";
 import { CatTag } from "../components/CatTag";
 import { CatSelect } from "../components/CatSelect";
+import { Dropdown } from "../components/Dropdown";
 import { MerchantAv } from "../components/MerchantAv";
 import { Ic } from "../components/Ic";
 
@@ -55,25 +56,23 @@ export function Transactions() {
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Zoek op naam of notitie…"
               style={{ width: "100%", border: "1px solid var(--line)", borderRadius: 10, padding: "9px 12px 9px 36px", fontSize: 14, outline: "none", background: "var(--subtle)" }} />
           </div>
-          <div style={{ position: "relative" }}>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setMonthSel(e.target.value)}
-              style={{ appearance: "none", border: "1px solid var(--line)", borderRadius: 10, padding: "9px 32px 9px 13px", fontSize: 13.5, fontWeight: 700, color: "var(--ink)", background: "#fff", cursor: "pointer" }}>
-              <option value="alle">Alle maanden</option>
-              {monthsInData.map((mk) => <option key={mk} value={mk}>{monthKeyLabelFull(mk)}</option>)}
-            </select>
-            <span style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", lineHeight: 0, pointerEvents: "none", color: "var(--faint)" }}><Ic name="chevronDown" size={16} /></span>
-          </div>
-          <div style={{ position: "relative" }}>
-            <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
-              style={{ appearance: "none", border: "1px solid var(--line)", borderRadius: 10, padding: "9px 32px 9px 13px", fontSize: 13.5, fontWeight: 600, color: "var(--ink)", background: "#fff", cursor: "pointer" }}>
-              <option value="alle">Alle categorieën</option>
-              <option value="leeg">Niet ingedeeld</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <span style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", lineHeight: 0, pointerEvents: "none", color: "var(--faint)" }}><Ic name="chevronDown" size={16} /></span>
-          </div>
+          <Dropdown
+            value={selectedMonth}
+            onChange={setMonthSel}
+            ariaLabel="Filter op maand"
+            minWidth={170}
+            options={[{ value: "alle", label: "Alle maanden" }, ...monthsInData.map((mk) => ({ value: mk, label: monthKeyLabelFull(mk) }))]}
+          />
+          <Dropdown
+            value={catFilter}
+            onChange={setCatFilter}
+            ariaLabel="Filter op categorie"
+            options={[
+              { value: "alle", label: "Alle categorieën", color: "var(--faint)" },
+              { value: "leeg", label: "Niet ingedeeld", color: "var(--faint)" },
+              ...categories.map((c) => ({ value: c.id, label: c.name, color: c.color })),
+            ]}
+          />
           <label style={{ display: "flex", alignItems: "center", gap: 7, marginLeft: "auto", fontSize: 13, fontWeight: 600, color: "var(--body)", cursor: "pointer" }}>
             <input type="checkbox" checked={onlyUncat} onChange={(e) => setOnlyUncat(e.target.checked)} style={{ accentColor: "var(--blue)", width: 16, height: 16 }} />
             Alleen niet ingedeeld
