@@ -20,7 +20,14 @@ function apply(theme: Theme) {
   const root = document.documentElement;
   if (theme === "dark") root.dataset.theme = "dark";
   else delete root.dataset.theme;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLOR[theme]);
+  // Het meta-element volledig vervangen (i.p.v. alleen content aanpassen) port Chrome
+  // in een standalone PWA om de statusbalk-kleur opnieuw te lezen bij een thema-wissel;
+  // in een gewone browsertab werkt het sowieso live.
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
+  const meta = document.createElement("meta");
+  meta.name = "theme-color";
+  meta.content = THEME_COLOR[theme];
+  document.head.appendChild(meta);
 }
 
 /* Beheert de licht/donker-voorkeur: onthoudt in localStorage en zet data-theme op <html>.
