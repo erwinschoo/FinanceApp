@@ -80,7 +80,6 @@ function CategoriesTab() {
                 onSave={async (d) => { await updateCategoryGroup(g.id, d); setEditGroupId(null); }} />
             ) : (
               <div className="cat-group-h">
-                <span style={{ width: 12, height: 12, borderRadius: 4, background: g.color, flex: "none" }}></span>
                 <div style={{ fontWeight: 800, color: "var(--ink)", fontSize: 14.5 }}>{g.name}</div>
                 <span style={{ fontSize: 12, color: "var(--faint)" }}>{members.length}</span>
                 <div style={{ marginLeft: "auto", display: "flex", gap: 2 }}>
@@ -201,7 +200,7 @@ function CatEditor({ initial, groups, defaultGroupId, onSave, onCancel }: {
         <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Groep</label>
         <div style={{ marginTop: 6 }}>
           <Dropdown fullWidth ariaLabel="Groep" value={groupId} onChange={setGroupId}
-            options={groups.map((g) => ({ value: g.id, label: g.name, color: g.color }))} />
+            options={groups.map((g) => ({ value: g.id, label: g.name }))} />
         </div>
       </div>
       <div>
@@ -217,10 +216,9 @@ function CatEditor({ initial, groups, defaultGroupId, onSave, onCancel }: {
 }
 
 function GroupEditor({ group, onSave, onCancel }: {
-  group: CategoryGroupRow; onSave: (d: { name: string; color: string }) => void; onCancel: () => void;
+  group: CategoryGroupRow; onSave: (d: { name: string }) => void; onCancel: () => void;
 }) {
   const [name, setName] = useState(group.name);
-  const [color, setColor] = useState(group.color);
   return (
     <div className="editor-grid" style={{ background: "var(--subtle)", borderRadius: 12, padding: 16, margin: "4px 0 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
       <div>
@@ -228,13 +226,9 @@ function GroupEditor({ group, onSave, onCancel }: {
         <input value={name} onChange={(e) => setName(e.target.value)} autoFocus
           style={{ display: "block", width: "100%", marginTop: 6, border: "1px solid var(--line)", borderRadius: 10, padding: "9px 12px", fontSize: 14, outline: "none" }} />
       </div>
-      <div>
-        <label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Kleur</label>
-        <ColorPicker color={color} onChange={setColor} />
-      </div>
       <div style={{ gridColumn: "1 / -1", display: "flex", gap: 10, justifyContent: "flex-end" }}>
         <button className="btn" onClick={onCancel}>Annuleren</button>
-        <button className="btn btn-primary" onClick={() => onSave({ name, color })}><Ic name="check" size={16} /> Opslaan</button>
+        <button className="btn btn-primary" onClick={() => onSave({ name })}><Ic name="check" size={16} /> Opslaan</button>
       </div>
     </div>
   );

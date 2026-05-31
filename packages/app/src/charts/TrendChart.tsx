@@ -46,9 +46,10 @@ export function TrendChart({ series, labels, height = 260, format = (v) => eur(v
     linePath(data) + ` L${x(n - 1).toFixed(1)},${y(0).toFixed(1)} L${x(0).toFixed(1)},${y(0).toFixed(1)} Z`;
 
   function onMove(e: React.MouseEvent) {
+    // De overlay-rect begint al op x=pad.l, dus mx is relatief aan de plotzone zelf.
     const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
     const mx = e.clientX - rect.left;
-    let idx = Math.round(((mx - pad.l) / iw) * (n - 1));
+    let idx = Math.round((mx / iw) * (n - 1));
     idx = Math.max(0, Math.min(n - 1, idx));
     setHover(idx);
   }

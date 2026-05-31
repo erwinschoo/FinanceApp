@@ -276,10 +276,13 @@ input { font-family:inherit; }
 .bud-fig { margin-left:auto; font-size:13px; color:var(--muted); font-weight:600; }
 .bud-fig b { color:var(--ink); }
 
-/* range slider — calm */
-input[type=range].rng { -webkit-appearance:none; appearance:none; width:100%; height:4px; border-radius:99px; background:var(--line); outline:none; margin:0; }
-input[type=range].rng::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%; background:#fff; border:2px solid var(--blue); box-shadow:0 1px 4px rgba(16,24,32,.18); cursor:grab; }
+/* range slider — calm. Het input-element is 20px hoog (grijpbare thumb), de track
+   blijft visueel 4px dun via de track-pseudo-elementen. */
+input[type=range].rng { -webkit-appearance:none; appearance:none; width:100%; height:20px; background:transparent; outline:none; margin:0; cursor:pointer; }
+input[type=range].rng::-webkit-slider-runnable-track { height:4px; border-radius:99px; background:var(--line); }
+input[type=range].rng::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; margin-top:-7px; width:18px; height:18px; border-radius:50%; background:#fff; border:2px solid var(--blue); box-shadow:0 1px 4px rgba(16,24,32,.18); cursor:grab; }
 input[type=range].rng::-webkit-slider-thumb:active { cursor:grabbing; }
+input[type=range].rng::-moz-range-track { height:4px; border-radius:99px; background:var(--line); }
 input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:#fff; border:2px solid var(--blue); cursor:grab; }
 
 /* segmented control */
