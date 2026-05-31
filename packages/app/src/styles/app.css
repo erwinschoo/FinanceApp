@@ -53,7 +53,7 @@
 
   /* elevated/overlay surfaces (themable) */
   --elevated:    #FFFFFF;            /* popovers, menus, tooltips */
-  --topbar-bg:   rgba(255,255,255,.86);
+  --topbar-bg:   #FEFBF6;
   --tip-bg:      #101820;            /* chart tooltip — donker in beide thema's */
   --tip-fg:      #FFFFFF;
   --tip-muted:   #B6BCC4;
@@ -97,7 +97,7 @@
   --over-soft:  rgba(215,105,92,.16);
 
   --elevated:   #333333;
-  --topbar-bg:  rgba(31,31,31,.86);
+  --topbar-bg:  #1F1F1F;
   --tip-bg:     #0F0F0F;
   --tip-fg:     #F3F3F3;
   --tip-muted:  #8A9099;
@@ -180,7 +180,7 @@ input { font-family:inherit; }
 
 /* main */
 .main { display:flex; flex-direction:column; min-width:0; overflow:hidden; }
-.topbar { display:flex; align-items:center; gap:16px; padding:18px 32px; background:var(--topbar-bg); backdrop-filter:blur(8px);
+.topbar { display:flex; align-items:center; gap:16px; padding:18px 32px; background:var(--topbar-bg);
   border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20; }
 .topbar h1 { font-size:23px; font-weight:800; color:var(--ink); margin:0; letter-spacing:-.02em; }
 .topbar .sub { font-size:13px; color:var(--muted); margin-top:1px; }
@@ -375,10 +375,7 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
     animation:fadeIn .16s var(--ease) both; }
 
   .main { overflow:visible; }
-  /* backdrop-filter op de topbar zou een containing block maken voor de
-     fixed maandbalk (die in de topbar staat) → zet 'm uit op mobiel zodat
-     .month-slot t.o.v. de viewport onderaan pint. */
-  .topbar { padding:12px 14px; gap:12px; backdrop-filter:none; }
+  .topbar { padding:12px 14px; gap:12px; }
   .topbar-burger { display:inline-flex; }
   .topbar-title { cursor:pointer; }
   .topbar h1 { font-size:19px; }
@@ -391,7 +388,7 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   /* maandselector onderaan vastgezet (opent opwaarts) */
   .month-slot { display:flex; justify-content:center; position:fixed; left:0; right:0; bottom:0; z-index:45;
     padding:10px 14px calc(10px + env(safe-area-inset-bottom));
-    background:var(--topbar-bg); backdrop-filter:blur(8px); border-top:1px solid var(--line); }
+    background:var(--topbar-bg); border-top:1px solid var(--line); }
   .month-slot .cat-select { width:100%; max-width:420px; }
   .month-slot .dd-trigger { width:100%; justify-content:center; }
   .month-slot .cat-menu { top:auto; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); }

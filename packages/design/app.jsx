@@ -1,4 +1,5 @@
 /* bokkiep — root: state, context provider, shell */
+
 function App() {
   const D = window.FA_DATA;
   const [view, setView] = React.useState("dashboard");

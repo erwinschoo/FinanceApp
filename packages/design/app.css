@@ -110,8 +110,9 @@ input { font-family:inherit; }
 
 /* main */
 .main { display:flex; flex-direction:column; min-width:0; overflow:hidden; }
-.topbar { display:flex; align-items:center; gap:16px; padding:18px 32px; background:rgba(255,255,255,.86); backdrop-filter:blur(8px);
-  border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20; }
+.topbar { display:flex; align-items:center; gap:16px; padding:18px 32px;
+  background:#FEFBF6;
+  border-bottom:1px solid #EFE9DF; position:sticky; top:0; z-index:20; }
 .topbar h1 { font-size:23px; font-weight:800; color:var(--ink); margin:0; letter-spacing:-.02em; }
 .topbar .sub { font-size:13px; color:var(--muted); margin-top:1px; }
 .spacer { flex:1; }
