@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ComponentType } from "react";
 import { useApp, type ViewId } from "./state/AppContext";
 import { runStartupSync } from "./sync/autoSync";
 import { Sidebar } from "./components/Sidebar";
@@ -53,6 +53,10 @@ export default function App() {
   const { ready, view, setView } = useApp();
   const [confirm, setConfirm] = useState<null | "transacties" | "tegenpartijen">(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const contentRef = useRef<HTMLElement>(null);
+
+  // Bij navigatie naar een ander scherm: altijd bovenaan beginnen.
+  useEffect(() => { contentRef.current?.scrollTo(0, 0); }, [view]);
 
   // Bij app-start: stil de nieuwste cloud-versie ophalen (alleen indien ingelogd).
   useEffect(() => { void runStartupSync(); }, []);
@@ -101,7 +105,7 @@ export default function App() {
             </button>
           )}
         </header>
-        <main className="content scroll">
+        <main className="content scroll" ref={contentRef}>
           <Suspense fallback={<div className="empty">Laden…</div>}>
             <ViewComp />
           </Suspense>
