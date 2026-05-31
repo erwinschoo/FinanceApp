@@ -59,7 +59,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!viewFromHash()) window.history.replaceState(null, "", "#dashboard");
+    // Zet alleen een default-hash als er NOG GEEN hash is. Een niet-lege hash die
+    // geen bekende view is laten we met rust — met name de MSAL OAuth-respons
+    // ("#code=...&state=...") die in het login-popupvenster op de redirectUri
+    // (de app-root) belandt. Zou de router die overschrijven, dan faalt de
+    // OneDrive-login met "hash_does_not_contain_known_properties".
+    if (!window.location.hash) window.history.replaceState(null, "", "#dashboard");
     const onPop = () => setViewState(viewFromHash() ?? "dashboard");
     window.addEventListener("popstate", onPop);
     window.addEventListener("hashchange", onPop);
