@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ComponentType } from "react";
 import { useApp, type ViewId } from "./state/AppContext";
 import { runStartupSync } from "./sync/autoSync";
+import { initOpenWithHandlers } from "./import/incoming";
 import { Sidebar } from "./components/Sidebar";
 import { MonthPicker } from "./components/MonthPicker";
 import { Ic } from "./components/Ic";
@@ -61,6 +62,10 @@ export default function App() {
 
   // Bij app-start: stil de nieuwste cloud-versie ophalen (alleen indien ingelogd).
   useEffect(() => { void runStartupSync(); }, []);
+
+  // "Openen met bokkiep" (Android deel-knop / desktop File Handling): zodra een CSV/Excel binnenkomt,
+  // naar de import-view en het bestand aan de wizard aanbieden. setView is een stabiele useCallback.
+  useEffect(() => { initOpenWithHandlers(() => setView("import")); }, [setView]);
 
   // Mobiel: drawer sluiten met Escape.
   useEffect(() => {

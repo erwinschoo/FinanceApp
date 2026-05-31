@@ -32,6 +32,12 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // injectManifest i.p.v. generateSW: we beheren de service worker zelf (src/pwa/sw.ts) zodat
+      // we de Web Share Target-POST (gedeeld CSV/Excel-bestand) kunnen opvangen. Offline-precache,
+      // SPA-fallback en autoUpdate worden in de SW zelf gereproduceerd.
+      strategies: "injectManifest",
+      srcDir: "src/pwa",
+      filename: "sw.ts",
       registerType: "autoUpdate",
       includeAssets: ["icon.svg", "apple-touch-icon-180x180.png"],
       manifest: {
@@ -57,11 +63,55 @@ export default defineConfig({
           { src: "maskable-icon-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
           { src: "icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
         ],
+        // CSV/Excel openen mét bokkiep → direct de import-wizard.
+        // Android: de deel-knop (Web Share Target). De service worker (src/pwa/sw.ts) vangt de POST op,
+        // stasht het bestand en stuurt door naar #import. De accept-lijst is bewust breed: Android
+        // rapporteert het MIME-type van een CSV inconsistent — de SW vertrouwt op de bestandsnaam,
+        // niet op het MIME-type, dus een te brede lijst is veilig.
+        share_target: {
+          action: "share-target",
+          method: "POST",
+          enctype: "multipart/form-data",
+          params: {
+            files: [
+              {
+                name: "sharedFile", // MOET gelijk zijn aan form.get("sharedFile") in src/pwa/sw.ts
+                accept: [
+                  "text/csv",
+                  "text/comma-separated-values",
+                  "application/csv",
+                  "text/plain",
+                  "application/vnd.ms-excel",
+                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                  "application/octet-stream",
+                  ".csv",
+                  ".xls",
+                  ".xlsx",
+                ],
+              },
+            ],
+          },
+        },
+        // Desktop (Edge/Chrome): "Openen met → bokkiep" (File Handling API). De action is base-afgeleid
+        // (/ of /bokkiep/) zodat hij binnen de manifest-scope valt op GitHub Pages.
+        file_handlers: [
+          {
+            action: `${base}#import`,
+            accept: {
+              "text/csv": [".csv"],
+              "application/vnd.ms-excel": [".xls", ".csv"],
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+            },
+          },
+        ],
       },
-      workbox: {
+      injectManifest: {
+        // Zelfde set als de oude workbox-config → offline-pariteit.
         globPatterns: ["**/*.{js,css,html,ttf,svg,png,woff2}"],
-        cleanupOutdatedCaches: true,
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // een xlsx-chunk kan groot zijn
       },
+      // SW ook in dev actief, zodat de share-target/deeplink lokaal te testen is.
+      devOptions: { enabled: true, type: "module", navigateFallback: "index.html" },
     }),
   ],
 });

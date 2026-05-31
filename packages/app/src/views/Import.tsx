@@ -1,9 +1,10 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useApp } from "../state/AppContext";
 import { db } from "../db/schema";
 import { eurSign, fmtDate } from "../lib/format";
 import { parseFile } from "../import/sheetParser";
+import { onIncomingFile } from "../import/incoming";
 import { commitImport, assignPayeeCategory } from "../db/repo";
 import { payeeKey } from "../helpers/payees";
 import { CatTag } from "../components/CatTag";
@@ -57,6 +58,13 @@ export function Import() {
       setStage("idle");
     }
   }
+
+  // Geopend via "openen met"/de deel-knop (zie App.tsx + import/incoming.ts): zodra een bestand wordt
+  // aangeboden, meteen inlezen en de preview tonen. Abonnement wordt bij unmount opgeruimd.
+  useEffect(() => {
+    return onIncomingFile((file) => void handleFile(file));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
