@@ -1,6 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useApp, type ViewId } from "../state/AppContext";
 import { useTheme } from "../state/useTheme";
+import { useSidebarCollapsed } from "../state/useSidebarCollapsed";
 import { useInstallState } from "../pwa/install";
 import { useAutoSyncStatus } from "../sync/autoSync";
 import { db } from "../db/schema";
@@ -41,6 +42,7 @@ function syncedLabel(iso: string): string {
 export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNavigate?: () => void } = {}) {
   const { view, setView, uncategorizedCount } = useApp();
   const { theme, toggle } = useTheme();
+  const { collapsed, toggle: toggleCollapsed } = useSidebarCollapsed();
   const { installed } = useInstallState();
 
   // "Download app" alleen tonen zolang de app niet geïnstalleerd is.
@@ -73,7 +75,7 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
   const item = (it: NavItem) => (
     <button key={it.id} className={"nav-item" + (view === it.id ? " active" : "")} onClick={() => { setView(it.id); onNavigate?.(); }}>
       <Ic name={it.icon} />
-      <span>{it.label}</span>
+      <span className="nav-label">{it.label}</span>
       {it.id === "transacties" && uncategorizedCount ? <span className="nav-badge">{uncategorizedCount}</span> : null}
       <span className="nav-tip">{it.tip}</span>
     </button>
@@ -84,6 +86,11 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
       <div className="sb-brand">
         <img className="goat" src={goatLogo} width={34} height={34} alt="" aria-hidden="true" style={{ display: "block", objectFit: "contain" }} />
         <span className="wm">bokkiep</span>
+        <button className="sb-collapse" onClick={toggleCollapsed}
+          title={collapsed ? "Menu uitklappen" : "Menu inklappen"}
+          aria-label={collapsed ? "Menu uitklappen" : "Menu inklappen"} aria-expanded={!collapsed}>
+          <Ic name={collapsed ? "chevronsRight" : "chevronsLeft"} />
+        </button>
       </div>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{MAIN.map(item)}</nav>
