@@ -42,7 +42,9 @@ export default defineConfig({
         // theme_color spiegelt STATUS_BAR.light uit src/theme/chrome.ts. Een manifest kent maar
         // één waarde (gebruikt bij PWA-opstart); dark wordt runtime gezet door useTheme.ts.
         theme_color: "#5E81B5",
-        background_color: "#1F1F1F",
+        // Zwarte PWA-achtergrond: kleurt de naad onder de system-app-bar (en de splash) zwart →
+        // zwarte rand onder de blauwe balk in light, onzichtbaar in dark.
+        background_color: "#000000",
         display: "standalone",
         start_url: ".",
         scope: ".",

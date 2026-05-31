@@ -54,7 +54,7 @@
   /* elevated/overlay surfaces (themable) */
   --elevated:    #FFFFFF;            /* popovers, menus, tooltips */
   --topbar-bg:   #FEFBF6;
-  --topbar-line: #101820;            /* zwarte haarlijn onder de topbalk (light) */
+  --topbar-line: #EFE9DF;            /* warme onderrand onder de topbalk */
   --tip-bg:      #101820;            /* chart tooltip — donker in beide thema's */
   --tip-fg:      #FFFFFF;
   --tip-muted:   #B6BCC4;
@@ -99,7 +99,7 @@
 
   --elevated:   #333333;
   --topbar-bg:  #1F1F1F;
-  --topbar-line:transparent;         /* naadloos in dark (tonale rand #1F1F1F vs #000 blijft) */
+  --topbar-line:var(--line);
   --tip-bg:     #0F0F0F;
   --tip-fg:     #F3F3F3;
   --tip-muted:  #8A9099;
@@ -122,9 +122,10 @@
 
 * { box-sizing:border-box; }
 html, body { margin:0; padding:0; }
-/* Wortel-achtergrond = topbalk/date-picker-kleur. Zo toont elke edge-to-edge-zone
-   (achter een transparante systeembalk op Android 15 / Chrome 135+) de thema-kleur. */
-html { background:var(--topbar-bg); }
+/* Wortel-achtergrond zwart in beide thema's: dit is de "PWA background" die de edge-to-edge-naad
+   onder de system-app-bar (statusbalk) inkleurt. Light = zwarte rand onder de blauwe balk;
+   dark = zwart-op-zwart (onzichtbaar). De zichtbare in-app topbalk (.topbar) blijft --topbar-bg. */
+html { background:#000; }
 body {
   font-family:"Mulish", system-ui, sans-serif;
   font-weight:400;
