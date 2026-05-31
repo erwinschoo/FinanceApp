@@ -111,10 +111,14 @@
   --shadow-pop:0 8px 28px rgba(0,0,0,.45);
 }
 
-/* dark mode: scherm-/pagina-achtergrond volledig zwart (kaarten en zijbalk blijven
-   grijze panelen voor contrast; subtiele oppervlakken/hovers blijven --subtle). */
+/* dark mode: scherm-/pagina-achtergrond volledig zwart over de hele scroll-hoogte
+   (alle layout-containers, niet alleen de eerste viewport). Kaarten en zijbalk blijven
+   grijze panelen voor contrast; subtiele oppervlakken/hovers blijven --subtle. */
+:root[data-theme="dark"] html,
 :root[data-theme="dark"] body,
-:root[data-theme="dark"] .app { background:#000; }
+:root[data-theme="dark"] .app,
+:root[data-theme="dark"] .main,
+:root[data-theme="dark"] .content { background:#000; }
 
 * { box-sizing:border-box; }
 html, body { margin:0; padding:0; }
