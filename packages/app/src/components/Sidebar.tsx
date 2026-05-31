@@ -1,7 +1,9 @@
 import { useLiveQuery } from "dexie-react-hooks";
+import { useState } from "react";
 import { useApp, type ViewId } from "../state/AppContext";
 import { useTheme } from "../state/useTheme";
 import { useSidebarCollapsed } from "../state/useSidebarCollapsed";
+import { useMediaQuery } from "../charts/useMediaQuery";
 import { useInstallState } from "../pwa/install";
 import { useAutoSyncStatus } from "../sync/autoSync";
 import { db } from "../db/schema";
@@ -43,6 +45,9 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
   const { view, setView, uncategorizedCount } = useApp();
   const { theme, toggle } = useTheme();
   const { collapsed, toggle: toggleCollapsed } = useSidebarCollapsed();
+  // Mobiel: Data en Overig zijn inklapbaar (accordion — max. één tegelijk open).
+  const isMobile = useMediaQuery("(max-width: 860px)");
+  const [openSection, setOpenSection] = useState<"data" | "overig" | null>(null);
   const { installed } = useInstallState();
 
   // "Download app" alleen tonen zolang de app niet geïnstalleerd is.
@@ -81,6 +86,23 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
     </button>
   );
 
+  // Een menusectie met kopje. Op desktop altijd open; op mobiel inklapbaar (accordion).
+  const section = (key: "data" | "overig", label: string, items: NavItem[]) => {
+    const navEl = <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{items.map(item)}</nav>;
+    if (!isMobile) return <>{<div className="sb-sec">{label}</div>}{navEl}</>;
+    const isOpen = openSection === key;
+    return (
+      <>
+        <button className={"sb-sec sb-sec-btn" + (isOpen ? " open" : "")} aria-expanded={isOpen}
+          onClick={() => setOpenSection((prev) => (prev === key ? null : key))}>
+          <span>{label}</span>
+          <Ic name="chevronDown" size={16} />
+        </button>
+        {isOpen && navEl}
+      </>
+    );
+  };
+
   return (
     <aside className={"sb" + (open ? " open" : "")}>
       <div className="sb-brand">
@@ -95,11 +117,8 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{MAIN.map(item)}</nav>
 
-      <div className="sb-sec">Data</div>
-      <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{DATA.map(item)}</nav>
-
-      <div className="sb-sec">Overig</div>
-      <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{overig.map(item)}</nav>
+      {section("data", "Data", DATA)}
+      {section("overig", "Overig", overig)}
 
       <div className="sb-actions">
         <button

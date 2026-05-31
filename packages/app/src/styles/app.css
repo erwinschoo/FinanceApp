@@ -422,6 +422,12 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   .sb.open { transform:none; }
   /* meer ademruimte tussen het laatste menu-item en de actie-knoppen in de drawer */
   .sb-actions { padding-top:28px; }
+  /* Data/Overig als inklapbare accordion-koppen (alleen mobiel) */
+  .sb-sec-btn { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;
+    border:0; background:transparent; text-align:left; border-radius:8px; }
+  .sb-sec-btn:hover { background:var(--subtle); }
+  .sb-sec-btn svg { color:var(--faint); flex:none; transform:rotate(-90deg); transition:transform .18s var(--ease); }
+  .sb-sec-btn.open svg { transform:rotate(0); }
   .drawer-scrim { display:block; position:fixed; inset:0; background:var(--overlay); z-index:55;
     animation:fadeIn .16s var(--ease) both; }
 
