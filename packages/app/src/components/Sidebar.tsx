@@ -124,9 +124,9 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
         <img className="goat" src={goatLogo} width={34} height={34} alt="" aria-hidden="true" style={{ display: "block", objectFit: "contain" }} />
         <span className="wm">bokkiep</span>
         <button className="sb-collapse" onClick={toggleCollapsed}
-          title={collapsed ? "Menu uitklappen" : "Menu inklappen"}
           aria-label={collapsed ? "Menu uitklappen" : "Menu inklappen"} aria-expanded={!collapsed}>
           <Ic name={collapsed ? "chevronsRight" : "chevronsLeft"} />
+          <span className="nav-tip">{collapsed ? "Menu uitklappen" : "Menu inklappen"}</span>
         </button>
       </div>
 
