@@ -19,7 +19,7 @@ export default defineConfig({
         description: "Importeer banktransacties, categoriseer, budgetteer en volg je spaardoelen.",
         lang: "nl",
         theme_color: "#FEFBF6",
-        background_color: "#F7F8FA",
+        background_color: "#1F1F1F",
         display: "standalone",
         start_url: ".",
         scope: ".",
