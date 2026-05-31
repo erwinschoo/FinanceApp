@@ -113,6 +113,9 @@
 
 * { box-sizing:border-box; }
 html, body { margin:0; padding:0; }
+/* Wortel-achtergrond = topbalk/date-picker-kleur. Zo toont elke edge-to-edge-zone
+   (achter een transparante systeembalk op Android 15 / Chrome 135+) de thema-kleur. */
+html { background:var(--topbar-bg); }
 body {
   font-family:"Mulish", system-ui, sans-serif;
   font-weight:400;
