@@ -16,14 +16,14 @@ const SCREENS: [string, string, string][] = [
 ];
 
 const FAQ: [string, string][] = [
-  ["Wat is bokkiep precies?", "bokkiep is een persoonlijk financieel overzicht: je importeert je banktransacties, categoriseert ze, stelt budgetten in en volgt spaardoelen. De app is volledig gratis en bevat geen advertenties of tracking."],
-  ["Waar worden mijn gegevens opgeslagen?", "Local-first: al je gegevens blijven op je eigen apparaat, in de opslag van je browser. Er gaat niets naar een server, tenzij je zelf synchroniseren met OneDrive inschakelt."],
-  ["Is synchroniseren veilig?", "Ja. Synchroniseren gebeurt uitsluitend met jóuw eigen OneDrive-account. Je gegevens worden niet door anderen ingezien; bokkiep heeft geen eigen server die je data bewaart."],
-  ["Waar staat mijn data op OneDrive?", "bokkiep bewaart al je gegevens in één bestand in de speciale app-map van je eigen OneDrive. Je vindt het in OneDrive onder \"Apps\" (of \"Toepassingen\") › \"bokkiep\" › data.json. Alleen bokkiep heeft toegang tot deze map; andere apps en personen zien de inhoud niet. Wil je een back-up of overstappen naar een ander apparaat? Dan kun je dit bestand gewoon zelf kopiëren of bewaren."],
   ["Hoe importeer ik mijn banktransacties?", "Ga naar Importeren en kies het Excel-bestand dat je via je bank exporteert. bokkiep leest de transacties in en deelt ze waar mogelijk automatisch in op basis van je regels en tegenpartijen."],
+  ["Hoe installeer ik bokkiep als app?", "Open de pagina \"Download app\" in het menu. Daar vind je een installatieknop of instructies per apparaat. Eenmaal geïnstalleerd open je bokkiep als een gewone app, zonder browserbalk."],
+  ["Is synchroniseren veilig?", "Ja. Synchroniseren gebeurt uitsluitend met jóuw eigen OneDrive-account. Je gegevens worden niet door anderen ingezien; bokkiep heeft geen eigen server die je data bewaart."],
   ["Kan ik categorieën aanpassen?", "Zeker. Via Beheer pas je categorieën, groepen en categoriseer-regels aan. Wijzigingen werken door op je hele overzicht."],
   ["Kost het geld?", "Nee, bokkiep is en blijft gratis. Vind je de app handig? Dan kun je de ontwikkeling vrijwillig steunen via de pagina \"Steun bokkiep\"."],
-  ["Hoe installeer ik bokkiep als app?", "Open de pagina \"Download app\" in het menu. Daar vind je een installatieknop of instructies per apparaat. Eenmaal geïnstalleerd open je bokkiep als een gewone app, zonder browserbalk."],
+  ["Waar staat mijn data op OneDrive?", "bokkiep bewaart al je gegevens in één bestand in de speciale app-map van je eigen OneDrive. Je vindt het in OneDrive onder \"Apps\" (of \"Toepassingen\") › \"bokkiep\" › data.json. Alleen bokkiep heeft toegang tot deze map; andere apps en personen zien de inhoud niet. Wil je een back-up of overstappen naar een ander apparaat? Dan kun je dit bestand gewoon zelf kopiëren of bewaren."],
+  ["Waar worden mijn gegevens opgeslagen?", "Local-first: al je gegevens blijven op je eigen apparaat, in de opslag van je browser. Er gaat niets naar een server, tenzij je zelf synchroniseren met OneDrive inschakelt."],
+  ["Wat is bokkiep precies?", "bokkiep is een persoonlijk financieel overzicht: je importeert je banktransacties, categoriseert ze, stelt budgetten in en volgt spaardoelen. De app is volledig gratis en bevat geen advertenties of tracking."],
 ];
 
 function FaqItem({ q, a }: { q: string; a: string }) {
