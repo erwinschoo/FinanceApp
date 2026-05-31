@@ -97,7 +97,11 @@ export type SyncOutcome =
   | { action: "conflict"; remoteModified: string };
 
 /* Automatische sync: vergelijk remote wijzigingsdatum met onze laatste sync.
- * - geen remote bestand → push
+ * - geen remote bestand → push (eerste upload ooit)
+ * - geen lokale sync-baseline (nog nooit verzoend) + cloud heeft al data:
+ *     · lokaal leeg → pull (niets te verliezen, adopteer de cloud)
+ *     · lokaal gevuld → conflict (laat de gebruiker bewust kiezen) — voorkomt dat
+ *       een vers/leeg toestel óf een handmatige import per ongeluk wordt gewist
  * - remote nieuwer dan onze laatste sync (ander apparaat) → pull
  * - anders → push */
 export async function syncNow(): Promise<SyncOutcome> {
@@ -109,7 +113,15 @@ export async function syncNow(): Promise<SyncOutcome> {
     await pushToOneDrive();
     return { action: "pushed" };
   }
-  if (local && remote.eTag !== local.remoteEtag && remote.lastModified > local.lastSyncedAt) {
+  if (!local) {
+    const localEmpty = (await db.transactions.count()) === 0;
+    if (localEmpty) {
+      await pullFromOneDrive();
+      return { action: "pulled" };
+    }
+    return { action: "conflict", remoteModified: remote.lastModified };
+  }
+  if (remote.eTag !== local.remoteEtag && remote.lastModified > local.lastSyncedAt) {
     await pullFromOneDrive();
     return { action: "pulled" };
   }

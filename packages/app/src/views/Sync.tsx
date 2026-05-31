@@ -80,6 +80,27 @@ export function Sync() {
     void run(() => importFromFile(file), "Back-up teruggezet.");
   }
 
+  // "Sync nu" verwerkt expliciet de drie uitkomsten. Bij een conflict (dit toestel
+  // is nog nooit verzoend én er staat al data in de cloud) doet de sync bewust niets
+  // en vragen we de gebruiker zelf te kiezen — zo wordt nooit stil data overschreven.
+  async function syncNowClick() {
+    setBusy(true); setMsg(null);
+    try {
+      const r = await syncNow();
+      const meta = await getSyncMeta();
+      setLastSynced(meta?.lastSyncedAt ?? null);
+      if (r.action === "conflict") {
+        setMsg({ kind: "err", text: "Dit toestel is nog niet verzoend met OneDrive en beide kanten hebben data. Kies bewust: Uploaden (dit toestel → cloud) of Ophalen (cloud → dit toestel)." });
+      } else {
+        setMsg({ kind: "ok", text: r.action === "pulled" ? "Nieuwere versie opgehaald van OneDrive." : "Lokale data geüpload naar OneDrive." });
+      }
+    } catch (e) {
+      setMsg({ kind: "err", text: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="content-inner fade-in" style={{ maxWidth: 760 }}>
       {msg && (
@@ -126,7 +147,7 @@ export function Sync() {
                 <Button variant="ghost" style={{ marginLeft: "auto" }} disabled={busy} onClick={() => run(async () => { await signOut(); setEmail(null); await setAccountMeta(null); }, "Uitgelogd.")}>Uitloggen</Button>
               </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <Button variant="primary" icon="cloud" disabled={busy} onClick={() => run(async () => { const r = await syncNow(); setMsg({ kind: "ok", text: r.action === "pulled" ? "Nieuwere versie opgehaald van OneDrive." : "Lokale data geüpload naar OneDrive." }); }, "Gesynchroniseerd.")}>
+                <Button variant="primary" icon="cloud" disabled={busy} onClick={syncNowClick}>
                   Sync nu
                 </Button>
                 <Button icon="upload" disabled={busy} onClick={() => run(pushToOneDrive, "Geüpload naar OneDrive.")}>Uploaden</Button>

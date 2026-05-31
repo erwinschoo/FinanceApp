@@ -59,7 +59,12 @@ async function flush(): Promise<void> {
   dirty = false;
   setStatus("syncing");
   try {
-    const { pushToOneDrive } = await import("./syncEngine");
+    const { pushToOneDrive, getSyncMeta } = await import("./syncEngine");
+    // Veiligheid: alleen automatisch pushen als dit toestel al een sync-baseline
+    // heeft. Zonder baseline (nog nooit verzoend) zou een push de cloud-backup
+    // kunnen overschrijven met mogelijk lege/verse data. Sla dan over; zodra de
+    // gebruiker bewust heeft ge-upload of opgehaald, pusht een volgende mutatie.
+    if (!(await getSyncMeta())) { setStatus("idle"); return; }
     await pushToOneDrive();
     setStatus("idle");
   } catch {
