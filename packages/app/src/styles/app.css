@@ -315,7 +315,7 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 .cat-group-h { display:flex; align-items:center; gap:11px; padding:8px 0 6px; }
 .cat-empty-drop { font-size:12.5px; color:var(--faint); font-style:italic; padding:14px 0; text-align:center; border:1px dashed var(--line); border-radius:10px; margin:4px 0; }
 .cat-row { display:flex; align-items:center; gap:11px; padding:12px 2px; cursor:default; border-radius:8px; background:var(--surface); }
-.cat-row.dragging { opacity:.45; }
+.cat-row.dragging { outline:2px solid var(--orange); outline-offset:-2px; background:var(--orange-tint); }
 .cat-main { display:flex; align-items:center; gap:11px; min-width:0; }
 .cat-actions { display:flex; align-items:center; gap:2px; }
 .cat-grip { display:inline-flex; align-items:center; justify-content:center; color:var(--faint); cursor:grab;
