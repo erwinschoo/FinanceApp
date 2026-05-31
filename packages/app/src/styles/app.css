@@ -516,6 +516,7 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 
   /* kaart-headers met meerdere knoppen mogen wrappen */
   .card-h { flex-wrap:wrap; row-gap:8px; }
+  .card-h .hint { margin-left:0; width:100%; }   /* gewrapte hint links onder de titel i.p.v. rechts */
 
   /* Beheer: categorie-rij in 2 regels — grip links (over beide regels), regel 1 naam+type,
      regel 2 "n transacties" links en de knoppen rechts. */
