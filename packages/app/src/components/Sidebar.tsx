@@ -19,7 +19,7 @@ const MAIN: NavItem[] = [
 const DATA: NavItem[] = [
   { id: "import", label: "Importeren", icon: "upload", tip: "Laad je banktransacties in via Excel" },
   { id: "sync", label: "Synchroniseren", icon: "cloud", tip: "Back-up en sync via je eigen OneDrive" },
-  { id: "beheer", label: "Beheer", icon: "sliders", tip: "Categorieën en categoriseer-regels onderhouden" },
+  { id: "beheer", label: "Beheer", icon: "settings", tip: "Categorieën en categoriseer-regels onderhouden" },
 ];
 const OVERIG: NavItem[] = [
   { id: "steun", label: "Steun bokkiep", icon: "heart", tip: "Steun de ontwikkeling van bokkiep" },
