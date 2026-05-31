@@ -54,7 +54,7 @@
   /* elevated/overlay surfaces (themable) */
   --elevated:    #FFFFFF;            /* popovers, menus, tooltips */
   --topbar-bg:   #FEFBF6;
-  --topbar-line: #EFE9DF;            /* warme onderrand onder de topbalk */
+  --topbar-line: #101820;            /* zwarte haarlijn onder de topbalk (light) */
   --tip-bg:      #101820;            /* chart tooltip — donker in beide thema's */
   --tip-fg:      #FFFFFF;
   --tip-muted:   #B6BCC4;
@@ -99,7 +99,7 @@
 
   --elevated:   #333333;
   --topbar-bg:  #1F1F1F;
-  --topbar-line:var(--line);
+  --topbar-line:transparent;         /* naadloos in dark (tonale rand #1F1F1F vs #000 blijft) */
   --tip-bg:     #0F0F0F;
   --tip-fg:     #F3F3F3;
   --tip-muted:  #8A9099;
@@ -181,6 +181,31 @@ input { font-family:inherit; }
 .nav-tip::after { content:""; position:absolute; right:100%; top:50%; transform:translateY(-50%);
   border:5px solid transparent; border-right-color:var(--elevated); margin-right:-1px; }
 .nav-item:hover .nav-tip { opacity:1; }
+
+/* ── Generieke tooltip (component <Tooltip>) — zelfde pretty-stijl als .nav-tip, maar maat-op-inhoud
+   en met vier plaatsingen. Verschijnt op hover/focus; op touch (≤860px) verborgen (zie media-query). */
+.tip-wrap { position:relative; display:inline-flex; }
+.tooltip { position:absolute; z-index:60; background:var(--elevated); color:var(--body); border:1px solid var(--line);
+  font-size:12px; font-weight:600; line-height:1.35; padding:6px 9px; border-radius:8px;
+  width:max-content; max-width:260px; white-space:nowrap; text-align:center; box-shadow:var(--shadow-pop);
+  opacity:0; pointer-events:none; transition:opacity .12s var(--ease); }
+.tip-wrap:hover > .tooltip, .tip-wrap:focus-within > .tooltip { opacity:1; }
+.tooltip--top    { bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); }
+.tooltip--bottom { top:calc(100% + 8px);   left:50%; transform:translateX(-50%); }
+.tooltip--right  { left:calc(100% + 8px);  top:50%;  transform:translateY(-50%); }
+.tooltip--left   { right:calc(100% + 8px); top:50%;  transform:translateY(-50%); }
+/* tweelaagse pijl (rand + vulling), per plaatsing */
+.tooltip::before, .tooltip::after { content:""; position:absolute; border:6px solid transparent; }
+.tooltip::after { border-width:5px; }
+.tooltip--top::before    { top:100%; left:50%; transform:translateX(-50%); border-top-color:var(--line); }
+.tooltip--top::after     { top:100%; left:50%; transform:translateX(-50%); border-top-color:var(--elevated); margin-top:-1px; }
+.tooltip--bottom::before { bottom:100%; left:50%; transform:translateX(-50%); border-bottom-color:var(--line); }
+.tooltip--bottom::after  { bottom:100%; left:50%; transform:translateX(-50%); border-bottom-color:var(--elevated); margin-bottom:-1px; }
+.tooltip--right::before  { right:100%; top:50%; transform:translateY(-50%); border-right-color:var(--line); }
+.tooltip--right::after   { right:100%; top:50%; transform:translateY(-50%); border-right-color:var(--elevated); margin-right:-1px; }
+.tooltip--left::before   { left:100%; top:50%; transform:translateY(-50%); border-left-color:var(--line); }
+.tooltip--left::after    { left:100%; top:50%; transform:translateY(-50%); border-left-color:var(--elevated); margin-left:-1px; }
+
 .nav-badge { margin-left:auto; font-size:11px; font-weight:700; background:var(--orange-soft); color:var(--orange); padding:1px 7px; border-radius:99px; }
 .sb-actions { margin-top:auto; display:flex; align-items:center; gap:8px; padding:0 4px 14px; }
 .sb-foot { padding-top:10px; border-top:1px solid var(--line-soft); }
@@ -211,6 +236,12 @@ input { font-family:inherit; }
 .content { flex:1; overflow-y:auto; padding:28px 32px 56px; }
 .content-inner { max-width:1240px; margin:0 auto; }
 
+/* Systeem-/navigatiebalk (Android) altijd zwart: vult enkel de onderste safe-area-inset.
+   Ligt boven de vaste maandbalk (z-index 45) en de drawer (60); op desktop is de inset 0
+   waardoor dit element 0px hoog en dus onzichtbaar is. */
+.safe-bottom { position:fixed; left:0; right:0; bottom:0; height:env(safe-area-inset-bottom);
+  background:#000; z-index:70; pointer-events:none; }
+
 /* generic button */
 .btn { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line); background:var(--surface); color:var(--ink);
   font-size:13.5px; font-weight:700; padding:9px 15px; border-radius:10px; transition:all .15s var(--ease); }
@@ -225,6 +256,9 @@ input { font-family:inherit; }
 .btn-danger:hover { background:#b34a3e; border-color:#b34a3e; }
 .btn-ghost { border-color:transparent; background:transparent; color:var(--muted); }
 .btn-ghost:hover { background:var(--subtle); color:var(--ink); }
+/* maat-/vorm-modifiers (via <Button size="sm" /> en iconOnly) — vervangen de losse inline padding */
+.btn-sm { padding:6px 11px; font-size:12.5px; }
+.btn-icon { padding:5px 9px; gap:0; }
 
 /* card */
 .card { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
@@ -458,7 +492,7 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   .topbar-burger { display:inline-flex; }
   .topbar-title { cursor:pointer; }
   .topbar h1 { font-size:19px; }
-  .nav-tip { display:none; }                 /* hover-tooltips niet bruikbaar op touch */
+  .nav-tip, .tooltip { display:none; }       /* hover-tooltips niet bruikbaar op touch */
 
   /* topbar-knoppen compact: alleen icoon */
   .topbar .btn .btn-label { display:none; }

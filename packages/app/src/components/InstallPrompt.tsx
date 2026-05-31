@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Ic } from "./Ic";
+import { Button } from "./Button";
 import goatLogo from "../assets/ibex-orange.png";
 import { useInstallState, promptInstall, snooze, snoozed } from "../pwa/install";
 
@@ -46,16 +47,16 @@ export function InstallPrompt() {
               <li>Kies <b>Zet op beginscherm</b>.</li>
               <li>Tik op <b>Voeg toe</b>.</li>
             </ol>
-            <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={later}>Begrepen</button>
+            <Button variant="primary" style={{ width: "100%", justifyContent: "center" }} onClick={later}>Begrepen</Button>
           </>
         ) : (
           <>
             <p>Gebruik bokkiep als een echte app — sneller te openen en zonder browserbalk.</p>
             <div style={{ display: "flex", gap: 10 }}>
-              <button className="btn" style={{ flex: 1, justifyContent: "center" }} onClick={later}>Niet nu</button>
-              <button className="btn btn-primary" style={{ flex: 1, justifyContent: "center" }} onClick={install}>
-                <Ic name="download" size={16} /> Installeren
-              </button>
+              <Button style={{ flex: 1, justifyContent: "center" }} onClick={later}>Niet nu</Button>
+              <Button variant="primary" style={{ flex: 1, justifyContent: "center" }} icon="download" onClick={install}>
+                Installeren
+              </Button>
             </div>
           </>
         )}

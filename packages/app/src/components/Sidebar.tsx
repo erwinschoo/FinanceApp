@@ -8,6 +8,7 @@ import { useInstallState } from "../pwa/install";
 import { useAutoSyncStatus } from "../sync/autoSync";
 import { db } from "../db/schema";
 import { Ic } from "./Ic";
+import { Tooltip } from "./Tooltip";
 import goatLogo from "../assets/ibex-orange.png";
 
 interface NavItem { id: ViewId; label: string; icon: string; tip: string }
@@ -136,14 +137,15 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
       {section("overig", "Overig", overig)}
 
       <div className="sb-actions">
-        <button
-          className="theme-toggle"
-          onClick={toggle}
-          title={theme === "dark" ? "Lichte modus" : "Donkere modus"}
-          aria-label="Donkere modus aan/uit"
-        >
-          <Ic name={theme === "dark" ? "sun" : "moon"} />
-        </button>
+        <Tooltip label={theme === "dark" ? "Lichte modus" : "Donkere modus"} side="top">
+          <button
+            className="theme-toggle"
+            onClick={toggle}
+            aria-label="Donkere modus aan/uit"
+          >
+            <Ic name={theme === "dark" ? "sun" : "moon"} />
+          </button>
+        </Tooltip>
       </div>
 
       <div className="sb-foot">

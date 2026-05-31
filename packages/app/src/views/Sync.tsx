@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Ic } from "../components/Ic";
+import { Button } from "../components/Button";
 import { db } from "../db/schema";
 import { isSyncConfigured, getPca, getAccount, signIn, signOut } from "../sync/msal";
 import { syncNow, pushToOneDrive, pullFromOneDrive, getSyncMeta, refreshProfilePhoto } from "../sync/syncEngine";
@@ -95,14 +96,14 @@ export function Sync() {
                 <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14 }}>Verbonden</div>
                 <div style={{ fontSize: 12.5, color: "var(--muted)" }}>{email}</div>
               </div>
-              <button className="btn btn-ghost" style={{ marginLeft: "auto" }} disabled={busy} onClick={() => run(async () => { await signOut(); setEmail(null); await setAccountMeta(null); }, "Uitgelogd.")}>Uitloggen</button>
+              <Button variant="ghost" style={{ marginLeft: "auto" }} disabled={busy} onClick={() => run(async () => { await signOut(); setEmail(null); await setAccountMeta(null); }, "Uitgelogd.")}>Uitloggen</Button>
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button className="btn btn-primary" disabled={busy} onClick={() => run(async () => { const r = await syncNow(); setMsg({ kind: "ok", text: r.action === "pulled" ? "Nieuwere versie opgehaald van OneDrive." : "Lokale data geüpload naar OneDrive." }); }, "Gesynchroniseerd.")}>
-                <Ic name="cloud" size={16} /> Sync nu
-              </button>
-              <button className="btn" disabled={busy} onClick={() => run(pushToOneDrive, "Geüpload naar OneDrive.")}><Ic name="upload" size={16} /> Uploaden</button>
-              <button className="btn" disabled={busy} onClick={() => run(async () => { const ok = await pullFromOneDrive(); if (!ok) throw new Error("Geen databestand in OneDrive gevonden."); }, "Opgehaald uit OneDrive.")}><Ic name="arrowDown" size={16} /> Ophalen</button>
+              <Button variant="primary" icon="cloud" disabled={busy} onClick={() => run(async () => { const r = await syncNow(); setMsg({ kind: "ok", text: r.action === "pulled" ? "Nieuwere versie opgehaald van OneDrive." : "Lokale data geüpload naar OneDrive." }); }, "Gesynchroniseerd.")}>
+                Sync nu
+              </Button>
+              <Button icon="upload" disabled={busy} onClick={() => run(pushToOneDrive, "Geüpload naar OneDrive.")}>Uploaden</Button>
+              <Button icon="arrowDown" disabled={busy} onClick={() => run(async () => { const ok = await pullFromOneDrive(); if (!ok) throw new Error("Geen databestand in OneDrive gevonden."); }, "Opgehaald uit OneDrive.")}>Ophalen</Button>
             </div>
             <div className="notice" style={{ marginTop: 18 }}>
               <span className="ni"><Ic name="info" size={20} /></span>
@@ -110,9 +111,9 @@ export function Sync() {
             </div>
           </>
         ) : (
-          <button className="btn btn-primary" disabled={busy} onClick={() => run(async () => { const acc = await signIn(); setEmail(acc.username); await setAccountMeta({ email: acc.username, name: acc.name }); await refreshProfilePhoto(); }, "Ingelogd.")}>
-            <Ic name="cloud" size={16} /> Inloggen met Microsoft
-          </button>
+          <Button variant="primary" icon="cloud" disabled={busy} onClick={() => run(async () => { const acc = await signIn(); setEmail(acc.username); await setAccountMeta({ email: acc.username, name: acc.name }); await refreshProfilePhoto(); }, "Ingelogd.")}>
+            Inloggen met Microsoft
+          </Button>
         )}
       </div>
     </div>

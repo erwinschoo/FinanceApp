@@ -7,6 +7,7 @@ import { KpiCard } from "../components/KpiCard";
 import { CatTag } from "../components/CatTag";
 import { MerchantAv } from "../components/MerchantAv";
 import { Ic } from "../components/Ic";
+import { Button } from "../components/Button";
 import { TrendChart, type TrendSeries } from "../charts/TrendChart";
 import { DonutChart } from "../charts/DonutChart";
 import { ProgressRing } from "../charts/ProgressRing";
@@ -177,9 +178,9 @@ export function Dashboard() {
         <div className="card card-pad">
           <div className="card-h">
             <h3>Budgetstatus</h3>
-            <button className="btn btn-ghost" style={{ marginLeft: "auto", padding: "5px 10px" }} onClick={() => setView("budgetten")}>
+            <Button variant="ghost" style={{ marginLeft: "auto", padding: "5px 10px" }} onClick={() => setView("budgetten")}>
               Alle budgetten <Ic name="chevronRight" size={15} />
-            </button>
+            </Button>
           </div>
           <div style={{ marginTop: 4 }}>
             {budgetRows.map(({ c, spent, budget }) => {
@@ -200,9 +201,9 @@ export function Dashboard() {
 
         <div className="card card-pad" style={{ display: "flex", flexDirection: "column" }}>
           <div className="card-h"><h3>Spaardoel</h3>
-            <button className="btn btn-ghost" style={{ marginLeft: "auto", padding: "5px 10px" }} onClick={() => setView("spaardoel")}>
+            <Button variant="ghost" style={{ marginLeft: "auto", padding: "5px 10px" }} onClick={() => setView("spaardoel")}>
               Details <Ic name="chevronRight" size={15} />
-            </button>
+            </Button>
           </div>
           {goal ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: "8px 0 4px" }}>
@@ -231,9 +232,9 @@ export function Dashboard() {
         <div className="card-pad" style={{ paddingBottom: 4 }}>
           <div className="card-h">
             <h3>Recente transacties</h3>
-            <button className="btn btn-ghost" style={{ marginLeft: "auto", padding: "5px 10px" }} onClick={() => setView("transacties")}>
+            <Button variant="ghost" style={{ marginLeft: "auto", padding: "5px 10px" }} onClick={() => setView("transacties")}>
               Alle transacties <Ic name="chevronRight" size={15} />
-            </button>
+            </Button>
           </div>
         </div>
         <div style={{ padding: "0 10px 8px" }}>

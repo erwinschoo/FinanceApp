@@ -9,6 +9,7 @@ import { payeeKey } from "../helpers/payees";
 import { CatTag } from "../components/CatTag";
 import { CatSelect } from "../components/CatSelect";
 import { Ic } from "../components/Ic";
+import { Button } from "../components/Button";
 import excelDoc from "../assets/excel-document.svg";
 import type { ParsedRow } from "../db/types";
 
@@ -117,7 +118,7 @@ export function Import() {
         <div className="notice" style={{ marginBottom: 18, background: "var(--pos-soft)", borderColor: "#CFE6DD" }}>
           <span className="ni" style={{ color: "var(--pos)" }}><Ic name="check" size={20} /></span>
           <div className="nt"><b>{added} transactie{added === 1 ? "" : "s"} toegevoegd.</b>{" "}
-            <button className="btn btn-ghost" style={{ padding: "3px 10px", color: "var(--blue)" }} onClick={() => setView("transacties")}>Bekijk transacties</button>
+            <Button variant="ghost" style={{ padding: "3px 10px", color: "var(--blue)" }} onClick={() => setView("transacties")}>Bekijk transacties</Button>
           </div>
         </div>
       )}
@@ -134,9 +135,9 @@ export function Import() {
               <>
                 <h2>Sleep je bankexport hierheen</h2>
                 <p>Een Excel- of CSV-bestand van ING — wij lezen het in, categoriseren automatisch en slaan duplicaten over.</p>
-                <button className="btn btn-primary" onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}>
-                  <Ic name="upload" size={16} /> Kies een bestand
-                </button>
+                <Button variant="primary" icon="upload" onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}>
+                  Kies een bestand
+                </Button>
                 <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }}
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }} />
                 <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 22 }}>
@@ -196,9 +197,9 @@ export function Import() {
               <span style={{ fontSize: 13, color: "var(--muted)" }} className="tnum">{autoCount} van {newRows.length} ingedeeld{uncatCount > 0 ? ` · ${uncatCount} te gaan` : " ✓"}</span>
               {pageCount > 1 && (
                 <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
-                  <button className="btn btn-ghost" style={{ padding: "5px 9px" }} disabled={cur === 0} onClick={() => setPage(cur - 1)} aria-label="Vorige pagina"><Ic name="chevronLeft" size={16} /></button>
+                  <Button variant="ghost" iconOnly icon="chevronLeft" disabled={cur === 0} onClick={() => setPage(cur - 1)} aria-label="Vorige pagina" />
                   <span className="tnum" style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)", minWidth: 84, textAlign: "center" }}>pagina {cur + 1} / {pageCount}</span>
-                  <button className="btn btn-ghost" style={{ padding: "5px 9px" }} disabled={cur >= pageCount - 1} onClick={() => setPage(cur + 1)} aria-label="Volgende pagina"><Ic name="chevronRight" size={16} /></button>
+                  <Button variant="ghost" iconOnly icon="chevronRight" disabled={cur >= pageCount - 1} onClick={() => setPage(cur + 1)} aria-label="Volgende pagina" />
                 </div>
               )}
             </div>
@@ -233,7 +234,7 @@ export function Import() {
               {uncatCount > 0 ? (
                 <span style={{ fontSize: 13, color: "var(--orange)", display: "inline-flex", alignItems: "center", gap: 6 }}>
                   <Ic name="info" size={16} /> <b>{uncatCount}</b> nog niet ingedeeld
-                  <button className="btn btn-ghost" style={{ padding: "3px 10px", color: "var(--blue)", marginLeft: 6 }} onClick={assignRestToOverig}>Zet resterende op Overig</button>
+                  <Button variant="ghost" style={{ padding: "3px 10px", color: "var(--blue)", marginLeft: 6 }} onClick={assignRestToOverig}>Zet resterende op Overig</Button>
                 </span>
               ) : (
                 <span style={{ fontSize: 13, color: "var(--pos)", display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -241,10 +242,10 @@ export function Import() {
                 </span>
               )}
               <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-                <button className="btn" onClick={() => { setStage("idle"); setRows([]); }}>Annuleren</button>
-                <button className="btn btn-primary" disabled={newRows.length === 0} onClick={commit}>
-                  <Ic name="check" size={16} /> Voeg {newRows.length} toe aan overzicht
-                </button>
+                <Button onClick={() => { setStage("idle"); setRows([]); }}>Annuleren</Button>
+                <Button variant="primary" icon="check" disabled={newRows.length === 0} onClick={commit}>
+                  Voeg {newRows.length} toe aan overzicht
+                </Button>
               </div>
             </div>
           </div>

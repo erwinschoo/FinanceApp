@@ -4,6 +4,7 @@ import { runStartupSync } from "./sync/autoSync";
 import { Sidebar } from "./components/Sidebar";
 import { MonthPicker } from "./components/MonthPicker";
 import { Ic } from "./components/Ic";
+import { Button } from "./components/Button";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { InstallPrompt } from "./components/InstallPrompt";
 import { clearTransactions, clearPayees } from "./db/repo";
@@ -93,16 +94,16 @@ export default function App() {
             <h1>{meta.title}</h1>
           </div>
           {(view === "transacties" || view === "tegenpartijen") && (
-            <button className="btn" style={{ marginLeft: 4 }} onClick={() => setConfirm(view)} title="Alle records permanent verwijderen">
-              <Ic name="trash" size={16} /> <span className="btn-label">Alles wissen</span>
-            </button>
+            <Button style={{ marginLeft: 4 }} onClick={() => setConfirm(view)} title="Alle records permanent verwijderen" icon="trash">
+              <span className="btn-label">Alles wissen</span>
+            </Button>
           )}
           <div className="spacer"></div>
           {meta.month && <div className="month-slot"><MonthPicker /></div>}
           {view !== "import" && view !== "steun" && view !== "download" && view !== "informatie" && (
-            <button className="btn btn-primary" onClick={() => setView("import")} title="Importeren">
-              <Ic name="upload" size={16} /> <span className="btn-label">Importeren</span>
-            </button>
+            <Button variant="primary" onClick={() => setView("import")} title="Importeren" icon="upload">
+              <span className="btn-label">Importeren</span>
+            </Button>
           )}
         </header>
         <main className="content scroll" ref={contentRef}>
@@ -130,6 +131,9 @@ export default function App() {
       />
 
       <InstallPrompt />
+
+      {/* Kleurt de onderste systeem-/navigatiebalk (Android safe-area) zwart in elk thema. */}
+      <div className="safe-bottom" />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { CatSelect } from "../components/CatSelect";
 import { Dropdown } from "../components/Dropdown";
 import { MerchantAv } from "../components/MerchantAv";
 import { Ic } from "../components/Ic";
+import { Button } from "../components/Button";
 
 export function Transactions() {
   const { transactions, categories } = useApp();
@@ -43,8 +44,8 @@ export function Transactions() {
           <span className="ni"><Ic name="info" size={20} /></span>
           <div className="nt">
             <b>{uncatCount} transactie{uncatCount === 1 ? "" : "s"} wacht{uncatCount === 1 ? "" : "en"} op indeling.</b> Klik op een categorie-label om ze toe te wijzen — daarna tellen ze mee in je budgetten.
-            <button className="btn btn-ghost" style={{ marginLeft: 10, padding: "3px 10px", color: "var(--blue)" }}
-              onClick={() => setOnlyUncat(true)}>Toon alleen deze</button>
+            <Button variant="ghost" style={{ marginLeft: 10, padding: "3px 10px", color: "var(--blue)" }}
+              onClick={() => setOnlyUncat(true)}>Toon alleen deze</Button>
           </div>
         </div>
       )}

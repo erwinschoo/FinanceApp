@@ -6,6 +6,8 @@ import {
   addRule, updateRule, deleteRule,
 } from "../db/repo";
 import { Ic } from "../components/Ic";
+import { Button } from "../components/Button";
+import { Tooltip } from "../components/Tooltip";
 import { Dropdown } from "../components/Dropdown";
 import { usePointerDragMove } from "../charts/usePointerDragMove";
 import type { Category, CategoryGroupRow, CategoryType, RuleRow } from "../db/types";
@@ -55,12 +57,12 @@ function CategoriesTab() {
     <div className="card card-pad">
       <div className="card-h" style={{ marginBottom: 14 }}>
         <h3>Categorieën</h3>
-        <button className="btn" style={{ marginLeft: "auto" }} onClick={() => addCategoryGroup({ name: "Nieuwe groep" })}>
-          <Ic name="plus" size={16} /> Nieuwe groep
-        </button>
-        <button className="btn btn-primary" onClick={() => { setAdding(categoryGroups[0]?.id ?? null); setEditId(null); }}>
-          <Ic name="plus" size={16} /> Nieuwe categorie
-        </button>
+        <Button style={{ marginLeft: "auto" }} icon="plus" onClick={() => addCategoryGroup({ name: "Nieuwe groep" })}>
+          Nieuwe groep
+        </Button>
+        <Button variant="primary" icon="plus" onClick={() => { setAdding(categoryGroups[0]?.id ?? null); setEditId(null); }}>
+          Nieuwe categorie
+        </Button>
       </div>
 
       {adding && categoryGroups.length > 0 && (
@@ -83,12 +85,18 @@ function CategoriesTab() {
                 <div style={{ fontWeight: 800, color: "var(--ink)", fontSize: 14.5 }}>{g.name}</div>
                 <span style={{ fontSize: 12, color: "var(--faint)" }}>{members.length}</span>
                 <div style={{ marginLeft: "auto", display: "flex", gap: 2 }}>
-                  <button className="btn btn-ghost" style={{ padding: "5px 9px" }} title="Categorie toevoegen aan groep"
-                    onClick={() => { setAdding(g.id); setEditId(null); }}><Ic name="plus" size={16} /></button>
-                  <button className="btn btn-ghost" style={{ padding: "5px 9px" }} title="Groep bewerken"
-                    onClick={() => setEditGroupId(g.id)}><Ic name="edit" size={16} /></button>
-                  <button className="btn btn-ghost" style={{ padding: "5px 9px" }} title="Groep verwijderen"
-                    onClick={() => removeGroup(g, members, categoryGroups)}><Ic name="trash" size={16} /></button>
+                  <Tooltip label="Categorie toevoegen aan groep" side="bottom">
+                    <Button variant="ghost" iconOnly icon="plus" aria-label="Categorie toevoegen aan groep"
+                      onClick={() => { setAdding(g.id); setEditId(null); }} />
+                  </Tooltip>
+                  <Tooltip label="Groep bewerken" side="bottom">
+                    <Button variant="ghost" iconOnly icon="edit" aria-label="Groep bewerken"
+                      onClick={() => setEditGroupId(g.id)} />
+                  </Tooltip>
+                  <Tooltip label="Groep verwijderen" side="bottom">
+                    <Button variant="ghost" iconOnly icon="trash" aria-label="Groep verwijderen"
+                      onClick={() => removeGroup(g, members, categoryGroups)} />
+                  </Tooltip>
                 </div>
               </div>
             )}
@@ -144,8 +152,12 @@ function CatRow({
         </div>
         <span style={{ marginLeft: "auto", fontSize: 12.5, color: "var(--muted)" }} className="tnum">{usage} transacties</span>
         <div className="cat-actions">
-          <button className="btn btn-ghost" style={{ padding: "5px 9px" }} onClick={onEdit} title="Bewerken"><Ic name="edit" size={16} /></button>
-          <button className="btn btn-ghost" style={{ padding: "5px 9px" }} onClick={remove} title="Verwijderen"><Ic name="trash" size={16} /></button>
+          <Tooltip label="Bewerken">
+            <Button variant="ghost" iconOnly icon="edit" onClick={onEdit} aria-label="Bewerken" />
+          </Tooltip>
+          <Tooltip label="Verwijderen">
+            <Button variant="ghost" iconOnly icon="trash" onClick={remove} aria-label="Verwijderen" />
+          </Tooltip>
         </div>
       </div>
       {editing && <CatEditor initial={c} groups={groups} onCancel={onClose} onSave={async (d) => { await updateCategory(c.id, d); onClose(); }} />}
@@ -208,8 +220,8 @@ function CatEditor({ initial, groups, defaultGroupId, onSave, onCancel }: {
         <ColorPicker color={color} onChange={setColor} />
       </div>
       <div style={{ gridColumn: "1 / -1", display: "flex", gap: 10, justifyContent: "flex-end" }}>
-        <button className="btn" onClick={onCancel}>Annuleren</button>
-        <button className="btn btn-primary" onClick={() => onSave({ name, color, type, groupId })}><Ic name="check" size={16} /> Opslaan</button>
+        <Button onClick={onCancel}>Annuleren</Button>
+        <Button variant="primary" icon="check" onClick={() => onSave({ name, color, type, groupId })}>Opslaan</Button>
       </div>
     </div>
   );
@@ -227,8 +239,8 @@ function GroupEditor({ group, onSave, onCancel }: {
           style={{ display: "block", width: "100%", marginTop: 6, border: "1px solid var(--line)", borderRadius: 10, padding: "9px 12px", fontSize: 14, outline: "none" }} />
       </div>
       <div style={{ gridColumn: "1 / -1", display: "flex", gap: 10, justifyContent: "flex-end" }}>
-        <button className="btn" onClick={onCancel}>Annuleren</button>
-        <button className="btn btn-primary" onClick={() => onSave({ name })}><Ic name="check" size={16} /> Opslaan</button>
+        <Button onClick={onCancel}>Annuleren</Button>
+        <Button variant="primary" icon="check" onClick={() => onSave({ name })}>Opslaan</Button>
       </div>
     </div>
   );
@@ -252,10 +264,10 @@ function RulesTab() {
     <div className="card card-pad">
       <div className="card-h" style={{ marginBottom: 6 }}>
         <h3>Categoriseer-regels</h3>
-        <button className="btn btn-primary" style={{ marginLeft: "auto" }}
+        <Button variant="primary" style={{ marginLeft: "auto" }} icon="plus"
           onClick={() => addRule({ field: "rawDescription", pattern: "", matchType: "contains", categoryId: "overig", priority: 50 })}>
-          <Ic name="plus" size={16} /> Nieuwe regel
-        </button>
+          Nieuwe regel
+        </Button>
       </div>
       <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
         Regels vullen automatisch een categorie in bij import. Een toewijzing per tegenpartij wint altijd van een regel. Lagere prioriteit = eerst toegepast.
@@ -293,7 +305,9 @@ function RulesTab() {
                   className="tnum" style={{ ...sel, width: 60 }} />
               </td>
               <td style={{ textAlign: "right" }}>
-                <button className="btn btn-ghost" style={{ padding: "5px 9px" }} title="Verwijderen" onClick={() => deleteRule(r.id)}><Ic name="trash" size={16} /></button>
+                <Tooltip label="Verwijderen" side="left">
+                  <Button variant="ghost" iconOnly icon="trash" aria-label="Verwijderen" onClick={() => deleteRule(r.id)} />
+                </Tooltip>
               </td>
             </tr>
           ))}

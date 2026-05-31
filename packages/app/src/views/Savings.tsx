@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../state/AppContext";
 import { eur, MONTHS_NL, MONTHS_SH } from "../lib/format";
 import {
@@ -11,6 +10,9 @@ import { TrendChart, type TrendSeries } from "../charts/TrendChart";
 import { useMediaQuery } from "../charts/useMediaQuery";
 import { catTint } from "../lib/catColor";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { Button } from "../components/Button";
+import { Tooltip } from "../components/Tooltip";
+import { Dropdown } from "../components/Dropdown";
 import { Ic } from "../components/Ic";
 import type { SavingsGroup, SavingsRow } from "../goals/savings";
 
@@ -82,12 +84,18 @@ function GoalRow({ group, row, idx, count }: { group: SavingsGroup; row: Savings
             className="tnum" style={{ width: 84, border: "1px solid var(--line)", borderRadius: 8, padding: "6px 8px", fontSize: 13.5, fontWeight: 700, color: "var(--ink)", outline: "none", textAlign: "right", background: "var(--surface)" }} />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <span className="reorder" data-disabled={idx === 0} title="Hogere prioriteit"
-            onClick={() => { if (idx > 0) moveGoalPriority(row.goal.id, "up"); }}><Ic name="chevronUp" size={16} /></span>
-          <span className="reorder" data-disabled={idx === count - 1} title="Lagere prioriteit"
-            onClick={() => { if (idx < count - 1) moveGoalPriority(row.goal.id, "down"); }}><Ic name="chevronDown" size={16} /></span>
+          <Tooltip label="Hogere prioriteit">
+            <span className="reorder" data-disabled={idx === 0}
+              onClick={() => { if (idx > 0) moveGoalPriority(row.goal.id, "up"); }}><Ic name="chevronUp" size={16} /></span>
+          </Tooltip>
+          <Tooltip label="Lagere prioriteit">
+            <span className="reorder" data-disabled={idx === count - 1}
+              onClick={() => { if (idx < count - 1) moveGoalPriority(row.goal.id, "down"); }}><Ic name="chevronDown" size={16} /></span>
+          </Tooltip>
         </div>
-        <span className="reorder" title="Verwijderen" onClick={() => deleteGoal(row.goal.id)}><Ic name="x" size={15} /></span>
+        <Tooltip label="Verwijderen">
+          <span className="reorder" onClick={() => deleteGoal(row.goal.id)}><Ic name="x" size={15} /></span>
+        </Tooltip>
       </div>
     </div>
   );
@@ -97,21 +105,7 @@ export function Savings() {
   const { savingsGroups, savingsLibrary } = useApp();
   const isPhone = useMediaQuery("(max-width: 560px)");
   const [selId, setSelId] = useState<string | null>(null);
-  const [addOpen, setAddOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<SavingsGroup | null>(null);
-  const addRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function h(e: MouseEvent) {
-      const t = e.target as Node;
-      if (addRef.current?.contains(t) || menuRef.current?.contains(t)) return;
-      setAddOpen(false);
-    }
-    if (addOpen) document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, [addOpen]);
 
   useEffect(() => {
     if (savingsGroups.length && (!selId || !savingsGroups.some((g) => g.categoryId === selId))) {
@@ -170,33 +164,23 @@ export function Savings() {
             );
           })}
 
-          {/* Knop blijft aan het eind van de ribbon; de dropdown opent via position:fixed
-              zodat 'ie niet door de horizontale overflow-container wordt afgekapt. */}
-          <div ref={addRef} style={{ position: "relative", flex: "0 0 auto" }}>
-            <button disabled={savingsLibrary.length === 0}
-              onClick={(e) => {
-                if (!addOpen) {
-                  const r = e.currentTarget.getBoundingClientRect();
-                  setMenuPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
-                }
-                setAddOpen((o) => !o);
-              }}
-              style={{ height: "100%", width: "100%", minWidth: 150, border: "1.5px dashed var(--line)", background: "var(--bg)", borderRadius: 12, padding: "12px 16px", color: savingsLibrary.length ? "var(--blue)" : "var(--faint)", fontWeight: 700, fontSize: 13.5, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, cursor: savingsLibrary.length ? "pointer" : "default" }}>
-              <span style={{ width: 30, height: 30, borderRadius: 9, background: "var(--blue-soft)", display: "flex", alignItems: "center", justifyContent: "center" }}><Ic name="plus" size={18} /></span>
-              Categorie toevoegen
-            </button>
-            {addOpen && menuPos && savingsLibrary.length > 0 && createPortal(
-              <div ref={menuRef} className="cat-menu scroll" style={{ position: "fixed", top: menuPos.top, right: menuPos.right, left: "auto", minWidth: 210, maxHeight: "min(60vh,360px)" }}>
-                <div className="cat-group">Kies een categorie</div>
-                {savingsLibrary.map((c) => (
-                  <button key={c.id} className="cat-opt" onClick={() => { addPotCategory(c.id); setSelId(c.id); setAddOpen(false); }}>
-                    <span className="dot" style={{ background: c.color }}></span>{c.name}
-                  </button>
-                ))}
-              </div>,
-              document.body,
+          {/* Knop blijft aan het eind van de ribbon; het menu zweeft (floating Dropdown) zodat het
+              niet door de horizontale overflow-container wordt afgekapt. */}
+          <Dropdown
+            floating align="right" minWidth={210} menuHeader="Kies een categorie"
+            style={{ flex: "0 0 auto" }}
+            disabled={savingsLibrary.length === 0}
+            ariaLabel="Spaarcategorie toevoegen"
+            value=""
+            onChange={(id) => { addPotCategory(id); setSelId(id); }}
+            options={savingsLibrary.map((c) => ({ value: c.id, label: c.name, color: c.color }))}
+            trigger={() => (
+              <span style={{ height: "100%", width: "100%", minWidth: 150, border: "1.5px dashed var(--line)", background: "var(--bg)", borderRadius: 12, padding: "12px 16px", color: savingsLibrary.length ? "var(--blue)" : "var(--faint)", fontWeight: 700, fontSize: 13.5, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <span style={{ width: 30, height: 30, borderRadius: 9, background: "var(--blue-soft)", display: "flex", alignItems: "center", justifyContent: "center" }}><Ic name="plus" size={18} /></span>
+                Categorie toevoegen
+              </span>
             )}
-          </div>
+          />
         </div>
       </div>
 
@@ -209,7 +193,9 @@ export function Savings() {
             <div style={{ alignSelf: "stretch", display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
               <CatIcon group={group} />
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--ink)" }}>{group.name}</h3>
-              <button className="btn btn-ghost" style={{ marginLeft: "auto", padding: 5 }} title="Categorie verwijderen" onClick={() => setConfirmRemove(group)}><Ic name="x" size={16} /></button>
+              <Tooltip label="Categorie verwijderen" style={{ marginLeft: "auto" }}>
+                <Button variant="ghost" iconOnly icon="x" aria-label="Categorie verwijderen" onClick={() => setConfirmRemove(group)} />
+              </Tooltip>
             </div>
 
             {group.allDone ? (
@@ -288,10 +274,10 @@ export function Savings() {
                   <GoalRow key={row.goal.id} group={group} row={row} idx={i} count={group.rows.length} />
                 ))}
               </div>
-              <button className="btn" style={{ width: "100%", justifyContent: "center", marginTop: 6, borderStyle: "dashed", color: "var(--blue)" }}
-                onClick={() => addGoalToCategory(group.categoryId)}>
-                <Ic name="plus" size={16} /> Doel toevoegen aan {group.name}
-              </button>
+              <Button style={{ width: "100%", justifyContent: "center", marginTop: 6, borderStyle: "dashed", color: "var(--blue)" }}
+                icon="plus" onClick={() => addGoalToCategory(group.categoryId)}>
+                Doel toevoegen aan {group.name}
+              </Button>
             </div>
 
             {!group.allDone && active && (

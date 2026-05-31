@@ -1,4 +1,4 @@
-import { Ic } from "./Ic";
+import { Button } from "./Button";
 
 interface Props {
   open: boolean;
@@ -17,8 +17,8 @@ export function ConfirmDialog({ open, title, message, confirmLabel = "Verwijdere
         <h3>{title}</h3>
         <p>{message}</p>
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn" style={{ flex: 1, justifyContent: "center" }} onClick={onCancel}>Annuleren</button>
-          <button className="btn btn-danger" style={{ flex: 1, justifyContent: "center" }} onClick={onConfirm}><Ic name="trash" size={16} /> {confirmLabel}</button>
+          <Button style={{ flex: 1, justifyContent: "center" }} onClick={onCancel}>Annuleren</Button>
+          <Button variant="danger" style={{ flex: 1, justifyContent: "center" }} icon="trash" onClick={onConfirm}>{confirmLabel}</Button>
         </div>
       </div>
     </div>

@@ -39,6 +39,8 @@ export default defineConfig({
         short_name: "bokkiep",
         description: "Importeer banktransacties, categoriseer, budgetteer en volg je spaardoelen.",
         lang: "nl",
+        // theme_color spiegelt STATUS_BAR.light uit src/theme/chrome.ts. Een manifest kent maar
+        // één waarde (gebruikt bij PWA-opstart); dark wordt runtime gezet door useTheme.ts.
         theme_color: "#5E81B5",
         background_color: "#1F1F1F",
         display: "standalone",

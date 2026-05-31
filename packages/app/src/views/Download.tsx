@@ -1,4 +1,5 @@
 import { Ic } from "../components/Ic";
+import { Button } from "../components/Button";
 import goatLogo from "../assets/ibex-orange.png";
 import { useInstallState, promptInstall } from "../pwa/install";
 
@@ -44,10 +45,10 @@ export function Download() {
         </p>
 
         {canInstall ? (
-          <button className="btn btn-primary" onClick={() => void promptInstall()}
+          <Button variant="primary" icon="download" iconSize={18} onClick={() => void promptInstall()}
             style={{ padding: "12px 22px", fontSize: 15 }}>
-            <Ic name="download" size={18} /> Installeer als app
-          </button>
+            Installeer als app
+          </Button>
         ) : (
           <div style={{ textAlign: "left", background: "var(--subtle)", border: "1px solid var(--line-soft)", borderRadius: "var(--radius-sm)", padding: "16px 18px" }}>
             <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>

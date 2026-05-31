@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
+import { STATUS_BAR } from "../theme/chrome";
 
 export type Theme = "light" | "dark";
 
 const STORAGE_KEY = "bokkiep:theme";
 const LEGACY_KEY = "financeapp:theme"; // voorkeur van vóór de rebrand
-// Browser/PWA-chrome (statusbalk): blauw in light mode, zwart in dark mode.
-const THEME_COLOR: Record<Theme, string> = { light: "#5E81B5", dark: "#000000" };
+// Browser/PWA-chrome (statusbalk): één bron van waarheid in theme/chrome.ts —
+// blauw in light mode, zwart in dark mode. De onderste navigatiebalk is altijd zwart
+// (zie de `.safe-bottom`-scrim in app.css), los van deze theme-color.
 
 function readStored(): Theme {
   try {
@@ -26,7 +28,7 @@ function apply(theme: Theme) {
   document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
   const meta = document.createElement("meta");
   meta.name = "theme-color";
-  meta.content = THEME_COLOR[theme];
+  meta.content = STATUS_BAR[theme];
   document.head.appendChild(meta);
 }
 
