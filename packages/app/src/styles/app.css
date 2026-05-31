@@ -111,6 +111,11 @@
   --shadow-pop:0 8px 28px rgba(0,0,0,.45);
 }
 
+/* dark mode: scherm-/pagina-achtergrond volledig zwart (kaarten en zijbalk blijven
+   grijze panelen voor contrast; subtiele oppervlakken/hovers blijven --subtle). */
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .app { background:#000; }
+
 * { box-sizing:border-box; }
 html, body { margin:0; padding:0; }
 /* Wortel-achtergrond = topbalk/date-picker-kleur. Zo toont elke edge-to-edge-zone
