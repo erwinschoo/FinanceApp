@@ -420,6 +420,8 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
     border-right:1px solid var(--line); overflow-y:auto; box-shadow:var(--shadow-pop);
     padding:20px 16px calc(20px + env(safe-area-inset-bottom)); }
   .sb.open { transform:none; }
+  /* meer ademruimte tussen het laatste menu-item en de actie-knoppen in de drawer */
+  .sb-actions { padding-top:28px; }
   .drawer-scrim { display:block; position:fixed; inset:0; background:var(--overlay); z-index:55;
     animation:fadeIn .16s var(--ease) both; }
 
