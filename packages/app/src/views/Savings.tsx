@@ -21,9 +21,14 @@ function endLabel(monthsNeeded: number): string {
   return `${MONTHS_NL[m]} ${y}`;
 }
 
-function CatIcon({ group, size = 30 }: { group: { tint: string; color: string; initial: string }; size?: number }) {
+/* Thema-adaptieve zachte achtergrond uit de categorie-kleur. De per-categorie `tint`
+ * uit de seed is een vaste lichte pastel die in dark mode licht blijft (onleesbaar);
+ * een color-mix-wash van de kleur wordt vanzelf donker op een donkere ondergrond. */
+const softTint = (color: string) => `color-mix(in srgb, ${color} 18%, transparent)`;
+
+function CatIcon({ group, size = 30 }: { group: { color: string; initial: string }; size?: number }) {
   return (
-    <span style={{ width: size, height: size, borderRadius: 9, background: group.tint, color: group.color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: size * 0.46, flex: "none" }}>
+    <span style={{ width: size, height: size, borderRadius: 9, background: softTint(group.color), color: group.color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: size * 0.46, flex: "none" }}>
       {group.initial}
     </span>
   );
@@ -141,15 +146,15 @@ export function Savings() {
   return (
     <div className="content-inner fade-in">
       {/* ── categorie-ribbon ── */}
-      <div className="card" style={{ padding: 10, marginBottom: 18 }}>
-        <div className="scroll" style={{ display: "flex", gap: 8, alignItems: "stretch", overflowX: "auto" }}>
+      <div className="card" style={{ padding: 10, marginBottom: 18, display: "flex", gap: 8, alignItems: "stretch" }}>
+        <div className="scroll" style={{ display: "flex", gap: 8, alignItems: "stretch", overflowX: "auto", flex: 1, minWidth: 0 }}>
           {savingsGroups.map((g) => {
             const pct = g.totalTarget ? Math.min(100, Math.round((g.balance / g.totalTarget) * 100)) : 0;
             const doneCount = g.rows.filter((r) => r.done).length;
             const on = g.categoryId === selId;
             return (
               <button key={g.categoryId} onClick={() => setSelId(g.categoryId)}
-                style={{ flex: "0 0 168px", width: 168, textAlign: "left", cursor: "pointer", border: "1px solid " + (on ? g.color : "var(--line)"), background: on ? g.tint : "var(--surface)", borderRadius: 12, padding: "12px 14px", boxShadow: on ? "inset 0 0 0 1px " + g.color : "none", transition: "all .15s var(--ease)" }}>
+                style={{ flex: "0 0 168px", width: 168, textAlign: "left", cursor: "pointer", border: "1px solid " + (on ? g.color : "var(--line)"), background: on ? softTint(g.color) : "var(--surface)", borderRadius: 12, padding: "12px 14px", boxShadow: on ? "inset 0 0 0 1px " + g.color : "none", transition: "all .15s var(--ease)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 9 }}>
                   <CatIcon group={g} />
                   <div style={{ minWidth: 0 }}>
@@ -161,24 +166,25 @@ export function Savings() {
               </button>
             );
           })}
+        </div>
 
-          <div ref={addRef} style={{ position: "relative", flex: "0 0 auto" }}>
-            <button onClick={() => setAddOpen((o) => !o)} disabled={savingsLibrary.length === 0}
-              style={{ height: "100%", width: "100%", minWidth: 150, border: "1.5px dashed var(--line)", background: "var(--bg)", borderRadius: 12, padding: "12px 16px", color: savingsLibrary.length ? "var(--blue)" : "var(--faint)", fontWeight: 700, fontSize: 13.5, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, cursor: savingsLibrary.length ? "pointer" : "default" }}>
-              <span style={{ width: 30, height: 30, borderRadius: 9, background: "var(--blue-soft)", display: "flex", alignItems: "center", justifyContent: "center" }}><Ic name="plus" size={18} /></span>
-              Categorie toevoegen
-            </button>
-            {addOpen && savingsLibrary.length > 0 && (
-              <div className="cat-menu scroll" style={{ left: "auto", right: 0, minWidth: 210 }}>
-                <div className="cat-group">Kies een categorie</div>
-                {savingsLibrary.map((c) => (
-                  <button key={c.id} className="cat-opt" onClick={() => { addPotCategory(c.id); setSelId(c.id); setAddOpen(false); }}>
-                    <span className="dot" style={{ background: c.color }}></span>{c.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+        {/* Buiten de overflow-x-container zodat de dropdown niet wordt afgekapt. */}
+        <div ref={addRef} style={{ position: "relative", flex: "0 0 auto" }}>
+          <button onClick={() => setAddOpen((o) => !o)} disabled={savingsLibrary.length === 0}
+            style={{ height: "100%", width: "100%", minWidth: 150, border: "1.5px dashed var(--line)", background: "var(--bg)", borderRadius: 12, padding: "12px 16px", color: savingsLibrary.length ? "var(--blue)" : "var(--faint)", fontWeight: 700, fontSize: 13.5, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, cursor: savingsLibrary.length ? "pointer" : "default" }}>
+            <span style={{ width: 30, height: 30, borderRadius: 9, background: "var(--blue-soft)", display: "flex", alignItems: "center", justifyContent: "center" }}><Ic name="plus" size={18} /></span>
+            Categorie toevoegen
+          </button>
+          {addOpen && savingsLibrary.length > 0 && (
+            <div className="cat-menu scroll" style={{ left: "auto", right: 0, minWidth: 210 }}>
+              <div className="cat-group">Kies een categorie</div>
+              {savingsLibrary.map((c) => (
+                <button key={c.id} className="cat-opt" onClick={() => { addPotCategory(c.id); setSelId(c.id); setAddOpen(false); }}>
+                  <span className="dot" style={{ background: c.color }}></span>{c.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -225,7 +231,7 @@ export function Savings() {
                 <div className="tnum" style={{ fontSize: 18, fontWeight: 800, color: "var(--ink)" }}>{eur(group.balance)}</div>
                 <div style={{ fontSize: 11.5, color: "var(--faint)", fontWeight: 600 }}>van {eur(group.totalTarget)}</div>
               </div>
-              <div style={{ background: group.tint, borderRadius: 12, padding: "12px 14px", textAlign: "left" }}>
+              <div style={{ background: softTint(group.color), borderRadius: 12, padding: "12px 14px", textAlign: "left" }}>
                 <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700 }}>Alles klaar rond</div>
                 <div className="tnum" style={{ fontSize: 18, fontWeight: 800, color: group.color }}>{endLabel(monthsAll)}</div>
                 <div style={{ fontSize: 11.5, color: "var(--faint)", fontWeight: 600 }}>bij {eur(group.monthly)}/mnd</div>
