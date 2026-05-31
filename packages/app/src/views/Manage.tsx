@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useApp } from "../state/AppContext";
 import {
   addCategory, updateCategory, deleteCategory,
-  addCategoryGroup, updateCategoryGroup, deleteCategoryGroup, setCategoryGroup, moveCategoryOrder, moveGroupOrder,
+  addCategoryGroup, updateCategoryGroup, deleteCategoryGroup, setCategoryGroup,
   addRule, updateRule, deleteRule,
 } from "../db/repo";
 import { Ic } from "../components/Ic";
@@ -18,7 +18,7 @@ const COLORS = [
 ];
 const TYPE_LABEL: Record<CategoryType, string> = { uitgave: "Uitgave", inkomen: "Inkomen", sparen: "Sparen", overboeking: "Overboeking" };
 
-const byOrder = (a: Category, b: Category) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name, "nl");
+const byName = (a: Category, b: Category) => a.name.localeCompare(b.name, "nl");
 
 export function Manage() {
   const [tab, setTab] = useState<"cats" | "rules">("cats");
@@ -39,9 +39,9 @@ function CategoriesTab() {
   const [editId, setEditId] = useState<string | null>(null);
   const [adding, setAdding] = useState<string | null>(null);     // groupId waar we een categorie aan toevoegen
   const [editGroupId, setEditGroupId] = useState<string | null>(null);
-  // drag & drop
+  // drag & drop — alleen om een categorie naar een andere groep te slepen
   const [dragCat, setDragCat] = useState<string | null>(null);
-  const [dropTarget, setDropTarget] = useState<{ groupId: string; index: number } | null>(null);
+  const [dropGroup, setDropGroup] = useState<string | null>(null);
 
   const usage = useMemo(() => {
     const m: Record<string, number> = {};
@@ -49,12 +49,12 @@ function CategoriesTab() {
     return m;
   }, [transactions]);
 
-  const inGroup = (id: string) => categories.filter((c) => c.groupId === id).sort(byOrder);
+  const inGroup = (id: string) => categories.filter((c) => c.groupId === id).sort(byName);
 
-  function onDrop(groupId: string, index: number) {
-    if (dragCat) setCategoryGroup(dragCat, groupId, index);
+  function onDrop(groupId: string) {
+    if (dragCat) setCategoryGroup(dragCat, groupId);   // no-op als de categorie al in deze groep zit
     setDragCat(null);
-    setDropTarget(null);
+    setDropGroup(null);
   }
 
   return (
@@ -76,24 +76,18 @@ function CategoriesTab() {
 
       {categoryGroups.length === 0 && <div className="empty">Nog geen categoriegroepen.</div>}
 
-      {categoryGroups.map((g, gi) => {
+      {categoryGroups.map((g) => {
         const members = inGroup(g.id);
-        const isOver = dropTarget?.groupId === g.id;
+        const isOver = dropGroup === g.id;
         return (
           <div key={g.id} className={"cat-group-sec" + (isOver ? " drag-over" : "")}
-            onDragOver={(e) => { if (dragCat) { e.preventDefault(); setDropTarget({ groupId: g.id, index: members.length }); } }}
-            onDrop={(e) => { e.preventDefault(); onDrop(g.id, dropTarget?.groupId === g.id ? dropTarget.index : members.length); }}>
+            onDragOver={(e) => { if (dragCat) { e.preventDefault(); setDropGroup(g.id); } }}
+            onDrop={(e) => { e.preventDefault(); onDrop(g.id); }}>
             {editGroupId === g.id ? (
               <GroupEditor group={g} onCancel={() => setEditGroupId(null)}
                 onSave={async (d) => { await updateCategoryGroup(g.id, d); setEditGroupId(null); }} />
             ) : (
               <div className="cat-group-h">
-                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  <span className="reorder" data-disabled={gi === 0} title="Groep omhoog"
-                    onClick={() => gi > 0 && moveGroupOrder(g.id, "up")}><Ic name="chevronUp" size={15} /></span>
-                  <span className="reorder" data-disabled={gi === categoryGroups.length - 1} title="Groep omlaag"
-                    onClick={() => gi < categoryGroups.length - 1 && moveGroupOrder(g.id, "down")}><Ic name="chevronDown" size={15} /></span>
-                </div>
                 <span style={{ width: 12, height: 12, borderRadius: 4, background: g.color, flex: "none" }}></span>
                 <div style={{ fontWeight: 800, color: "var(--ink)", fontSize: 14.5 }}>{g.name}</div>
                 <span style={{ fontSize: 12, color: "var(--faint)" }}>{members.length}</span>
@@ -111,15 +105,12 @@ function CategoriesTab() {
             {members.length === 0 && (
               <div className="cat-empty-drop">Sleep hier categorieën naartoe of voeg er een toe.</div>
             )}
-            {members.map((c, ci) => (
-              <CatRow key={c.id} c={c} idx={ci} count={members.length} groups={categoryGroups}
+            {members.map((c) => (
+              <CatRow key={c.id} c={c} groups={categoryGroups}
                 usage={usage[c.id] || 0} editing={editId === c.id}
                 isDragging={dragCat === c.id}
-                showDropLine={dropTarget?.groupId === g.id && dropTarget.index === ci}
                 onEdit={() => { setEditId(c.id); setAdding(null); }} onClose={() => setEditId(null)}
-                onDragStart={() => setDragCat(c.id)} onDragEnd={() => { setDragCat(null); setDropTarget(null); }}
-                onRowDragOver={() => { if (dragCat) setDropTarget({ groupId: g.id, index: ci }); }}
-                onRowDrop={() => onDrop(g.id, ci)} />
+                onDragStart={() => setDragCat(c.id)} onDragEnd={() => { setDragCat(null); setDropGroup(null); }} />
             ))}
           </div>
         );
@@ -139,36 +130,27 @@ async function removeGroup(g: CategoryGroupRow, members: Category[], groups: Cat
 }
 
 function CatRow({
-  c, idx, count, groups, usage, editing, isDragging, showDropLine,
-  onEdit, onClose, onDragStart, onDragEnd, onRowDragOver, onRowDrop,
+  c, groups, usage, editing, isDragging,
+  onEdit, onClose, onDragStart, onDragEnd,
 }: {
-  c: Category; idx: number; count: number; groups: CategoryGroupRow[]; usage: number;
-  editing: boolean; isDragging: boolean; showDropLine: boolean;
+  c: Category; groups: CategoryGroupRow[]; usage: number;
+  editing: boolean; isDragging: boolean;
   onEdit: () => void; onClose: () => void;
-  onDragStart: () => void; onDragEnd: () => void; onRowDragOver: () => void; onRowDrop: () => void;
+  onDragStart: () => void; onDragEnd: () => void;
 }) {
   async function remove() {
     const msg = usage > 0 ? `${usage} transactie(s) worden verplaatst naar "Overig". Doorgaan?` : `Categorie "${c.name}" verwijderen?`;
     if (confirm(msg)) await deleteCategory(c.id);
   }
   return (
-    <div style={{ borderBottom: "1px solid var(--line-soft)" }}
-      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); onRowDragOver(); }}
-      onDrop={(e) => { e.preventDefault(); e.stopPropagation(); onRowDrop(); }}>
-      {showDropLine && <div className="cat-drop-line" />}
+    <div style={{ borderBottom: "1px solid var(--line-soft)" }}>
       <div className={"cat-row" + (isDragging ? " dragging" : "")} draggable
         onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <span className="cat-grip" title="Sleep om te verplaatsen"><Ic name="grip" size={16} /></span>
+        <span className="cat-grip" title="Sleep naar een andere groep"><Ic name="grip" size={16} /></span>
         <span style={{ width: 11, height: 11, borderRadius: "50%", background: c.color, flex: "none" }}></span>
         <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14 }}>{c.name}</div>
         <span className="tag" style={{ background: "var(--subtle)", color: "var(--muted)", fontSize: 11 }}>{TYPE_LABEL[c.type]}</span>
         <span style={{ marginLeft: "auto", fontSize: 12.5, color: "var(--muted)" }} className="tnum">{usage} transacties</span>
-        <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          <span className="reorder" data-disabled={idx === 0} title="Omhoog"
-            onClick={() => idx > 0 && moveCategoryOrder(c.id, "up")}><Ic name="chevronUp" size={14} /></span>
-          <span className="reorder" data-disabled={idx === count - 1} title="Omlaag"
-            onClick={() => idx < count - 1 && moveCategoryOrder(c.id, "down")}><Ic name="chevronDown" size={14} /></span>
-        </div>
         <button className="btn btn-ghost" style={{ padding: "5px 9px" }} onClick={onEdit} title="Bewerken"><Ic name="edit" size={16} /></button>
         <button className="btn btn-ghost" style={{ padding: "5px 9px" }} onClick={remove} title="Verwijderen"><Ic name="trash" size={16} /></button>
       </div>
@@ -271,7 +253,7 @@ function RulesTab() {
   // categorie-opties (gegroepeerd per categoriegroep) voor de gestylede Dropdown
   const catDropdownOptions = () =>
     categoryGroups.flatMap((g) =>
-      categories.filter((c) => c.groupId === g.id).sort(byOrder)
+      categories.filter((c) => c.groupId === g.id).sort(byName)
         .map((c) => ({ value: c.id, label: c.name, color: c.color, group: g.name })),
     );
 

@@ -58,7 +58,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppState>(() => {
     const cats = categories ?? [];
     const catMap = Object.fromEntries(cats.map((c) => [c.id, c]));
-    const categoryGroups = [...(groupRows ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const categoryGroups = [...(groupRows ?? [])].sort((a, b) => a.name.localeCompare(b.name, "nl"));
     const groupMap = Object.fromEntries(categoryGroups.map((g) => [g.id, g]));
     const transactions: Transaction[] = (txRows ?? [])
       .map(rowToTx)

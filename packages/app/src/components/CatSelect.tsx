@@ -16,9 +16,9 @@ export function CatSelect({ value, onChange, includeIncome = false }: { value: s
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
 
-  const byOrder = (a: Category, b: Category) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name, "nl");
+  const byName = (a: Category, b: Category) => a.name.localeCompare(b.name, "nl");
   const inGroup = (id: string) =>
-    categories.filter((c) => c.groupId === id && (includeIncome || c.id !== "inkomen")).sort(byOrder);
+    categories.filter((c) => c.groupId === id && (includeIncome || c.id !== "inkomen")).sort(byName);
 
   function opt(c: Category) {
     return (

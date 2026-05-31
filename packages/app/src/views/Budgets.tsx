@@ -12,9 +12,9 @@ export function Budgets() {
   const spend = spendByCat(monthTxs, catMap);
   const income = incomeOf(monthTxs, catMap);
 
-  const byOrder = (a: Category, b: Category) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name, "nl");
-  // budgetteerbare uitgave-categorieën per groep
-  const expenseInGroup = (id: string) => categories.filter((c) => c.groupId === id && c.type === "uitgave").sort(byOrder);
+  const byName = (a: Category, b: Category) => a.name.localeCompare(b.name, "nl");
+  // budgetteerbare uitgave-categorieën per groep (alfabetisch)
+  const expenseInGroup = (id: string) => categories.filter((c) => c.groupId === id && c.type === "uitgave").sort(byName);
   const leaves = categories.filter((c) => c.type === "uitgave");
   const totalBudget = leaves.reduce((s, c) => s + (budgets[c.id] || 0), 0);
   const totalSpent = leaves.reduce((s, c) => s + (spend[c.id] || 0), 0);

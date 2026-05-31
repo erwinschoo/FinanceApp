@@ -299,47 +299,16 @@ export async function deleteCategoryGroup(id: string, reassignTo: string): Promi
   scheduleSync();
 }
 
-/* Zet een categorie in een (andere) groep op positie 'index' (drag & drop-drop).
- * Hernummert de orders binnen de doelgroep naar 0…N. */
-export async function setCategoryGroup(catId: string, groupId: string, index?: number): Promise<void> {
+/* Verplaats een categorie naar een (andere) groep (drag & drop). Groepen en
+ * categorieën worden alfabetisch getoond, dus 'order' is enkel een rest-veld:
+ * we zetten de categorie achteraan in de doelgroep. */
+export async function setCategoryGroup(catId: string, groupId: string): Promise<void> {
   await db.transaction("rw", db.categories, async () => {
     const cat = await db.categories.get(catId);
-    if (!cat) return;
-    const others = (await db.categories.where("groupId").equals(groupId).toArray())
-      .filter((c) => c.id !== catId)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const at = index == null || index < 0 || index > others.length ? others.length : index;
-    others.splice(at, 0, { ...cat, groupId });
-    await db.categories.bulkPut(others.map((c, i) => ({ ...c, groupId, order: i })));
-  });
-  scheduleSync();
-}
-
-/* Verschuif een categorie één plek binnen zijn groep (order-swap met de buur). */
-export async function moveCategoryOrder(catId: string, dir: "up" | "down"): Promise<void> {
-  await db.transaction("rw", db.categories, async () => {
-    const cat = await db.categories.get(catId);
-    if (!cat) return;
-    const ordered = (await db.categories.where("groupId").equals(cat.groupId).toArray())
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const idx = ordered.findIndex((c) => c.id === catId);
-    const swap = dir === "up" ? idx - 1 : idx + 1;
-    if (idx < 0 || swap < 0 || swap >= ordered.length) return;
-    const a = ordered[idx], b = ordered[swap];
-    await db.categories.bulkPut([{ ...a, order: b.order ?? 0 }, { ...b, order: a.order ?? 0 }]);
-  });
-  scheduleSync();
-}
-
-/* Verschuif een categoriegroep één plek in de lijst (order-swap met de buur). */
-export async function moveGroupOrder(id: string, dir: "up" | "down"): Promise<void> {
-  await db.transaction("rw", db.categoryGroups, async () => {
-    const ordered = (await db.categoryGroups.toArray()).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const idx = ordered.findIndex((g) => g.id === id);
-    const swap = dir === "up" ? idx - 1 : idx + 1;
-    if (idx < 0 || swap < 0 || swap >= ordered.length) return;
-    const a = ordered[idx], b = ordered[swap];
-    await db.categoryGroups.bulkPut([{ ...a, order: b.order ?? 0 }, { ...b, order: a.order ?? 0 }]);
+    if (!cat || cat.groupId === groupId) return;
+    const inGroup = await db.categories.where("groupId").equals(groupId).toArray();
+    const order = inGroup.reduce((m, x) => Math.max(m, x.order ?? 0), -1) + 1;
+    await db.categories.update(catId, { groupId, order });
   });
   scheduleSync();
 }
