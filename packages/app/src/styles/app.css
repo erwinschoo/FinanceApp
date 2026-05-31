@@ -395,8 +395,10 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   :root[data-sidebar-collapsed="true"] .nav-badge { position:absolute; top:6px; right:6px;
     margin:0; padding:0; min-width:8px; height:8px; border-radius:50%; font-size:0; line-height:0; background:var(--orange); }
 
-  /* thema/instellingen verbergen */
+  /* thema/instellingen verbergen — de margin-top:auto die de footer naar onder
+     duwde zat op .sb-actions, dus verplaats die naar .sb-foot */
   :root[data-sidebar-collapsed="true"] .sb-actions { display:none; }
+  :root[data-sidebar-collapsed="true"] .sb-foot { margin-top:auto; }
 
   /* footer: alleen het wolkje + sync-tijd, gecentreerd gestapeld, wolkje groter */
   :root[data-sidebar-collapsed="true"] .sb-user { flex-direction:column; gap:4px; padding:8px 0; }
