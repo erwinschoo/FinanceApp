@@ -39,7 +39,7 @@ export default defineConfig({
         short_name: "bokkiep",
         description: "Importeer banktransacties, categoriseer, budgetteer en volg je spaardoelen.",
         lang: "nl",
-        theme_color: "#FEFBF6",
+        theme_color: "#5E81B5",
         background_color: "#1F1F1F",
         display: "standalone",
         start_url: ".",
