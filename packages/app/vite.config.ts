@@ -39,9 +39,11 @@ export default defineConfig({
         short_name: "bokkiep",
         description: "Importeer banktransacties, categoriseer, budgetteer en volg je spaardoelen.",
         lang: "nl",
-        // theme_color spiegelt STATUS_BAR.light uit src/theme/chrome.ts. Een manifest kent maar
-        // één waarde (gebruikt bij PWA-opstart); dark wordt runtime gezet door useTheme.ts.
-        theme_color: "#5E81B5",
+        // Bewust ZWART (niet STATUS_BAR.light): de geïnstalleerde PWA kleurt met deze waarde de
+        // dunne naad/rand tussen de systeem-statusbalk en de webview. Zwart → zwarte rand onder de
+        // blauwe balk in light, en zwart-op-zwart (onzichtbaar) in dark. De zichtbare statusbalk
+        // zelf wordt per thema gezet via de runtime <meta theme-color> in useTheme.ts (blauw/zwart).
+        theme_color: "#000000",
         // Zwarte PWA-achtergrond: kleurt de naad onder de system-app-bar (en de splash) zwart →
         // zwarte rand onder de blauwe balk in light, onzichtbaar in dark.
         background_color: "#000000",
