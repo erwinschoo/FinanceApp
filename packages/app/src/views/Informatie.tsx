@@ -26,6 +26,17 @@ const FAQ: [string, string][] = [
   ["Wat is bokkiep precies?", "bokkiep is een persoonlijk financieel overzicht: je importeert je banktransacties, categoriseert ze, stelt budgetten in en volgt spaardoelen. De app is volledig gratis en bevat geen advertenties of tracking."],
 ];
 
+/* Build-informatie (geïnjecteerd via define in vite.config.ts). */
+const buildDate = new Date(__BUILD_DATE__);
+const APP_INFO: [string, string][] = [
+  ["Versie", __APP_VERSION__],
+  ["Build", __GIT_COMMIT__],
+  ["Build-datum", isNaN(buildDate.getTime()) ? "—" : buildDate.toLocaleString("nl-NL", { dateStyle: "long", timeStyle: "short" })],
+  ["Framework", `React ${__REACT_VERSION__} · Vite ${__VITE_VERSION__}`],
+  ["Taal", `TypeScript ${__TS_VERSION__}`],
+  ["Opslag", "Lokaal (IndexedDB), optionele OneDrive-sync"],
+];
+
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
@@ -77,11 +88,23 @@ export function Informatie() {
         ))}
       </div>
 
-      <div className="card card-pad">
+      <div className="card card-pad" style={{ marginBottom: 20 }}>
         <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--ink)", margin: "0 0 6px" }}>Veelgestelde vragen</h3>
         {FAQ.map(([q, a]) => (
           <FaqItem key={q} q={q} a={a} />
         ))}
+      </div>
+
+      <div className="card card-pad">
+        <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--ink)", margin: "0 0 14px" }}>App-informatie</h3>
+        <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "auto 1fr", rowGap: 10, columnGap: 16 }}>
+          {APP_INFO.map(([label, value]) => (
+            <div key={label} style={{ display: "contents" }}>
+              <dt style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>{label}</dt>
+              <dd style={{ margin: 0, fontSize: 13, color: "var(--ink)", fontWeight: 700, textAlign: "right", wordBreak: "break-word" }}>{value}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </div>
   );

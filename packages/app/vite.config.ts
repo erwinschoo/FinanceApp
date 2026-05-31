@@ -1,3 +1,5 @@
+import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
@@ -6,8 +8,27 @@ import { VitePWA } from "vite-plugin-pwa";
 // Pas dit aan als de repo anders heet. Lokaal (dev) gebruikt altijd "/".
 const base = process.env.GITHUB_PAGES === "true" ? "/bokkiep/" : "/";
 
+// Build-info voor de App-informatie-tile (Informatie-pagina).
+const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf-8"));
+const clean = (v: string) => v.replace(/^[^0-9]*/, "");
+function gitCommit(): string {
+  try {
+    return execSync("git rev-parse --short HEAD").toString().trim();
+  } catch {
+    return "—";
+  }
+}
+
 export default defineConfig({
   base,
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __BUILD_DATE__: JSON.stringify(new Date().toISOString()),
+    __GIT_COMMIT__: JSON.stringify(gitCommit()),
+    __REACT_VERSION__: JSON.stringify(clean(pkg.dependencies.react)),
+    __VITE_VERSION__: JSON.stringify(clean(pkg.devDependencies.vite)),
+    __TS_VERSION__: JSON.stringify(clean(pkg.devDependencies.typescript)),
+  },
   plugins: [
     react(),
     VitePWA({
