@@ -339,6 +339,7 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 .chart-tip .tt-row { display:flex; align-items:center; gap:7px; }
 .chart-tip .tt-row .d { width:8px; height:8px; border-radius:2px; }
 
+.cat-body { display:flex; align-items:center; gap:18px; }
 .legend { display:flex; flex-direction:column; gap:2px; }
 .legend-row { display:flex; align-items:center; gap:10px; padding:7px 8px; border-radius:8px; transition:background .12s; cursor:default; }
 .legend-row:hover { background:var(--subtle); }
@@ -474,6 +475,20 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   .topbar h1 { font-size:18px; }
   .content { padding:14px 12px 96px; }
   .grid { gap:14px; }
+
+  /* Overzicht: KPI-tiles vol breedte onder elkaar, intern heringedeeld */
+  .grid-kpi { grid-template-columns:1fr !important; }
+  .kpi-m .k-top { margin-bottom:8px; }
+  .kpi-m .k-row2 { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+
+  /* Uitgaven per categorie: taart gecentreerd boven, legenda eronder in 2 kolommen */
+  .cat-body { flex-direction:column; align-items:center; gap:16px; }
+  .legend-2col { display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; width:100%; }
+  .legend-cell { padding:6px 8px; border-radius:8px; min-width:0; transition:background .12s; }
+  .legend-cell .lc-top { display:flex; align-items:center; gap:8px; min-width:0; }
+  .legend-cell .d { width:10px; height:10px; border-radius:3px; flex:none; }
+  .legend-cell .ln { font-size:12.5px; font-weight:600; color:var(--body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .legend-cell .lc-sub { font-size:11.5px; font-weight:700; color:var(--muted); margin-top:2px; padding-left:18px; }
 
   /* tabellen → kaarten (label-waarde gestapeld) */
   .tbl-cards thead { display:none; }

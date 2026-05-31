@@ -64,9 +64,10 @@ export function Dashboard() {
   const last6 = (sel: (s: typeof series[number]) => number) =>
     series.slice(Math.max(0, monthIdx - 5), monthIdx + 1).map(sel);
 
+  const MONTH_ABBR = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
   const labels = months.map((mk) => {
     const [y, m] = mk.split("-");
-    return `${["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"][+m - 1]} '${y.slice(2)}`;
+    return `${MONTH_ABBR[+m - 1]} '${y.slice(2)}`;
   });
   const trendSeries: TrendSeries[] =
     trendMode === "beide"
@@ -75,6 +76,13 @@ export function Dashboard() {
           { key: "uitgaven", name: "Uitgaven", color: "var(--orange)", data: series.map((s) => s.expense) },
         ]
       : [{ key: "netto", name: "Netto over", color: "var(--pos)", data: series.map((s) => Math.max(0, s.income - s.expense)) }];
+
+  // Mobiel: kleinere tijdschaal (laatste 6 maanden t/m de geselecteerde maand) met
+  // maand-only labels, zodat de datums niet in elkaar overlopen. Desktop: volledige reeks.
+  const from = isPhone ? Math.max(0, monthIdx + 1 - 6) : 0;
+  const to = isPhone ? monthIdx + 1 : months.length;
+  const trendLabels = (isPhone ? months.map((mk) => MONTH_ABBR[+mk.split("-")[1] - 1]) : labels).slice(from, to);
+  const trendSeriesView = trendSeries.map((s) => ({ ...s, data: s.data.slice(from, to) }));
 
   const budgetRows = categories
     .filter((c) => budgets[c.id])
@@ -88,16 +96,16 @@ export function Dashboard() {
   return (
     <div className="content-inner fade-in">
       <div className="grid stagger grid-kpi" style={{ gridTemplateColumns: "repeat(4,1fr)", marginBottom: 18 }}>
-        <KpiCard icon="wallet" iconColor="var(--blue)" iconBg="var(--blue-soft)"
+        <KpiCard icon="wallet" iconColor="var(--blue)" iconBg="var(--blue-soft)" phone={isPhone}
           label="Saldo betaalrekening" value={eur(balance)} delta={prevBalance ? pct(balance, prevBalance) : null}
           deltaNote="vs. vorige maand" spark={last6((s) => s.income - s.expense)} sparkColor="var(--blue)" />
-        <KpiCard icon="arrowDown" iconColor="var(--pos)" iconBg="var(--pos-soft)"
+        <KpiCard icon="arrowDown" iconColor="var(--pos)" iconBg="var(--pos-soft)" phone={isPhone}
           label="Inkomsten" value={eur(cur.income)} delta={prev ? pct(cur.income, prev.income) : null}
           deltaNote="vs. vorige maand" spark={last6((s) => s.income)} sparkColor="var(--pos)" />
-        <KpiCard icon="arrowUp" iconColor="var(--orange)" iconBg="var(--orange-soft)"
+        <KpiCard icon="arrowUp" iconColor="var(--orange)" iconBg="var(--orange-soft)" phone={isPhone}
           label="Uitgaven" value={eur(cur.expense)} delta={prev ? pct(cur.expense, prev.expense) : null}
           deltaNote="vs. vorige maand" spark={last6((s) => s.expense)} sparkColor="var(--orange)" />
-        <KpiCard icon="piggy" iconColor="var(--cat-4)" iconBg="#F2EFF7"
+        <KpiCard icon="piggy" iconColor="var(--cat-4)" iconBg="#F2EFF7" phone={isPhone}
           label="Gespaard" value={eur(cur.saved)} delta={prev ? pct(cur.saved, prev.saved) : null}
           deltaNote="naar spaardoel" spark={last6((s) => s.saved)} sparkColor="var(--cat-4)" />
       </div>
@@ -118,15 +126,15 @@ export function Dashboard() {
               </span>
             ))}
           </div>
-          <TrendChart series={trendSeries} labels={labels} height={262} />
+          <TrendChart series={trendSeriesView} labels={trendLabels} height={isPhone ? 200 : 262} />
         </div>
 
         <div className="card card-pad">
           <div className="card-h"><h3>Uitgaven per categorie</h3></div>
           <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 14 }}>{monthKeyLabelFull(key)}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+          <div className="cat-body">
             <div className="ring-wrap" style={{ flex: "none" }}>
-              <DonutChart data={donutData} size={isPhone ? 124 : 158} thickness={22} active={donutActive} onHover={setDonutActive} />
+              <DonutChart data={donutData} size={isPhone ? 190 : 158} thickness={22} active={donutActive} onHover={setDonutActive} />
               <div className="ring-center">
                 <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 700 }}>
                   {donutActive != null ? donutData[donutActive].label : "Totaal"}
@@ -136,18 +144,31 @@ export function Dashboard() {
                 </div>
               </div>
             </div>
-            <div className="legend" style={{ flex: 1, minWidth: 0 }}>
-              {donutData.slice(0, 6).map((d, i) => (
-                <div className="legend-row" key={d.id}
-                  onMouseEnter={() => setDonutActive(i)} onMouseLeave={() => setDonutActive(null)}
-                  style={{ background: donutActive === i ? "var(--subtle)" : "transparent" }}>
-                  <span className="d" style={{ background: d.color }}></span>
-                  <span className="ln">{d.label}</span>
-                  <span className="lv tnum">{eur(d.value)}</span>
-                  <span className="lp tnum">{Math.round((d.value / totalSpend) * 100)}%</span>
-                </div>
-              ))}
-            </div>
+            {isPhone ? (
+              <div className="legend-2col">
+                {donutData.slice(0, 6).map((d, i) => (
+                  <div className="legend-cell" key={d.id}
+                    onMouseEnter={() => setDonutActive(i)} onMouseLeave={() => setDonutActive(null)}
+                    style={{ background: donutActive === i ? "var(--subtle)" : "transparent" }}>
+                    <div className="lc-top"><span className="d" style={{ background: d.color }}></span><span className="ln">{d.label}</span></div>
+                    <div className="lc-sub tnum">{eur(d.value)} · {Math.round((d.value / totalSpend) * 100)}%</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="legend" style={{ flex: 1, minWidth: 0 }}>
+                {donutData.slice(0, 6).map((d, i) => (
+                  <div className="legend-row" key={d.id}
+                    onMouseEnter={() => setDonutActive(i)} onMouseLeave={() => setDonutActive(null)}
+                    style={{ background: donutActive === i ? "var(--subtle)" : "transparent" }}>
+                    <span className="d" style={{ background: d.color }}></span>
+                    <span className="ln">{d.label}</span>
+                    <span className="lv tnum">{eur(d.value)}</span>
+                    <span className="lp tnum">{Math.round((d.value / totalSpend) * 100)}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
