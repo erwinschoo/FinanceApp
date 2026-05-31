@@ -101,7 +101,7 @@ export function Informatie() {
           {APP_INFO.map(([label, value]) => (
             <div key={label} style={{ display: "contents" }}>
               <dt style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>{label}</dt>
-              <dd style={{ margin: 0, fontSize: 13, color: "var(--ink)", fontWeight: 700, textAlign: "right", wordBreak: "break-word" }}>{value}</dd>
+              <dd style={{ margin: 0, fontSize: 13, color: "var(--ink)", fontWeight: 400, textAlign: "right", wordBreak: "break-word" }}>{value}</dd>
             </div>
           ))}
         </dl>
