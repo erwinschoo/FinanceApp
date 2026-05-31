@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db/schema";
 import { rowToTx, rowToGoal, rowToPot } from "../db/map";
@@ -7,7 +7,14 @@ import { lastTwelveMonthKeys } from "../helpers/aggregations";
 import { fromCents } from "../lib/money";
 import type { Category, CategoryGroupRow, Transaction, Goal, RuleRow, PayeeRow } from "../db/types";
 
-export type ViewId = "dashboard" | "transacties" | "budgetten" | "spaardoel" | "tegenpartijen" | "import" | "sync" | "beheer" | "steun" | "download" | "informatie";
+export const VIEW_IDS = ["dashboard", "transacties", "budgetten", "spaardoel", "tegenpartijen", "import", "sync", "beheer", "steun", "download", "informatie"] as const;
+export type ViewId = (typeof VIEW_IDS)[number];
+
+/* Leidt de actieve view af uit de URL-hash (bijv. "#sync"); null bij ontbrekende/onbekende hash. */
+function viewFromHash(): ViewId | null {
+  const h = window.location.hash.replace(/^#\/?/, "");
+  return (VIEW_IDS as readonly string[]).includes(h) ? (h as ViewId) : null;
+}
 
 interface AppState {
   ready: boolean;
@@ -40,9 +47,27 @@ export function useApp(): AppState {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [view, setView] = useState<ViewId>("dashboard");
+  const [view, setViewState] = useState<ViewId>(() => viewFromHash() ?? "dashboard");
   const months = useMemo(() => lastTwelveMonthKeys(), []);
   const [monthIdx, setMonthIdx] = useState(months.length - 1);
+
+  // Navigatie schrijft de view in de URL-hash, zodat deep links, verversen en de
+  // (mobiele) terug-knop blijven werken zonder een router-library.
+  const setView = useCallback((v: ViewId) => {
+    setViewState(v);
+    if (window.location.hash.replace(/^#\/?/, "") !== v) window.history.pushState(null, "", `#${v}`);
+  }, []);
+
+  useEffect(() => {
+    if (!viewFromHash()) window.history.replaceState(null, "", "#dashboard");
+    const onPop = () => setViewState(viewFromHash() ?? "dashboard");
+    window.addEventListener("popstate", onPop);
+    window.addEventListener("hashchange", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("hashchange", onPop);
+    };
+  }, []);
 
   const categories = useLiveQuery(() => db.categories.toArray(), [], undefined);
   const groupRows = useLiveQuery(() => db.categoryGroups.toArray(), [], undefined);

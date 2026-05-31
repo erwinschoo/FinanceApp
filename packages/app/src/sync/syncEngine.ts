@@ -16,25 +16,26 @@ export interface Snapshot {
   importProfiles: unknown[];
   pots?: unknown[];
   categoryGroups?: unknown[];
+  payees?: unknown[];
 }
 
 export async function exportAll(): Promise<Snapshot> {
-  const [categories, categoryGroups, transactions, budgets, rules, goals, importBatches, importProfiles, pots] = await Promise.all([
+  const [categories, categoryGroups, transactions, budgets, rules, goals, importBatches, importProfiles, pots, payees] = await Promise.all([
     db.categories.toArray(), db.categoryGroups.toArray(), db.transactions.toArray(), db.budgets.toArray(),
-    db.rules.toArray(), db.goals.toArray(), db.importBatches.toArray(), db.importProfiles.toArray(), db.pots.toArray(),
+    db.rules.toArray(), db.goals.toArray(), db.importBatches.toArray(), db.importProfiles.toArray(), db.pots.toArray(), db.payees.toArray(),
   ]);
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
-    categories, categoryGroups, transactions, budgets, rules, goals, importBatches, importProfiles, pots,
+    categories, categoryGroups, transactions, budgets, rules, goals, importBatches, importProfiles, pots, payees,
   };
 }
 
 export async function importAll(snap: Snapshot): Promise<void> {
-  await db.transaction("rw", [db.categories, db.categoryGroups, db.transactions, db.budgets, db.rules, db.goals, db.importBatches, db.importProfiles, db.pots], async () => {
+  await db.transaction("rw", [db.categories, db.categoryGroups, db.transactions, db.budgets, db.rules, db.goals, db.importBatches, db.importProfiles, db.pots, db.payees], async () => {
     await Promise.all([
       db.categories.clear(), db.categoryGroups.clear(), db.transactions.clear(), db.budgets.clear(),
-      db.rules.clear(), db.goals.clear(), db.importBatches.clear(), db.importProfiles.clear(), db.pots.clear(),
+      db.rules.clear(), db.goals.clear(), db.importBatches.clear(), db.importProfiles.clear(), db.pots.clear(), db.payees.clear(),
     ]);
     await Promise.all([
       db.categories.bulkPut(snap.categories as never[]),
@@ -46,6 +47,7 @@ export async function importAll(snap: Snapshot): Promise<void> {
       db.importBatches.bulkPut(snap.importBatches as never[]),
       db.importProfiles.bulkPut(snap.importProfiles as never[]),
       db.pots.bulkPut((snap.pots ?? []) as never[]),
+      db.payees.bulkPut((snap.payees ?? []) as never[]),
     ]);
   });
 }
