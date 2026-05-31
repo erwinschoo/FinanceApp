@@ -4,7 +4,8 @@ export type Theme = "light" | "dark";
 
 const STORAGE_KEY = "bokkiep:theme";
 const LEGACY_KEY = "financeapp:theme"; // voorkeur van vóór de rebrand
-const THEME_COLOR: Record<Theme, string> = { light: "#5E81B5", dark: "#1F1F1F" };
+// Browser/PWA-chrome (statusbalk) gelijk aan de topbalk-kleur per thema.
+const THEME_COLOR: Record<Theme, string> = { light: "#FEFBF6", dark: "#1F1F1F" };
 
 function readStored(): Theme {
   try {
