@@ -40,6 +40,7 @@ export function Ic({ name, size = 20, className, style, strokeWidth = 1.8 }: Pro
     wallet: <><rect x="3" y="6" width="18" height="13" rx="2.5" {...p} /><path d="M3 10h18" {...p} /><circle cx="16.5" cy="14.5" r="1.2" fill="currentColor" stroke="none" /></>,
     edit: <><path d="M12 20h9" {...p} /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" {...p} /></>,
     info: <><circle cx="12" cy="12" r="9" {...p} /><line x1="12" y1="11" x2="12" y2="16" {...p} /><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none" /></>,
+    user: <><circle cx="12" cy="8" r="3.6" {...p} /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" {...p} /></>,
     sparkle: <><path d="M12 3v4M12 17v4M3 12h4M17 12h4" {...p} /><path d="M12 8a4 4 0 0 0 4 4 4 4 0 0 0-4 4 4 4 0 0 0-4-4 4 4 0 0 0 4-4z" {...p} fill="currentColor" /></>,
     file: <><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" {...p} /><path d="M14 3v5h5" {...p} /></>,
     filter: <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" {...p} />,

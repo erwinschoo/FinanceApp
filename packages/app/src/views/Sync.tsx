@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { Ic } from "../components/Ic";
 import { db } from "../db/schema";
 import { isSyncConfigured, getPca, getAccount, signIn, signOut } from "../sync/msal";
-import { syncNow, pushToOneDrive, pullFromOneDrive, getSyncMeta } from "../sync/syncEngine";
+import { syncNow, pushToOneDrive, pullFromOneDrive, getSyncMeta, refreshProfilePhoto } from "../sync/syncEngine";
 
 /* Houdt de verbindingsstatus in db.meta zodat de zijbalk hem reactief kan tonen
- * zonder MSAL te hoeven laden. */
+ * zonder MSAL te hoeven laden. Bij uitloggen ook de gecachte profielfoto wissen. */
 async function setAccountMeta(acc: { email?: string; name?: string } | null) {
   if (acc?.email) await db.meta.put({ key: "account", value: { email: acc.email, name: acc.name } });
-  else await db.meta.delete("account");
+  else { await db.meta.delete("account"); await db.meta.delete("accountPhoto"); }
 }
 
 export function Sync() {
@@ -26,6 +26,7 @@ export function Sync() {
         const acc = getAccount();
         setEmail(acc?.username ?? null);
         await setAccountMeta(acc ? { email: acc.username, name: acc.name } : null);
+        if (acc) void refreshProfilePhoto(); // bestaande gebruikers: foto alsnog ophalen
         const meta = await getSyncMeta();
         setLastSynced(meta?.lastSyncedAt ?? null);
       } catch { /* genegeerd */ }
@@ -109,7 +110,7 @@ export function Sync() {
             </div>
           </>
         ) : (
-          <button className="btn btn-primary" disabled={busy} onClick={() => run(async () => { const acc = await signIn(); setEmail(acc.username); await setAccountMeta({ email: acc.username, name: acc.name }); }, "Ingelogd.")}>
+          <button className="btn btn-primary" disabled={busy} onClick={() => run(async () => { const acc = await signIn(); setEmail(acc.username); await setAccountMeta({ email: acc.username, name: acc.name }); await refreshProfilePhoto(); }, "Ingelogd.")}>
             <Ic name="cloud" size={16} /> Inloggen met Microsoft
           </button>
         )}

@@ -61,3 +61,17 @@ export async function getToken(): Promise<string> {
     return res.accessToken;
   }
 }
+
+/* Stille token-acquisitie zonder popup-fallback — voor achtergrondtaken (profielfoto)
+ * die nooit een inlog-popup mogen openen. Geeft null als het niet stil lukt. */
+export async function getTokenSilent(): Promise<string | null> {
+  const app = await getPca();
+  const account = getAccount();
+  if (!account) return null;
+  try {
+    const res = await app.acquireTokenSilent({ scopes: GRAPH_SCOPES, account });
+    return res.accessToken;
+  } catch {
+    return null;
+  }
+}

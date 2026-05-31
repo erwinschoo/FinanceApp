@@ -1,6 +1,6 @@
 import { db } from "../db/schema";
-import { getToken } from "./msal";
-import { getRemoteMeta, downloadData, uploadData } from "./graphClient";
+import { getToken, getTokenSilent } from "./msal";
+import { getRemoteMeta, downloadData, uploadData, downloadProfilePhoto } from "./graphClient";
 
 const SCHEMA_VERSION = 1;
 
@@ -56,6 +56,18 @@ async function setSyncMeta(v: { lastSyncedAt: string; remoteEtag: string }) {
 export async function getSyncMeta(): Promise<{ lastSyncedAt: string; remoteEtag: string } | null> {
   const r = await db.meta.get("sync");
   return (r?.value as { lastSyncedAt: string; remoteEtag: string }) ?? null;
+}
+
+/* Haal de profielfoto van de ingelogde gebruiker op en cache 'm in db.meta ("accountPhoto").
+ * Stil: gebruikt alleen een silent token en faalt geruisloos (geen popup, geen sync-fout). */
+export async function refreshProfilePhoto(): Promise<void> {
+  try {
+    const token = await getTokenSilent();
+    if (!token) return;
+    const dataUrl = await downloadProfilePhoto(token);
+    if (dataUrl) await db.meta.put({ key: "accountPhoto", value: { dataUrl } });
+    else await db.meta.delete("accountPhoto");
+  } catch { /* genegeerd */ }
 }
 
 /* Upload de lokale dataset naar OneDrive (overschrijft remote). */

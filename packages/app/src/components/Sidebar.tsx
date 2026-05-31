@@ -30,6 +30,19 @@ const OVERIG: NavItem[] = [
   { id: "informatie", label: "Informatie", icon: "info", tip: "Over bokkiep: uitleg en veelgestelde vragen" },
 ];
 
+/* Initialen afgeleid van de account-naam (val terug op het e-mailadres). */
+function initialsFrom(name?: string, email?: string): string {
+  const n = (name ?? "").trim();
+  if (n) {
+    const parts = n.split(/\s+/);
+    const first = parts[0]?.[0] ?? "";
+    const last = parts.length > 1 ? (parts[parts.length - 1][0] ?? "") : "";
+    return (first + last).toUpperCase() || "?";
+  }
+  const local = (email ?? "").split("@")[0].replace(/[^a-zA-Z]/g, "");
+  return (local.slice(0, 2) || "?").toUpperCase();
+}
+
 /* "gesynct 14:32" (vandaag) of "gesynct 28 mei" (anders). */
 function syncedLabel(iso: string): string {
   const d = new Date(iso);
@@ -56,8 +69,10 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
   const syncState = useAutoSyncStatus();
   const account = useLiveQuery(() => db.meta.get("account"), [], undefined);
   const syncMeta = useLiveQuery(() => db.meta.get("sync"), [], undefined);
+  const photoMeta = useLiveQuery(() => db.meta.get("accountPhoto"), [], undefined);
   const acc = account?.value as { email?: string; name?: string } | undefined;
   const connected = !!acc?.email;
+  const photo = connected ? (photoMeta?.value as { dataUrl?: string } | undefined)?.dataUrl : undefined;
   const lastSynced = (syncMeta?.value as { lastSyncedAt?: string } | undefined)?.lastSyncedAt;
   const displayName = connected ? (acc?.email ?? acc?.name ?? "Verbonden") : "Niet verbonden";
 
@@ -133,7 +148,13 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
 
       <div className="sb-foot">
         <div className="sb-user">
-          <div className="av">ES</div>
+          <div className={"av" + (connected ? "" : " av-empty")}>
+            {photo
+              ? <img className="av-photo" src={photo} alt="" />
+              : connected
+                ? initialsFrom(acc?.name, acc?.email)
+                : <Ic name="user" size={18} />}
+          </div>
           <div className="meta">
             <div className="nm" title={displayName}>{displayName}</div>
             <div className={"em" + (connected ? " online" : "") + (connected && syncState === "syncing" ? " syncing" : "")} title={connected ? "Verbonden met OneDrive" : "Alleen op dit apparaat opgeslagen"}>

@@ -83,9 +83,10 @@ export async function runStartupSync(): Promise<void> {
   inFlight = true;
   setStatus("syncing");
   try {
-    const { syncNow } = await import("./syncEngine");
+    const { syncNow, refreshProfilePhoto } = await import("./syncEngine");
     await syncNow();
     setStatus("idle");
+    void refreshProfilePhoto(); // profielfoto stil op de achtergrond verversen
   } catch {
     setStatus(navigator.onLine ? "error" : "offline");
   } finally {
