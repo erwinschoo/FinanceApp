@@ -316,7 +316,10 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 .cat-empty-drop { font-size:12.5px; color:var(--faint); font-style:italic; padding:14px 0; text-align:center; border:1px dashed var(--line); border-radius:10px; margin:4px 0; }
 .cat-row { display:flex; align-items:center; gap:11px; padding:12px 2px; cursor:default; border-radius:8px; background:var(--surface); }
 .cat-row.dragging { opacity:.45; }
-.cat-grip { display:inline-flex; align-items:center; color:var(--faint); cursor:grab; flex:none; }
+.cat-main { display:flex; align-items:center; gap:11px; min-width:0; }
+.cat-actions { display:flex; align-items:center; gap:2px; }
+.cat-grip { display:inline-flex; align-items:center; justify-content:center; color:var(--faint); cursor:grab;
+  flex:none; touch-action:none; user-select:none; -webkit-user-select:none; }
 .cat-grip:active { cursor:grabbing; }
 .cat-drop-line { height:2px; background:var(--blue); border-radius:2px; margin:0 2px; }
 
@@ -514,9 +517,16 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   /* kaart-headers met meerdere knoppen mogen wrappen */
   .card-h { flex-wrap:wrap; row-gap:8px; }
 
-  /* Beheer: categorie-rij wrapt, sleep-grip weg (touch gebruikt de pijltjes) */
-  .cat-row { flex-wrap:wrap; }
-  .cat-row .cat-grip { display:none; }
+  /* Beheer: categorie-rij in 2 regels — grip links (over beide regels), regel 1 naam+type,
+     regel 2 "n transacties" links en de knoppen rechts. */
+  .cat-row { display:grid; grid-template-columns:auto 1fr auto;
+    grid-template-areas:"grip name name" "grip usage actions";
+    align-items:center; column-gap:11px; row-gap:4px; }
+  .cat-row .cat-grip { grid-area:grip; align-self:center; min-width:32px; min-height:32px; }
+  .cat-row .cat-main { grid-area:name; }
+  .cat-row .cat-main .cat-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cat-row .tnum { grid-area:usage; margin-left:0 !important; }   /* override inline marginLeft:auto */
+  .cat-row .cat-actions { grid-area:actions; justify-self:end; }
 
   /* touch-targets */
   .nav-item { min-height:48px; }

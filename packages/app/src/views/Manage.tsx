@@ -7,6 +7,7 @@ import {
 } from "../db/repo";
 import { Ic } from "../components/Ic";
 import { Dropdown } from "../components/Dropdown";
+import { usePointerDragMove } from "../charts/usePointerDragMove";
 import type { Category, CategoryGroupRow, CategoryType, RuleRow } from "../db/types";
 
 /* Suggesties die "luisteren" met de rest: afgeleid van de huisstijl-tokens
@@ -39,9 +40,8 @@ function CategoriesTab() {
   const [editId, setEditId] = useState<string | null>(null);
   const [adding, setAdding] = useState<string | null>(null);     // groupId waar we een categorie aan toevoegen
   const [editGroupId, setEditGroupId] = useState<string | null>(null);
-  // drag & drop — alleen om een categorie naar een andere groep te slepen
-  const [dragCat, setDragCat] = useState<string | null>(null);
-  const [dropGroup, setDropGroup] = useState<string | null>(null);
+  // verslepen naar een andere groep — pointer-based (werkt op touch + muis, met auto-scroll)
+  const { dragCat, dropGroup, startDrag } = usePointerDragMove({ onMove: setCategoryGroup });
 
   const usage = useMemo(() => {
     const m: Record<string, number> = {};
@@ -50,12 +50,6 @@ function CategoriesTab() {
   }, [transactions]);
 
   const inGroup = (id: string) => categories.filter((c) => c.groupId === id).sort(byName);
-
-  function onDrop(groupId: string) {
-    if (dragCat) setCategoryGroup(dragCat, groupId);   // no-op als de categorie al in deze groep zit
-    setDragCat(null);
-    setDropGroup(null);
-  }
 
   return (
     <div className="card card-pad">
@@ -80,9 +74,7 @@ function CategoriesTab() {
         const members = inGroup(g.id);
         const isOver = dropGroup === g.id;
         return (
-          <div key={g.id} className={"cat-group-sec" + (isOver ? " drag-over" : "")}
-            onDragOver={(e) => { if (dragCat) { e.preventDefault(); setDropGroup(g.id); } }}
-            onDrop={(e) => { e.preventDefault(); onDrop(g.id); }}>
+          <div key={g.id} data-group-id={g.id} className={"cat-group-sec" + (isOver ? " drag-over" : "")}>
             {editGroupId === g.id ? (
               <GroupEditor group={g} onCancel={() => setEditGroupId(null)}
                 onSave={async (d) => { await updateCategoryGroup(g.id, d); setEditGroupId(null); }} />
@@ -110,7 +102,7 @@ function CategoriesTab() {
                 usage={usage[c.id] || 0} editing={editId === c.id}
                 isDragging={dragCat === c.id}
                 onEdit={() => { setEditId(c.id); setAdding(null); }} onClose={() => setEditId(null)}
-                onDragStart={() => setDragCat(c.id)} onDragEnd={() => { setDragCat(null); setDropGroup(null); }} />
+                onGripPointerDown={startDrag} />
             ))}
           </div>
         );
@@ -131,12 +123,12 @@ async function removeGroup(g: CategoryGroupRow, members: Category[], groups: Cat
 
 function CatRow({
   c, groups, usage, editing, isDragging,
-  onEdit, onClose, onDragStart, onDragEnd,
+  onEdit, onClose, onGripPointerDown,
 }: {
   c: Category; groups: CategoryGroupRow[]; usage: number;
   editing: boolean; isDragging: boolean;
   onEdit: () => void; onClose: () => void;
-  onDragStart: () => void; onDragEnd: () => void;
+  onGripPointerDown: (catId: string, e: React.PointerEvent) => void;
 }) {
   async function remove() {
     const msg = usage > 0 ? `${usage} transactie(s) worden verplaatst naar "Overig". Doorgaan?` : `Categorie "${c.name}" verwijderen?`;
@@ -144,15 +136,18 @@ function CatRow({
   }
   return (
     <div style={{ borderBottom: "1px solid var(--line-soft)" }}>
-      <div className={"cat-row" + (isDragging ? " dragging" : "")} draggable
-        onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <span className="cat-grip" title="Sleep naar een andere groep"><Ic name="grip" size={16} /></span>
-        <span style={{ width: 11, height: 11, borderRadius: "50%", background: c.color, flex: "none" }}></span>
-        <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14 }}>{c.name}</div>
-        <span className="tag" style={{ background: "var(--subtle)", color: "var(--muted)", fontSize: 11 }}>{TYPE_LABEL[c.type]}</span>
+      <div className={"cat-row" + (isDragging ? " dragging" : "")}>
+        <span className="cat-grip" title="Sleep naar een andere groep" onPointerDown={(e) => onGripPointerDown(c.id, e)}><Ic name="grip" size={16} /></span>
+        <div className="cat-main">
+          <span style={{ width: 11, height: 11, borderRadius: "50%", background: c.color, flex: "none" }}></span>
+          <div className="cat-name" style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14 }}>{c.name}</div>
+          <span className="tag" style={{ background: "var(--subtle)", color: "var(--muted)", fontSize: 11 }}>{TYPE_LABEL[c.type]}</span>
+        </div>
         <span style={{ marginLeft: "auto", fontSize: 12.5, color: "var(--muted)" }} className="tnum">{usage} transacties</span>
-        <button className="btn btn-ghost" style={{ padding: "5px 9px" }} onClick={onEdit} title="Bewerken"><Ic name="edit" size={16} /></button>
-        <button className="btn btn-ghost" style={{ padding: "5px 9px" }} onClick={remove} title="Verwijderen"><Ic name="trash" size={16} /></button>
+        <div className="cat-actions">
+          <button className="btn btn-ghost" style={{ padding: "5px 9px" }} onClick={onEdit} title="Bewerken"><Ic name="edit" size={16} /></button>
+          <button className="btn btn-ghost" style={{ padding: "5px 9px" }} onClick={remove} title="Verwijderen"><Ic name="trash" size={16} /></button>
+        </div>
       </div>
       {editing && <CatEditor initial={c} groups={groups} onCancel={onClose} onSave={async (d) => { await updateCategory(c.id, d); onClose(); }} />}
     </div>
