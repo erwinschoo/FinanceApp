@@ -17,6 +17,7 @@ const SCREENS: [string, string, string][] = [
 
 const FAQ: [string, string][] = [
   ["Hoe importeer ik mijn banktransacties?", "Ga naar Importeren en kies het Excel-bestand dat je via je bank exporteert. bokkiep leest de transacties in en deelt ze waar mogelijk automatisch in op basis van je regels en tegenpartijen."],
+  ["Kan ik een bestand direct met bokkiep openen op mijn telefoon?", "Ja! Heb je bokkiep als app geïnstalleerd, dan open je een gedownloade Excel- of CSV-export rechtstreeks met bokkiep. Tik op je Android-telefoon bij het bestand op \"Delen\" (of op de computer op \"Openen met\") en kies bokkiep — de import-wizard opent meteen, met je transacties klaar om in te delen. Op iPhone en iPad kan dit nog niet; gebruik daar \"Kies een bestand\" op de Importeren-pagina."],
   ["Hoe installeer ik bokkiep als app?", "Open de pagina \"Download app\" in het menu. Daar vind je een installatieknop of instructies per apparaat. Eenmaal geïnstalleerd open je bokkiep als een gewone app, zonder browserbalk."],
   ["Is synchroniseren veilig?", "Ja. Synchroniseren gebeurt uitsluitend met jóuw eigen OneDrive-account. Je gegevens worden niet door anderen ingezien; bokkiep heeft geen eigen server die je data bewaart."],
   ["Kan ik categorieën aanpassen?", "Zeker. Via Beheer pas je categorieën, groepen en categoriseer-regels aan. Wijzigingen werken door op je hele overzicht."],
