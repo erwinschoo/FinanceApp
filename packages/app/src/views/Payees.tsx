@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useApp } from "../state/AppContext";
 import { eurSign, fmtDate } from "../lib/format";
 import { buildPayeeOverview } from "../helpers/payees";
+import { catTint } from "../lib/catColor";
 import { assignPayeeCategory } from "../db/repo";
 import { CatSelect } from "../components/CatSelect";
 import { Ic } from "../components/Ic";
@@ -80,7 +81,7 @@ export function Payees() {
                   <tr className="row" key={p.key} style={!p.categoryId ? { background: "var(--orange-tint)" } : undefined}>
                     <td className="td-primary" style={{ width: "40%" }}>
                       <div className="merchant">
-                        <span className="mi" style={{ background: c ? c.tint : "var(--subtle)", color: c ? c.color : "var(--muted)" }}>
+                        <span className="mi" style={{ background: c ? catTint(c.color) : "var(--subtle)", color: c ? c.color : "var(--muted)" }}>
                           {(p.name[0] || "?").toUpperCase()}
                         </span>
                         <div>

@@ -9,6 +9,7 @@ import {
 import { ProgressRing } from "../charts/ProgressRing";
 import { TrendChart, type TrendSeries } from "../charts/TrendChart";
 import { useMediaQuery } from "../charts/useMediaQuery";
+import { catTint } from "../lib/catColor";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { Ic } from "../components/Ic";
 import type { SavingsGroup, SavingsRow } from "../goals/savings";
@@ -22,14 +23,9 @@ function endLabel(monthsNeeded: number): string {
   return `${MONTHS_NL[m]} ${y}`;
 }
 
-/* Thema-adaptieve zachte achtergrond uit de categorie-kleur. De per-categorie `tint`
- * uit de seed is een vaste lichte pastel die in dark mode licht blijft (onleesbaar);
- * een color-mix-wash van de kleur wordt vanzelf donker op een donkere ondergrond. */
-const softTint = (color: string) => `color-mix(in srgb, ${color} 18%, transparent)`;
-
 function CatIcon({ group, size = 30 }: { group: { color: string; initial: string }; size?: number }) {
   return (
-    <span style={{ width: size, height: size, borderRadius: 9, background: softTint(group.color), color: group.color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: size * 0.46, flex: "none" }}>
+    <span style={{ width: size, height: size, borderRadius: 9, background: catTint(group.color), color: group.color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: size * 0.46, flex: "none" }}>
       {group.initial}
     </span>
   );
@@ -161,7 +157,7 @@ export function Savings() {
             const on = g.categoryId === selId;
             return (
               <button key={g.categoryId} onClick={() => setSelId(g.categoryId)}
-                style={{ flex: "0 0 168px", width: 168, textAlign: "left", cursor: "pointer", border: "1px solid " + (on ? g.color : "var(--line)"), background: on ? softTint(g.color) : "var(--surface)", borderRadius: 12, padding: "12px 14px", boxShadow: on ? "inset 0 0 0 1px " + g.color : "none", transition: "all .15s var(--ease)" }}>
+                style={{ flex: "0 0 168px", width: 168, textAlign: "left", cursor: "pointer", border: "1px solid " + (on ? g.color : "var(--line)"), background: on ? catTint(g.color) : "var(--surface)", borderRadius: 12, padding: "12px 14px", boxShadow: on ? "inset 0 0 0 1px " + g.color : "none", transition: "all .15s var(--ease)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 9 }}>
                   <CatIcon group={g} />
                   <div style={{ minWidth: 0 }}>
@@ -247,7 +243,7 @@ export function Savings() {
                 <div className="tnum" style={{ fontSize: 18, fontWeight: 800, color: "var(--ink)" }}>{eur(group.balance)}</div>
                 <div style={{ fontSize: 11.5, color: "var(--faint)", fontWeight: 600 }}>van {eur(group.totalTarget)}</div>
               </div>
-              <div style={{ background: softTint(group.color), borderRadius: 12, padding: "12px 14px", textAlign: "left" }}>
+              <div style={{ background: catTint(group.color), borderRadius: 12, padding: "12px 14px", textAlign: "left" }}>
                 <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700 }}>Alles klaar rond</div>
                 <div className="tnum" style={{ fontSize: 18, fontWeight: 800, color: group.color }}>{endLabel(monthsAll)}</div>
                 <div style={{ fontSize: 11.5, color: "var(--faint)", fontWeight: 600 }}>bij {eur(group.monthly)}/mnd</div>
