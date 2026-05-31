@@ -54,6 +54,7 @@
   /* elevated/overlay surfaces (themable) */
   --elevated:    #FFFFFF;            /* popovers, menus, tooltips */
   --topbar-bg:   #FEFBF6;
+  --topbar-line: #EFE9DF;            /* warme onderrand onder de topbalk */
   --tip-bg:      #101820;            /* chart tooltip — donker in beide thema's */
   --tip-fg:      #FFFFFF;
   --tip-muted:   #B6BCC4;
@@ -98,6 +99,7 @@
 
   --elevated:   #333333;
   --topbar-bg:  #1F1F1F;
+  --topbar-line:var(--line);
   --tip-bg:     #0F0F0F;
   --tip-fg:     #F3F3F3;
   --tip-muted:  #8A9099;
@@ -181,7 +183,7 @@ input { font-family:inherit; }
 /* main */
 .main { display:flex; flex-direction:column; min-width:0; overflow:hidden; }
 .topbar { display:flex; align-items:center; gap:16px; padding:18px 32px; background:var(--topbar-bg);
-  border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20; }
+  border-bottom:1px solid var(--topbar-line); position:sticky; top:0; z-index:20; }
 .topbar h1 { font-size:23px; font-weight:800; color:var(--ink); margin:0; letter-spacing:-.02em; }
 .topbar .sub { font-size:13px; color:var(--muted); margin-top:1px; }
 .spacer { flex:1; }
