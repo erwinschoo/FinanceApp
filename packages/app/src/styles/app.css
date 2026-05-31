@@ -481,8 +481,11 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 
   /* Overzicht: KPI-tiles vol breedte onder elkaar, intern heringedeeld */
   .grid-kpi { grid-template-columns:1fr !important; }
+  .kpi-m { display:flex; align-items:center; gap:14px; }
+  .kpi-m .kpi-m-main { flex:1; min-width:0; }
   .kpi-m .k-top { margin-bottom:8px; }
-  .kpi-m .k-row2 { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .kpi-m .k-row2 { display:flex; align-items:baseline; gap:8px; }
+  .kpi-m > svg { flex:none; }
 
   /* Uitgaven per categorie: taart gecentreerd boven, legenda eronder in 2 kolommen */
   .cat-body { flex-direction:column; align-items:center; gap:16px; }

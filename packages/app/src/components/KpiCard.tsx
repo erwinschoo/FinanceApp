@@ -22,20 +22,22 @@ export function KpiCard({ icon, iconColor, iconBg, label, value, delta, deltaNot
     </span>
   );
 
-  // Mobiel: spark naast de titel, bedrag eronder met de delta% ernaast.
+  // Mobiel: links titel + bedrag/percentage, rechts een grotere spark die de
+  // tile-hoogte vult en verticaal centreert. Geen delta-subtekst (bespaart ruimte).
   if (phone) {
     return (
       <div className="card kpi kpi-m">
-        <div className="k-top">
-          <span className="k-ic" style={{ background: iconBg, color: iconColor }}><Ic name={icon} /></span>
-          <span className="k-lbl">{label}</span>
-          {spark && <span style={{ marginLeft: "auto" }}><Spark data={spark} color={sparkColor} /></span>}
+        <div className="kpi-m-main">
+          <div className="k-top">
+            <span className="k-ic" style={{ background: iconBg, color: iconColor }}><Ic name={icon} /></span>
+            <span className="k-lbl">{label}</span>
+          </div>
+          <div className="k-row2">
+            <div className="k-val tnum">{value}</div>
+            {deltaEl}
+          </div>
         </div>
-        <div className="k-row2">
-          <div className="k-val tnum">{value}</div>
-          {deltaEl}
-          {delta != null && <span className="delta-note">{deltaNote}</span>}
-        </div>
+        {spark && <Spark data={spark} color={sparkColor} w={88} h={52} />}
       </div>
     );
   }
