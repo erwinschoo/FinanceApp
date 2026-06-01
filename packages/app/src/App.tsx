@@ -57,8 +57,9 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const contentRef = useRef<HTMLElement>(null);
 
-  // Bij navigatie naar een ander scherm: altijd bovenaan beginnen.
-  useEffect(() => { contentRef.current?.scrollTo(0, 0); }, [view]);
+  // Bij navigatie naar een ander scherm: altijd bovenaan beginnen. Op desktop scrollt .content,
+  // op mobiel het venster zelf (.main is daar overflow:visible) — daarom beide resetten.
+  useEffect(() => { contentRef.current?.scrollTo(0, 0); window.scrollTo(0, 0); }, [view]);
 
   // Bij app-start: stil de nieuwste cloud-versie ophalen (alleen indien ingelogd).
   useEffect(() => { void runStartupSync(); }, []);

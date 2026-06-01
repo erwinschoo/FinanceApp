@@ -1,9 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db/schema";
 import { rowToTx, rowToGoal, rowToPot } from "../db/map";
 import { buildSavings, type SavingsGroup } from "../goals/savings";
-import { lastTwelveMonthKeys } from "../helpers/aggregations";
+import { lastTwelveMonthKeys, txKey } from "../helpers/aggregations";
 import { fromCents } from "../lib/money";
 import type { Category, CategoryGroupRow, Transaction, Goal, RuleRow, PayeeRow } from "../db/types";
 
@@ -85,14 +85,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const ready = !!categories && !!groupRows && !!txRows && !!budgetRows && !!goalRows && !!ruleRows && !!payeeRows && !!potRows;
 
+  // Transacties (nieuwste eerst) — apart gememoïseerd zodat de maand-default ze kan gebruiken.
+  const transactions = useMemo<Transaction[]>(
+    () => (txRows ?? []).map(rowToTx).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
+    [txRows],
+  );
+
+  // Default-maand = nieuwste maand binnen het 12-maandsvenster waarvoor er data is (anders de huidige
+  // maand). Zo toont een lege huidige maand toch de laatste maand mét cijfers i.p.v. nullen + een leeg
+  // maandveld. Eenmalig toegepast zodra de data klaar is; een handmatige keuze (pickMonth) wint daarna.
+  const defaultMonthIdx = useMemo(() => {
+    const keys = new Set(transactions.map(txKey));
+    for (let i = months.length - 1; i >= 0; i--) if (keys.has(months[i])) return i;
+    return months.length - 1;
+  }, [transactions, months]);
+
+  const monthTouched = useRef(false);
+  const pickMonth = useCallback((i: number) => { monthTouched.current = true; setMonthIdx(i); }, []);
+  useEffect(() => {
+    if (ready && !monthTouched.current) setMonthIdx(defaultMonthIdx);
+  }, [ready, defaultMonthIdx]);
+
   const value = useMemo<AppState>(() => {
     const cats = categories ?? [];
     const catMap = Object.fromEntries(cats.map((c) => [c.id, c]));
     const categoryGroups = [...(groupRows ?? [])].sort((a, b) => a.name.localeCompare(b.name, "nl"));
     const groupMap = Object.fromEntries(categoryGroups.map((g) => [g.id, g]));
-    const transactions: Transaction[] = (txRows ?? [])
-      .map(rowToTx)
-      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
     const budgets: Record<string, number> = {};
     for (const b of budgetRows ?? []) {
       if (b.month === null) budgets[b.categoryId] = fromCents(b.amountCents);
@@ -109,9 +127,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     return {
       ready, categories: cats, catMap, categoryGroups, groupMap, transactions, budgets, goals, savingsGroups, savingsLibrary, rules, payees, payeeMap,
-      months, monthIdx, setMonthIdx, view, setView, uncategorizedCount,
+      months, monthIdx, setMonthIdx: pickMonth, view, setView, uncategorizedCount,
     };
-  }, [categories, groupRows, txRows, budgetRows, goalRows, ruleRows, payeeRows, potRows, ready, months, monthIdx, view]);
+  }, [categories, groupRows, transactions, budgetRows, goalRows, ruleRows, payeeRows, potRows, ready, months, monthIdx, view, pickMonth, setView]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

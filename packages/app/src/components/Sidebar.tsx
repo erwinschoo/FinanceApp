@@ -102,10 +102,11 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
     </button>
   );
 
-  // Een menusectie met kopje. Op desktop altijd open; op mobiel inklapbaar (accordion).
+  // Menusectie met kopje. Inklapbaar (accordion, max. één tegelijk) op mobiel én desktop. Alleen in
+  // de ingeklapte desktop-icoonrail tonen we alles statisch — daar past geen accordion.
   const section = (key: "data" | "overig", label: string, items: NavItem[]) => {
     const navEl = <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{items.map(item)}</nav>;
-    if (!isMobile) return <>{<div className="sb-sec">{label}</div>}{navEl}</>;
+    if (!isMobile && collapsed) return <>{<div className="sb-sec">{label}</div>}{navEl}</>;
     const isOpen = openSection === key;
     return (
       <>
