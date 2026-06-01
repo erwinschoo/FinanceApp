@@ -3,7 +3,7 @@ import { Ic } from "../components/Ic";
 import { Button } from "../components/Button";
 import { db } from "../db/schema";
 import { isSyncConfigured, getPca, getAccount, signIn, signOut } from "../sync/msal";
-import { syncNow, pushToOneDrive, pullFromOneDrive, getSyncMeta, refreshProfilePhoto, exportAll, importAll, type Snapshot } from "../sync/syncEngine";
+import { syncNow, pushToOneDrive, getSyncMeta, refreshProfilePhoto, exportAll, importAll, fetchRemoteSnapshot, applyPull, isSubstantialTxLoss, type Snapshot } from "../sync/syncEngine";
 
 /* Houdt de verbindingsstatus in db.meta zodat de zijbalk hem reactief kan tonen
  * zonder MSAL te hoeven laden. Bij uitloggen ook de gecachte profielfoto wissen. */
@@ -72,11 +72,20 @@ export function Sync() {
     }
   }
 
-  function onFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = ""; // reset zodat hetzelfde bestand opnieuw gekozen kan worden
     if (!file) return;
-    if (!confirm("Hiermee worden al je huidige gegevens vervangen door de inhoud van dit bestand. Doorgaan?")) return;
+    let warn = "Hiermee worden al je huidige gegevens vervangen door de inhoud van dit bestand. Doorgaan?";
+    try {
+      const snap = JSON.parse(await file.text()) as Snapshot;
+      const incomingTx = Array.isArray(snap?.transactions) ? snap.transactions.length : 0;
+      const currentTx = await db.transactions.count();
+      if (isSubstantialTxLoss(currentTx, incomingTx)) {
+        warn = `Let op: je vervangt ${currentTx} transacties door ${incomingTx} — je verliest er mogelijk ${currentTx - incomingTx}. Maak eventueel eerst een export. Toch doorgaan?`;
+      }
+    } catch { /* ongeldige JSON: importFromFile geeft straks een nette foutmelding */ }
+    if (!confirm(warn)) return;
     void run(() => importFromFile(file), "Back-up teruggezet.");
   }
 
@@ -90,10 +99,53 @@ export function Sync() {
       const meta = await getSyncMeta();
       setLastSynced(meta?.lastSyncedAt ?? null);
       if (r.action === "conflict") {
-        setMsg({ kind: "err", text: "Dit toestel is nog niet verzoend met OneDrive en beide kanten hebben data. Kies bewust: Uploaden (dit toestel → cloud) of Ophalen (cloud → dit toestel)." });
+        setMsg({ kind: "err", text: "De cloud en dit toestel verschillen te veel om automatisch te kiezen — om geen data te verliezen doet de sync niets. Kies bewust: Uploaden (dit toestel → cloud) of Ophalen (cloud → dit toestel)." });
       } else {
         setMsg({ kind: "ok", text: r.action === "pulled" ? "Nieuwere versie opgehaald van OneDrive." : "Lokale data geüpload naar OneDrive." });
       }
+    } catch (e) {
+      setMsg({ kind: "err", text: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Ophalen met veiligheidscheck: zou de cloud-versie substantieel minder transacties
+  // bevatten, dan eerst expliciet bevestigen (je vervangt immers je lokale data).
+  async function pullClick() {
+    setBusy(true); setMsg(null);
+    try {
+      const rs = await fetchRemoteSnapshot();
+      if (!rs) throw new Error("Geen databestand in OneDrive gevonden.");
+      if (isSubstantialTxLoss(rs.localTx, rs.remoteTx) &&
+          !confirm(`Let op: de OneDrive-versie bevat ${rs.remoteTx} transacties, dit toestel ${rs.localTx}. Ophalen vervangt je lokale data; je verliest mogelijk ${rs.localTx - rs.remoteTx} transactie(s). Doorgaan?`)) {
+        setBusy(false); return;
+      }
+      await applyPull(rs.snap, rs.remoteEtag);
+      const meta = await getSyncMeta();
+      setLastSynced(meta?.lastSyncedAt ?? null);
+      setMsg({ kind: "ok", text: "Opgehaald uit OneDrive." });
+    } catch (e) {
+      setMsg({ kind: "err", text: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Uploaden met veiligheidscheck: zou de cloud (die je overschrijft) substantieel
+  // meer transacties bevatten dan dit toestel, dan eerst expliciet bevestigen.
+  async function uploadClick() {
+    setBusy(true); setMsg(null);
+    try {
+      const rs = await fetchRemoteSnapshot(); // null = nog geen cloudbestand → niets te verliezen
+      if (rs && isSubstantialTxLoss(rs.remoteTx, rs.localTx) &&
+          !confirm(`Let op: OneDrive bevat ${rs.remoteTx} transacties, dit toestel ${rs.localTx}. Uploaden overschrijft de cloud; daar verdwijnen mogelijk ${rs.remoteTx - rs.localTx} transactie(s). Doorgaan?`)) {
+        setBusy(false); return;
+      }
+      await pushToOneDrive();
+      const meta = await getSyncMeta();
+      setLastSynced(meta?.lastSyncedAt ?? null);
+      setMsg({ kind: "ok", text: "Geüpload naar OneDrive." });
     } catch (e) {
       setMsg({ kind: "err", text: e instanceof Error ? e.message : String(e) });
     } finally {
@@ -150,8 +202,8 @@ export function Sync() {
                 <Button variant="primary" icon="cloud" disabled={busy} onClick={syncNowClick}>
                   Sync nu
                 </Button>
-                <Button icon="upload" disabled={busy} onClick={() => run(pushToOneDrive, "Geüpload naar OneDrive.")}>Uploaden</Button>
-                <Button icon="arrowDown" disabled={busy} onClick={() => run(async () => { const ok = await pullFromOneDrive(); if (!ok) throw new Error("Geen databestand in OneDrive gevonden."); }, "Opgehaald uit OneDrive.")}>Ophalen</Button>
+                <Button icon="upload" disabled={busy} onClick={uploadClick}>Uploaden</Button>
+                <Button icon="arrowDown" disabled={busy} onClick={pullClick}>Ophalen</Button>
               </div>
               <div className="notice" style={{ marginTop: 18 }}>
                 <span className="ni"><Ic name="info" size={20} /></span>

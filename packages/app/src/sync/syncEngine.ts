@@ -80,15 +80,42 @@ export async function pushToOneDrive(): Promise<void> {
   await setSyncMeta({ lastSyncedAt: new Date().toISOString(), remoteEtag: meta.eTag });
 }
 
-/* Haal de dataset op uit OneDrive (overschrijft lokaal). */
-export async function pullFromOneDrive(): Promise<boolean> {
+/* Aantal transacties in een snapshot (de zwaarste, onvervangbare data). */
+export function snapshotTxCount(snap: Snapshot): number {
+  return Array.isArray(snap.transactions) ? snap.transactions.length : 0;
+}
+
+/* "Substantieel verlies": de vervangende dataset heeft fors minder transacties dan
+ * wat er nu staat. Triggert bij meer dan 10 transacties én ≥10% minder, of wanneer
+ * je álles (→ 0) zou wissen. Een klein/normaal multi-device-verschil triggert dus niet. */
+export function isSubstantialTxLoss(haveTx: number, wouldHaveTx: number): boolean {
+  if (haveTx <= 0) return false;
+  if (wouldHaveTx <= 0) return true;
+  const lost = haveTx - wouldHaveTx;
+  return lost > 10 && lost >= haveTx * 0.1;
+}
+
+export interface RemoteSnapshot {
+  snap: Snapshot;
+  remoteTx: number; // transacties in de cloud-versie
+  localTx: number;  // transacties op dit toestel
+  remoteEtag: string;
+}
+
+/* Download de cloud-snapshot zonder iets toe te passen — voor een veiligheidscheck
+ * vooraf, zodat we de aantallen kunnen vergelijken vóór we lokaal of de cloud overschrijven. */
+export async function fetchRemoteSnapshot(): Promise<RemoteSnapshot | null> {
   const token = await getToken();
-  const data = (await downloadData(token)) as Snapshot | null;
-  if (!data) return false;
-  await importAll(data);
+  const snap = (await downloadData(token)) as Snapshot | null;
+  if (!snap) return null;
   const meta = await getRemoteMeta(token);
-  await setSyncMeta({ lastSyncedAt: new Date().toISOString(), remoteEtag: meta?.eTag ?? "" });
-  return true;
+  return { snap, remoteTx: snapshotTxCount(snap), localTx: await db.transactions.count(), remoteEtag: meta?.eTag ?? "" };
+}
+
+/* Pas een opgehaalde snapshot toe als 'pull' (vervangt lokaal + zet de sync-baseline). */
+export async function applyPull(snap: Snapshot, remoteEtag: string): Promise<void> {
+  await importAll(snap);
+  await setSyncMeta({ lastSyncedAt: new Date().toISOString(), remoteEtag });
 }
 
 export type SyncOutcome =
@@ -100,9 +127,9 @@ export type SyncOutcome =
  * - geen remote bestand → push (eerste upload ooit)
  * - geen lokale sync-baseline (nog nooit verzoend) + cloud heeft al data:
  *     · lokaal leeg → pull (niets te verliezen, adopteer de cloud)
- *     · lokaal gevuld → conflict (laat de gebruiker bewust kiezen) — voorkomt dat
- *       een vers/leeg toestel óf een handmatige import per ongeluk wordt gewist
- * - remote nieuwer dan onze laatste sync (ander apparaat) → pull
+ *     · lokaal gevuld → conflict (laat de gebruiker bewust kiezen)
+ * - remote nieuwer (ander apparaat) → pull, behalve als dat substantieel
+ *     transactie-verlies zou geven → dan conflict (niet stil overschrijven)
  * - anders → push */
 export async function syncNow(): Promise<SyncOutcome> {
   const token = await getToken();
@@ -114,15 +141,20 @@ export async function syncNow(): Promise<SyncOutcome> {
     return { action: "pushed" };
   }
   if (!local) {
-    const localEmpty = (await db.transactions.count()) === 0;
-    if (localEmpty) {
-      await pullFromOneDrive();
-      return { action: "pulled" };
+    if ((await db.transactions.count()) > 0) {
+      return { action: "conflict", remoteModified: remote.lastModified };
     }
-    return { action: "conflict", remoteModified: remote.lastModified };
+    const snap = (await downloadData(token)) as Snapshot | null;
+    if (snap) await applyPull(snap, remote.eTag);
+    return { action: "pulled" };
   }
   if (remote.eTag !== local.remoteEtag && remote.lastModified > local.lastSyncedAt) {
-    await pullFromOneDrive();
+    const snap = (await downloadData(token)) as Snapshot | null;
+    if (!snap) { await pushToOneDrive(); return { action: "pushed" }; }
+    if (isSubstantialTxLoss(await db.transactions.count(), snapshotTxCount(snap))) {
+      return { action: "conflict", remoteModified: remote.lastModified };
+    }
+    await applyPull(snap, remote.eTag);
     return { action: "pulled" };
   }
   await pushToOneDrive();
