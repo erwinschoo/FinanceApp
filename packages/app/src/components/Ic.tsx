@@ -16,6 +16,7 @@ export function Ic({ name, size = 20, className, style, strokeWidth = 1.8 }: Pro
     sliders: <><line x1="4" y1="8" x2="20" y2="8" {...p} /><line x1="4" y1="16" x2="20" y2="16" {...p} /><circle cx="9" cy="8" r="2.6" {...p} fill="var(--surface)" /><circle cx="15" cy="16" r="2.6" {...p} fill="var(--surface)" /></>,
     settings: <><circle cx="12" cy="12" r="3" {...p} /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" {...p} /></>,
     target: <><circle cx="12" cy="12" r="8" {...p} /><circle cx="12" cy="12" r="4" {...p} /><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" /></>,
+    scale: <><path d="M12 4v16" {...p} /><path d="M6 20h12" {...p} /><path d="M5 7h14" {...p} /><path d="M5 7 2.5 13a3 3 0 0 0 5 0L5 7z" {...p} /><path d="M19 7l-2.5 6a3 3 0 0 0 5 0L19 7z" {...p} /></>,
     upload: <><path d="M12 16V4" {...p} /><path d="m7 9 5-5 5 5" {...p} /><path d="M5 16v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3" {...p} /></>,
     cloud: <><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.1 11 4 4 0 0 0 7 19h10.5z" {...p} /></>,
     onedrive: <path d="M10.5 18.5h7.6a3.2 3.2 0 0 0 .5-6.37 4.3 4.3 0 0 0-6.7-3.1 3.6 3.6 0 0 0-5.2 2.2A3.5 3.5 0 0 0 7 18.5h3.5z" fill="currentColor" stroke="none" />,
@@ -50,6 +51,10 @@ export function Ic({ name, size = 20, className, style, strokeWidth = 1.8 }: Pro
     download: <><path d="M12 4v12" {...p} /><path d="m7 11 5 5 5-5" {...p} /><path d="M5 18v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1" {...p} /></>,
     heart: <path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z" {...p} />,
     share: <><path d="M12 14V4" {...p} /><path d="m8.5 7 3.5-3.5L15.5 7" {...p} /><path d="M7 10H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" {...p} /></>,
+    lock: <><rect x="4.5" y="10.5" width="15" height="10" rx="2" {...p} /><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" {...p} /><circle cx="12" cy="15.5" r="1.3" fill="currentColor" stroke="none" /></>,
+    unlock: <><rect x="4.5" y="10.5" width="15" height="10" rx="2" {...p} /><path d="M8 10.5V7a4 4 0 0 1 7.5-1.9" {...p} /><circle cx="12" cy="15.5" r="1.3" fill="currentColor" stroke="none" /></>,
+    shield: <><path d="M12 3 5 6v5c0 4.4 3 7.6 7 9 4-1.4 7-4.6 7-9V6l-7-3z" {...p} /><path d="m9 12 2 2 4-4" {...p} /></>,
+    fingerprint: <><path d="M12 11a2 2 0 0 1 2 2c0 2.5.4 4.6 1.2 6.4" {...p} /><path d="M8.2 16.5A12 12 0 0 0 9 13a3 3 0 0 1 6 0c0 1.2.1 2.3.3 3.4" {...p} /><path d="M5.5 13a6.5 6.5 0 0 1 13 0c0 1 0 2 .2 3" {...p} /><path d="M7.5 6.6a6.5 6.5 0 0 1 9 .9" {...p} /></>,
   };
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} className={className} style={style}>

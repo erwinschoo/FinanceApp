@@ -7,7 +7,7 @@ import { db } from "../db/schema";
  *   Zo blijft MSAL uit de hoofdbundle voor lokale/uitgelogde gebruikers.
  * - Push na elke datawijziging (gedebouncet); pull-verzoening bij app-start. */
 
-export type SyncStatus = "idle" | "syncing" | "error" | "offline";
+export type SyncStatus = "idle" | "syncing" | "error" | "offline" | "locked";
 
 let status: SyncStatus = "idle";
 const listeners = new Set<() => void>();
@@ -67,7 +67,12 @@ async function flush(): Promise<void> {
     if (!(await getSyncMeta())) { setStatus("idle"); return; }
     await pushToOneDrive();
     setStatus("idle");
-  } catch {
+  } catch (e) {
+    const { SyncLockedError } = await import("./syncEngine");
+    // Vergrendeld: NIET herplannen (zou een 2,5s-busy-loop met token-calls geven).
+    // De openstaande wijziging zit veilig lokaal; syncAfterUnlock() pusht zodra de
+    // gebruiker ontgrendelt. dirty bewust op false laten.
+    if (e instanceof SyncLockedError) { dirty = false; setStatus("locked"); return; }
     setStatus(navigator.onLine ? "error" : "offline");
     dirty = true; // openstaand: opnieuw proberen bij volgende mutatie of 'online'
   } finally {
@@ -89,13 +94,32 @@ export async function runStartupSync(): Promise<void> {
   setStatus("syncing");
   try {
     const { syncNow, refreshProfilePhoto } = await import("./syncEngine");
-    await syncNow();
-    setStatus("idle");
+    const r = await syncNow();
+    setStatus(r.action === "locked" ? "locked" : "idle");
     void refreshProfilePhoto(); // profielfoto stil op de achtergrond verversen
   } catch {
     setStatus(navigator.onLine ? "error" : "offline");
   } finally {
     inFlight = false;
+  }
+}
+
+/* Na het ontgrendelen (passphrase/biometrie) de uitgestelde sync alsnog uitvoeren:
+ * verzoen met de cloud en schrijf openstaande lokale wijzigingen weg. */
+export async function syncAfterUnlock(): Promise<void> {
+  if (!(await hasAccount())) return;
+  if (inFlight) { dirty = true; return; }
+  inFlight = true;
+  setStatus("syncing");
+  try {
+    const { syncNow } = await import("./syncEngine");
+    const r = await syncNow();
+    setStatus(r.action === "locked" ? "locked" : "idle");
+  } catch {
+    setStatus(navigator.onLine ? "error" : "offline");
+  } finally {
+    inFlight = false;
+    if (dirty && navigator.onLine) scheduleSync();
   }
 }
 

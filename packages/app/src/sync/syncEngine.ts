@@ -1,8 +1,20 @@
 import { db } from "../db/schema";
 import { getToken, getTokenSilent } from "./msal";
 import { getRemoteMeta, downloadData, uploadData, downloadProfilePhoto } from "./graphClient";
+import { isEncEnvelope, type EncEnvelope } from "./crypto";
+import { isUnlocked, isEncryptionEnabled, sealSnapshot, openEnvelope, adoptCloudSlots } from "./encSession";
 
 const SCHEMA_VERSION = 1;
+
+/* Gegooid wanneer de cloud-data versleuteld is maar de sleutel (DEK) nog niet in
+ * deze sessie is ontgrendeld. De sync-laag vertaalt dit naar een "locked"-uitkomst
+ * i.p.v. een harde fout, zodat de UI om ontgrendeling kan vragen. */
+export class SyncLockedError extends Error {
+  constructor() {
+    super("Je cloud-data is versleuteld en op dit toestel vergrendeld. Ontgrendel eerst (wachtwoord of biometrie) bij Synchroniseren → Versleuteling.");
+    this.name = "SyncLockedError";
+  }
+}
 
 export interface Snapshot {
   schemaVersion: number;
@@ -17,17 +29,22 @@ export interface Snapshot {
   pots?: unknown[];
   categoryGroups?: unknown[];
   payees?: unknown[];
+  /* Huishoudprofiel (meta["profile"]). Apparaat-onafhankelijk, dus wél meegesynct —
+   * in tegenstelling tot de overige meta-keys (account/foto/sync-state). */
+  profile?: unknown;
 }
 
 export async function exportAll(): Promise<Snapshot> {
-  const [categories, categoryGroups, transactions, budgets, rules, goals, importBatches, importProfiles, pots, payees] = await Promise.all([
+  const [categories, categoryGroups, transactions, budgets, rules, goals, importBatches, importProfiles, pots, payees, profileRow] = await Promise.all([
     db.categories.toArray(), db.categoryGroups.toArray(), db.transactions.toArray(), db.budgets.toArray(),
     db.rules.toArray(), db.goals.toArray(), db.importBatches.toArray(), db.importProfiles.toArray(), db.pots.toArray(), db.payees.toArray(),
+    db.meta.get("profile"),
   ]);
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
     categories, categoryGroups, transactions, budgets, rules, goals, importBatches, importProfiles, pots, payees,
+    profile: profileRow?.value ?? null,
   };
 }
 
@@ -50,6 +67,13 @@ export async function importAll(snap: Snapshot): Promise<void> {
       db.payees.bulkPut((snap.payees ?? []) as never[]),
     ]);
   });
+  // Huishoudprofiel buiten de data-transactie toepassen (meta-tabel). Alleen
+  // overschrijven wanneer de snapshot een profiel meelevert; ontbreekt het veld
+  // (oudere snapshot) → lokaal profiel ongemoeid laten.
+  if (snap.profile !== undefined) {
+    if (snap.profile === null) await db.meta.delete("profile");
+    else await db.meta.put({ key: "profile", value: snap.profile });
+  }
 }
 
 async function setSyncMeta(v: { lastSyncedAt: string; remoteEtag: string }) {
@@ -72,11 +96,35 @@ export async function refreshProfilePhoto(): Promise<void> {
   } catch { /* genegeerd */ }
 }
 
+/* Maak de te uploaden payload: een versleutelde envelope als encryptie aanstaat,
+ * anders de platte snapshot (legacy). Gooit SyncLockedError als encryptie aanstaat
+ * maar de sessie nog vergrendeld is. */
+async function buildPayload(snap: Snapshot): Promise<Snapshot | EncEnvelope> {
+  if (!(await isEncryptionEnabled())) return snap;
+  if (!isUnlocked()) throw new SyncLockedError();
+  return sealSnapshot(snap);
+}
+
+/* Download de cloud-data en geef altijd een leesbare Snapshot terug:
+ * - versleutelde envelope → sloten lokaal adopteren, daarna ontsleutelen
+ *   (SyncLockedError als de sessie nog vergrendeld is);
+ * - legacy plaintext → ongewijzigd teruggeven (wordt bij de volgende push versleuteld). */
+async function readRemote(token: string): Promise<Snapshot | null> {
+  const raw = await downloadData(token);
+  if (raw === null) return null;
+  if (isEncEnvelope(raw)) {
+    await adoptCloudSlots(raw.slots); // markeert encryptie lokaal als aan + cachet sloten
+    if (!isUnlocked()) throw new SyncLockedError();
+    return (await openEnvelope(raw)) as Snapshot;
+  }
+  return raw as Snapshot;
+}
+
 /* Upload de lokale dataset naar OneDrive (overschrijft remote). */
 export async function pushToOneDrive(): Promise<void> {
   const token = await getToken();
   const snap = await exportAll();
-  const meta = await uploadData(token, snap);
+  const meta = await uploadData(token, await buildPayload(snap));
   await setSyncMeta({ lastSyncedAt: new Date().toISOString(), remoteEtag: meta.eTag });
 }
 
@@ -106,7 +154,7 @@ export interface RemoteSnapshot {
  * vooraf, zodat we de aantallen kunnen vergelijken vóór we lokaal of de cloud overschrijven. */
 export async function fetchRemoteSnapshot(): Promise<RemoteSnapshot | null> {
   const token = await getToken();
-  const snap = (await downloadData(token)) as Snapshot | null;
+  const snap = await readRemote(token);
   if (!snap) return null;
   const meta = await getRemoteMeta(token);
   return { snap, remoteTx: snapshotTxCount(snap), localTx: await db.transactions.count(), remoteEtag: meta?.eTag ?? "" };
@@ -121,7 +169,8 @@ export async function applyPull(snap: Snapshot, remoteEtag: string): Promise<voi
 export type SyncOutcome =
   | { action: "pushed" }
   | { action: "pulled" }
-  | { action: "conflict"; remoteModified: string };
+  | { action: "conflict"; remoteModified: string }
+  | { action: "locked" };
 
 /* Automatische sync: vergelijk remote wijzigingsdatum met onze laatste sync.
  * - geen remote bestand → push (eerste upload ooit)
@@ -132,6 +181,15 @@ export type SyncOutcome =
  *     transactie-verlies zou geven → dan conflict (niet stil overschrijven)
  * - anders → push */
 export async function syncNow(): Promise<SyncOutcome> {
+  try {
+    return await syncNowInner();
+  } catch (e) {
+    if (e instanceof SyncLockedError) return { action: "locked" };
+    throw e;
+  }
+}
+
+async function syncNowInner(): Promise<SyncOutcome> {
   const token = await getToken();
   const remote = await getRemoteMeta(token);
   const local = await getSyncMeta();
@@ -144,12 +202,12 @@ export async function syncNow(): Promise<SyncOutcome> {
     if ((await db.transactions.count()) > 0) {
       return { action: "conflict", remoteModified: remote.lastModified };
     }
-    const snap = (await downloadData(token)) as Snapshot | null;
+    const snap = await readRemote(token);
     if (snap) await applyPull(snap, remote.eTag);
     return { action: "pulled" };
   }
   if (remote.eTag !== local.remoteEtag && remote.lastModified > local.lastSyncedAt) {
-    const snap = (await downloadData(token)) as Snapshot | null;
+    const snap = await readRemote(token);
     if (!snap) { await pushToOneDrive(); return { action: "pushed" }; }
     if (isSubstantialTxLoss(await db.transactions.count(), snapshotTxCount(snap))) {
       return { action: "conflict", remoteModified: remote.lastModified };

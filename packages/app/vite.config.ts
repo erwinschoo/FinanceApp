@@ -1,8 +1,48 @@
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { defineConfig } from "vite";
+import { createHash } from "node:crypto";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+
+/* Injecteert een Content-Security-Policy als <meta> in de PRODUCTIE-build.
+ * GitHub Pages kan geen HTTP-headers zetten, dus de CSP gaat in de HTML zelf.
+ * Alleen bij `build` (niet in dev — daar zou het Vite's HMR/inline scripts breken).
+ * De hashes van inline <script>-blokken (bv. de thema-bootstrap) worden automatisch
+ * berekend, zodat we 'unsafe-inline' voor scripts kunnen vermijden.
+ *
+ * Doel: een gestolen MSAL-token via XSS kan dan geen data wegsluizen, en samen met
+ * de end-to-end encryptie ziet OneDrive sowieso alleen ciphertext. */
+function cspPlugin(): Plugin {
+  let isBuild = false;
+  return {
+    name: "bokkiep-csp",
+    configResolved(c) { isBuild = c.command === "build"; },
+    transformIndexHtml: {
+      order: "post",
+      handler(html) {
+        if (!isBuild) return html;
+        const hashes = new Set<string>();
+        for (const m of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)) {
+          if (!m[1]) continue; // leeg of alleen-src script overslaan
+          hashes.add(`'sha256-${createHash("sha256").update(m[1], "utf8").digest("base64")}'`);
+        }
+        const csp = [
+          "default-src 'self'",
+          `script-src 'self' ${[...hashes].join(" ")}`.trim(),
+          "style-src 'self' 'unsafe-inline'", // React inline-styles (style={{…}})
+          "img-src 'self' data: blob:", // profielfoto = data-URL
+          "connect-src 'self' https://graph.microsoft.com https://login.microsoftonline.com",
+          "frame-src https://login.microsoftonline.com", // MSAL silent-token iframe
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+        ].join("; ");
+        return html.replace("</head>", `  <meta http-equiv="Content-Security-Policy" content="${csp}">\n  </head>`);
+      },
+    },
+  };
+}
 
 // GitHub Pages serveert op een subpad: https://<gebruiker>.github.io/bokkiep/
 // Pas dit aan als de repo anders heet. Lokaal (dev) gebruikt altijd "/".
@@ -30,6 +70,7 @@ export default defineConfig({
     __TS_VERSION__: JSON.stringify(clean(pkg.devDependencies.typescript)),
   },
   plugins: [
+    cspPlugin(),
     react(),
     VitePWA({
       // injectManifest i.p.v. generateSW: we beheren de service worker zelf (src/pwa/sw.ts) zodat
@@ -39,6 +80,9 @@ export default defineConfig({
       srcDir: "src/pwa",
       filename: "sw.ts",
       registerType: "autoUpdate",
+      // Registratiecode als EXTERN script (registerSW.js) i.p.v. inline, zodat de
+      // CSP 'self' volstaat en we geen inline-script-hash hoeven te beheren.
+      injectRegister: "script-defer",
       includeAssets: ["icon.svg", "apple-touch-icon-180x180.png"],
       manifest: {
         name: "bokkiep — persoonlijk financieel overzicht",
