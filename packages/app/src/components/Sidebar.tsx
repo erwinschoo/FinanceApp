@@ -17,6 +17,7 @@ const MAIN: NavItem[] = [
   { id: "dashboard", label: "Overzicht", icon: "dashboard", tip: "Je financiële beeld in één oogopslag" },
   { id: "transacties", label: "Transacties", icon: "list", tip: "Controleer en deel je uitgaven in" },
   { id: "budgetten", label: "Budgetten", icon: "sliders", tip: "Stem je budget af per categorie" },
+  { id: "vergelijken", label: "Vergelijken", icon: "scale", tip: "Zet je uitgaven af tegen een vergelijkbaar huishouden (Nibud)" },
   { id: "spaardoel", label: "Spaardoelen", icon: "target", tip: "Stel doelen en volg je voortgang" },
   { id: "tegenpartijen", label: "Tegenpartijen", icon: "wallet", tip: "Wijs per winkel of rekening één keer een categorie toe" },
 ];
@@ -26,6 +27,7 @@ const DATA: NavItem[] = [
   { id: "beheer", label: "Beheer", icon: "settings", tip: "Categorieën en categoriseer-regels onderhouden" },
 ];
 const OVERIG: NavItem[] = [
+  { id: "profiel", label: "Profiel & instellingen", icon: "user", tip: "Je huishouden, categorie-koppeling en weergave" },
   { id: "steun", label: "Steun bokkiep", icon: "heart", tip: "Steun de ontwikkeling van bokkiep" },
   { id: "download", label: "Download app", icon: "download", tip: "Installeer bokkiep als app" },
   { id: "informatie", label: "Informatie", icon: "info", tip: "Over bokkiep: uitleg en veelgestelde vragen" },
@@ -82,6 +84,8 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
   let statusColor: string | undefined;
   if (!connected) {
     status = "Lokaal opgeslagen";
+  } else if (syncState === "locked") {
+    status = "Vergrendeld – ontgrendel"; statusColor = "var(--warn)";
   } else if (syncState === "syncing") {
     status = "Synchroniseren…";
   } else if (syncState === "error") {
@@ -91,6 +95,7 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
   } else {
     status = lastSynced ? syncedLabel(lastSynced) : "OneDrive verbonden";
   }
+  const locked = connected && syncState === "locked";
   const iconStyle = !connected ? { color: "var(--faint)" } : statusColor ? { color: statusColor } : undefined;
 
   const item = (it: NavItem) => (
@@ -150,7 +155,10 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
       </div>
 
       <div className="sb-foot">
-        <div className="sb-user">
+        <button type="button" className="sb-user sb-user-btn"
+          onClick={() => { setView(locked ? "sync" : "profiel"); onNavigate?.(); }}
+          aria-label={locked ? "Ontgrendelen" : "Profiel & instellingen openen"}
+          title={locked ? "Ontgrendel je versleutelde data" : "Profiel & instellingen"}>
           <div className={"av" + (connected ? "" : " av-empty")}>
             {photo
               ? <img className="av-photo" src={photo} alt="" />
@@ -161,11 +169,11 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
           <div className="meta">
             <div className="nm" title={displayName}>{displayName}</div>
             <div className={"em" + (connected ? " online" : "") + (connected && syncState === "syncing" ? " syncing" : "")} title={connected ? "Verbonden met OneDrive" : "Alleen op dit apparaat opgeslagen"}>
-              <Ic name="onedrive" style={iconStyle} />
+              <Ic name={locked ? "lock" : "onedrive"} style={iconStyle} />
               <span className="em-txt">{status}</span>
             </div>
           </div>
-        </div>
+        </button>
       </div>
     </aside>
   );

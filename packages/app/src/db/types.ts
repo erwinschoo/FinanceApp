@@ -139,6 +139,46 @@ export interface Goal {
   color: string;
 }
 
+/* ── Huishoudprofiel + Nibud-vergelijking ── */
+
+/* Nibud-uitgavenposten waarop een huishouden wordt vergeleken. Bewust een vaste,
+ * beperkte set die aansluit op de gratis gepubliceerde Nibud-voorbeeldbegrotingen. */
+export type NibudPostId =
+  | "wonen"
+  | "energie-water"
+  | "gemeentelijke-heffingen"
+  | "telefoon-tv-internet"
+  | "verzekeringen"
+  | "vervoer"
+  | "voeding"
+  | "kleding"
+  | "niet-vergoede-ziektekosten"
+  | "abonnementen-contributies"
+  | "inventaris-onderhoud"
+  | "recreatie"
+  | "reserveringen";
+
+/* Samenstelling van het huishouden (sluit aan op Nibud-voorbeeldhuishoudens). */
+export type HouseholdComposition =
+  | "alleenstaand"
+  | "paar"
+  | "eenoudergezin"
+  | "gezin";
+
+/* Inkomensband (grof; Nibud publiceert voorbeelden rond deze niveaus). */
+export type IncomeBand = "minimum" | "modaal" | "twee-modaal";
+
+/* Het door de gebruiker ingevulde huishoudprofiel. Opgeslagen in meta["profile"]. */
+export interface HouseholdProfile {
+  adults: number;
+  children: number;
+  incomeBand: IncomeBand;
+  housing: "huur" | "koop";
+  hasCar: boolean;
+  nibudHouseholdId?: string;                              // expliciete keuze; anders auto-match
+  categoryMapOverrides?: Record<string, NibudPostId | null>; // per categoryId; null = niet vergelijken
+}
+
 /* een geparste, nog niet opgeslagen rij uit een bankexport */
 export interface ParsedRow {
   date: string;             // ISO

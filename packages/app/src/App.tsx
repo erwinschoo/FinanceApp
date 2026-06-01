@@ -12,8 +12,10 @@ import { clearTransactions, clearPayees } from "./db/repo";
 import { Dashboard } from "./views/Dashboard";
 import { Transactions } from "./views/Transactions";
 import { Budgets } from "./views/Budgets";
+import { Compare } from "./views/Compare";
 import { Savings } from "./views/Savings";
 import { Payees } from "./views/Payees";
+import { Profile } from "./views/Profile";
 import { Steun } from "./views/Steun";
 import { Download } from "./views/Download";
 import { Informatie } from "./views/Informatie";
@@ -27,11 +29,13 @@ const META: Record<ViewId, { title: string; month: boolean }> = {
   dashboard: { title: "Overzicht", month: true },
   transacties: { title: "Transacties", month: false },
   budgetten: { title: "Budgetten", month: true },
+  vergelijken: { title: "Vergelijken", month: true },
   spaardoel: { title: "Spaardoelen", month: false },
   tegenpartijen: { title: "Tegenpartijen", month: false },
   import: { title: "Importeren", month: false },
   sync: { title: "Synchroniseren", month: false },
   beheer: { title: "Beheer", month: false },
+  profiel: { title: "Profiel & instellingen", month: false },
   steun: { title: "Steun bokkiep", month: false },
   download: { title: "Download app", month: false },
   informatie: { title: "Informatie", month: false },
@@ -41,11 +45,13 @@ const VIEWS: Record<ViewId, ComponentType> = {
   dashboard: Dashboard,
   transacties: Transactions,
   budgetten: Budgets,
+  vergelijken: Compare,
   spaardoel: Savings,
   tegenpartijen: Payees,
   import: Import,
   sync: Sync,
   beheer: Manage,
+  profiel: Profile,
   steun: Steun,
   download: Download,
   informatie: Informatie,

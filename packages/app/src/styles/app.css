@@ -603,4 +603,48 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   .import-actions { flex-direction:column; align-items:stretch !important; }
   .import-actions > div { margin-left:0 !important; width:100%; flex-direction:column; }
   .import-actions .btn { width:100%; justify-content:center; }
+
+  /* vergelijken: naam vol breedte, dan twee bedragen, dan de balk eronder */
+  .cmp-head { display:none; }
+  .cmp-row { grid-template-columns:1fr 1fr; gap:6px 18px; }
+  .cmp-name { grid-column:1 / -1; }
+  .cmp-row .cmp-bar-col { grid-column:1 / -1; order:2; }
+}
+
+/* ── Profielpagina (sidebar-footer als knop) ── */
+.sb-user-btn { width:100%; border:0; background:transparent; font:inherit; text-align:left; cursor:pointer; color:inherit; }
+.sb-user-btn:hover { background:var(--subtle); }
+
+/* Inline tekstlink-knop */
+.lnk { border:0; background:transparent; padding:0; font:inherit; color:var(--blue); font-weight:700; cursor:pointer; text-decoration:underline; }
+
+/* Toggle-switch */
+.switch { width:42px; height:24px; border-radius:99px; border:0; background:var(--line); position:relative; cursor:pointer; flex:none; transition:background .2s var(--ease); }
+.switch.on { background:var(--blue); }
+.switch-knob { position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; transition:transform .2s var(--ease); }
+.switch.on .switch-knob { transform:translateX(18px); }
+
+/* ── Vergelijken-tabel ── */
+.cmp-row { display:grid; grid-template-columns:200px 1fr 120px 120px; align-items:center; gap:18px; padding:14px 0; border-bottom:1px solid var(--line-soft); }
+.cmp-head { display:grid; grid-template-columns:200px 1fr 120px 120px; gap:18px; padding-bottom:10px; font-size:12px; font-weight:700; color:var(--muted); border-bottom:1px solid var(--line); }
+.cmp-name { font-weight:700; color:var(--ink); font-size:14px; }
+.cmp-amt { text-align:right; font-size:14px; }
+.cmp-sub { margin-top:7px; font-size:12.5px; }
+.cmp-total { border-bottom:0; padding-top:18px; }
+
+/* ── Profielformulier ── */
+.prof-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 18px; }
+.prof-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.prof-field-lbl { font-size:12.5px; font-weight:700; color:var(--muted); }
+.prof-match { display:flex; align-items:center; gap:9px; margin-top:18px; padding:12px 14px; border-radius:10px; background:var(--blue-tint); color:var(--ink); font-size:13.5px; }
+.prof-match svg { color:var(--blue); flex:none; }
+.prof-summary { display:flex; align-items:center; gap:10px; cursor:pointer; list-style:none; }
+.prof-summary::-webkit-details-marker { display:none; }
+.prof-map { display:flex; flex-direction:column; }
+.prof-map-row { display:grid; grid-template-columns:1fr 240px; align-items:center; gap:16px; padding:12px 0; border-bottom:1px solid var(--line-soft); font-size:14px; color:var(--ink); font-weight:600; }
+.prof-map-row:last-child { border-bottom:0; }
+
+@media (max-width:680px) {
+  .prof-grid { grid-template-columns:1fr; }
+  .prof-map-row { grid-template-columns:1fr; gap:8px; }
 }
