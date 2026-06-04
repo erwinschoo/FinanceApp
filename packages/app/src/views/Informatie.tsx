@@ -12,7 +12,7 @@ const SCREENS: [string, string, string][] = ([
   ["wallet", "Tegenpartijen", "Wijs een winkel of rekening één keer een categorie toe en bokkiep onthoudt het."],
   ["upload", "Importeren", "Laad je bank-export (Excel) in; transacties worden automatisch herkend en ingedeeld."],
   ["cloud", "Synchroniseren", "Optionele back-up en sync via je eigen OneDrive — jij houdt de controle."],
-  ["sliders", "Beheer", "Onderhoud je categorieën, groepen en categoriseer-regels."],
+  ["settings", "Beheer", "Onderhoud je categorieën, groepen en categoriseer-regels."],
 ] as [string, string, string][]).sort((a, b) => a[1].localeCompare(b[1], "nl"));
 
 const FAQ: [string, string][] = ([
