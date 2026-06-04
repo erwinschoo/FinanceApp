@@ -158,10 +158,13 @@ function BudgetLeafRow({ c, spent, budget, reference, indent }: { c: Category; s
             onKeyUp={(e) => commit(Number(e.currentTarget.value))}
             onBlur={(e) => commit(Number(e.currentTarget.value))} />
           {reference != null && (
-            <Tooltip label={`Nibud: ${eur(reference)}`} side="top"
-              style={{ position: "absolute", top: 1, left: `calc(${refPct} * (100% - 18px) + 9px)`, transform: "translateX(-50%)", width: 14, height: 18, alignItems: "center", justifyContent: "center", cursor: "help" }}>
-              <span aria-hidden style={{ width: 2, height: 12, borderRadius: 2, background: "var(--orange)" }} />
-            </Tooltip>
+            <>
+              <Tooltip label={`Nibud: ${eur(reference)}`} side="top"
+                style={{ position: "absolute", top: 1, left: `calc(${refPct} * (100% - 18px) + 9px)`, transform: "translateX(-50%)", width: 14, height: 18, alignItems: "center", justifyContent: "center", cursor: "help" }}>
+                <span aria-hidden style={{ width: 2, height: 12, borderRadius: 2, background: "var(--orange)" }} />
+              </Tooltip>
+              <span className="tnum" style={{ position: "absolute", top: "calc(100% + 1px)", left: `calc(${refPct} * (100% - 18px) + 9px)`, transform: "translateX(-50%)", fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap", pointerEvents: "none" }}>{eur(reference)}</span>
+            </>
           )}
         </div>
       </div>
