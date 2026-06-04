@@ -112,12 +112,36 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
     </button>
   );
 
-  // Menusectie met kopje. Inklapbaar (accordion, max. één tegelijk) op mobiel én desktop. Alleen in
-  // de ingeklapte desktop-icoonrail tonen we alles statisch — daar past geen accordion.
+  // Menusectie met kopje. Inklapbaar (accordion, max. één tegelijk) op mobiel én desktop. In de
+  // ingeklapte desktop-icoonrail tonen we de groep als één letter-knop ("D"/"O") die een flyout opent.
   const section = (key: "data" | "overig", label: string, items: NavItem[]) => {
     const navEl = <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{items.map((it) => item(it, key))}</nav>;
-    if (!isMobile && collapsed) return <>{<div className="sb-sec">{label}</div>}{navEl}</>;
     const isOpen = openSection === key;
+
+    if (!isMobile && collapsed) {
+      return (
+        <div className="sb-rail-group">
+          <button className={"nav-item sb-rail-letter" + (isOpen ? " active" : "")} aria-expanded={isOpen} aria-label={label}
+            onClick={() => setOpenSection((prev) => (prev === key ? null : key))}>
+            {label[0]}
+          </button>
+          {isOpen && (
+            <div className="sb-flyout" role="menu">
+              <div className="sb-flyout-h">{label}</div>
+              {items.map((it) => (
+                <button key={it.id} className={"nav-item" + (view === it.id ? " active" : "")} role="menuitem"
+                  onClick={() => { setView(it.id); setOpenSection(null); onNavigate?.(); }}>
+                  <Ic name={it.icon} />
+                  <span className="nav-label">{it.label}</span>
+                  {it.id === "transacties" && uncategorizedCount ? <span className="nav-badge">{uncategorizedCount}</span> : null}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
       <>
         <button className={"sb-sec sb-sec-btn" + (isOpen ? " open" : "")} aria-expanded={isOpen}
@@ -130,8 +154,12 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
     );
   };
 
+  // Klik-buiten sluit de flyout in de ingeklapte rail.
+  const railFlyoutOpen = !isMobile && collapsed && openSection !== null;
+
   return (
     <aside className={"sb" + (open ? " open" : "")}>
+      {railFlyoutOpen && <div className="sb-flyout-backdrop" onClick={() => setOpenSection(null)} />}
       <div className="sb-brand">
         <img className="goat" src={goatLogo} width={34} height={34} alt="" aria-hidden="true" style={{ display: "block", objectFit: "contain" }} />
         <span className="wm">bokkiep</span>
