@@ -1,10 +1,13 @@
 import { db } from "../db/schema";
+import { hasUserContent } from "../db/userContent";
 import { getToken, getTokenSilent } from "./msal";
-import { getRemoteMeta, downloadData, uploadData, downloadProfilePhoto } from "./graphClient";
+import { getRemoteMeta, downloadData, uploadData, downloadProfilePhoto, backupRemote, listBackups, downloadBackup, RemoteChangedError, type BackupItem } from "./graphClient";
 import { isEncEnvelope, type EncEnvelope } from "./crypto";
 import { isUnlocked, isEncryptionEnabled, sealSnapshot, openEnvelope, adoptCloudSlots } from "./encSession";
 
 const SCHEMA_VERSION = 1;
+
+export { RemoteChangedError };
 
 /* Gegooid wanneer de cloud-data versleuteld is maar de sleutel (DEK) nog niet in
  * deze sessie is ontgrendeld. De sync-laag vertaalt dit naar een "locked"-uitkomst
@@ -120,11 +123,17 @@ async function readRemote(token: string): Promise<Snapshot | null> {
   return raw as Snapshot;
 }
 
-/* Upload de lokale dataset naar OneDrive (overschrijft remote). */
-export async function pushToOneDrive(): Promise<void> {
+/* Upload de lokale dataset naar OneDrive (overschrijft remote).
+ * Air-tight: maakt eerst een getimestampte backup van de huidige cloud-versie, en
+ * schrijft met If-Match op de laatst bekende eTag (optimistic concurrency) zodat een
+ * intussen door een ander toestel gewijzigde cloud niet stil wordt overschreven.
+ * Een 412 → RemoteChangedError (afgevangen door syncNow als conflict). */
+export async function pushToOneDrive(opts?: { expectedEtag?: string }): Promise<void> {
   const token = await getToken();
+  const expected = opts?.expectedEtag !== undefined ? opts.expectedEtag : (await getSyncMeta())?.remoteEtag;
+  await backupRemote(token); // kopie vóór overwrite (no-op als er nog geen cloudbestand is)
   const snap = await exportAll();
-  const meta = await uploadData(token, await buildPayload(snap));
+  const meta = await uploadData(token, await buildPayload(snap), expected || undefined);
   await setSyncMeta({ lastSyncedAt: new Date().toISOString(), remoteEtag: meta.eTag });
 }
 
@@ -160,17 +169,76 @@ export async function fetchRemoteSnapshot(): Promise<RemoteSnapshot | null> {
   return { snap, remoteTx: snapshotTxCount(snap), localTx: await db.transactions.count(), remoteEtag: meta?.eTag ?? "" };
 }
 
-/* Pas een opgehaalde snapshot toe als 'pull' (vervangt lokaal + zet de sync-baseline). */
+/* ── Lokale momentopnames (ring van laatste N) — vangnet vóór elke destructieve
+ * lokale vervanging (pull/herstel), zodat een verkeerde overschrijving terug kan. */
+const LOCAL_BACKUPS_KEY = "localBackups";
+const LOCAL_BACKUP_KEEP = 3;
+
+export interface LocalBackup {
+  at: string;      // ISO
+  txCount: number;
+  snap: Snapshot;
+}
+
+export async function listLocalBackups(): Promise<LocalBackup[]> {
+  const row = await db.meta.get(LOCAL_BACKUPS_KEY);
+  return (row?.value as LocalBackup[] | undefined) ?? [];
+}
+
+async function snapshotLocal(): Promise<void> {
+  const snap = await exportAll();
+  const entry: LocalBackup = { at: new Date().toISOString(), txCount: snapshotTxCount(snap), snap };
+  const next = [entry, ...(await listLocalBackups())].slice(0, LOCAL_BACKUP_KEEP);
+  await db.meta.put({ key: LOCAL_BACKUPS_KEY, value: next });
+}
+
+/* Pas een opgehaalde snapshot toe als 'pull' (vervangt lokaal + zet de sync-baseline).
+ * Maakt eerst een lokale momentopname (best-effort; mag de pull niet blokkeren). */
 export async function applyPull(snap: Snapshot, remoteEtag: string): Promise<void> {
+  try { await snapshotLocal(); } catch { /* vangnet; blokkeert de pull niet */ }
   await importAll(snap);
   await setSyncMeta({ lastSyncedAt: new Date().toISOString(), remoteEtag });
+}
+
+/* Zet een eerdere lokale momentopname terug (vervangt lokaal). Bewaart eerst de
+ * huidige staat als nieuwe momentopname. Schrijft NIET naar de cloud; de gebruiker
+ * uploadt daarna desgewenst bewust. */
+export async function restoreLocalBackup(at: string): Promise<void> {
+  const b = (await listLocalBackups()).find((x) => x.at === at);
+  if (!b) throw new Error("Lokale back-up niet gevonden.");
+  await snapshotLocal();
+  await importAll(b.snap);
+}
+
+/* ── Cloud-backups (approot/backups) ── */
+export async function fetchCloudBackups(): Promise<BackupItem[]> {
+  return listBackups(await getToken());
+}
+
+/* Zet een cloud-backup terug naar lokaal (vervangt lokaal; ontsleutelt indien nodig).
+ * Bewaart eerst de huidige lokale staat. Schrijft NIET naar de cloud. */
+export async function restoreCloudBackup(name: string): Promise<void> {
+  const token = await getToken();
+  const raw = await downloadBackup(token, name);
+  if (raw === null) throw new Error("Cloud-back-up niet gevonden.");
+  let snap: Snapshot;
+  if (isEncEnvelope(raw)) {
+    await adoptCloudSlots(raw.slots);
+    if (!isUnlocked()) throw new SyncLockedError();
+    snap = (await openEnvelope(raw)) as Snapshot;
+  } else {
+    snap = raw as Snapshot;
+  }
+  await snapshotLocal();
+  await importAll(snap);
 }
 
 export type SyncOutcome =
   | { action: "pushed" }
   | { action: "pulled" }
   | { action: "conflict"; remoteModified: string }
-  | { action: "locked" };
+  | { action: "locked" }
+  | { action: "noop" }; // niets te doen (bv. vers/leeg toestel zonder cloudbestand)
 
 /* Automatische sync: vergelijk remote wijzigingsdatum met onze laatste sync.
  * - geen remote bestand → push (eerste upload ooit)
@@ -185,6 +253,8 @@ export async function syncNow(): Promise<SyncOutcome> {
     return await syncNowInner();
   } catch (e) {
     if (e instanceof SyncLockedError) return { action: "locked" };
+    // Cloud is intussen gewijzigd (If-Match 412): geen stille overschrijving, conflict.
+    if (e instanceof RemoteChangedError) return { action: "conflict", remoteModified: "" };
     throw e;
   }
 }
@@ -195,11 +265,16 @@ async function syncNowInner(): Promise<SyncOutcome> {
   const local = await getSyncMeta();
 
   if (!remote) {
+    // Eerste upload ooit — maar NOOIT een vers/leeg toestel als "waarheid" wegschrijven.
+    if (!(await hasUserContent())) return { action: "noop" };
     await pushToOneDrive();
     return { action: "pushed" };
   }
   if (!local) {
-    if ((await db.transactions.count()) > 0) {
+    // Nog nooit verzoend op dit toestel én er staat al data in de cloud. Heeft dit
+    // toestel echte gebruikersdata → bewust laten kiezen (conflict). Anders (vers/
+    // seed-only) de cloud adopteren via pull — nooit de cloud overschrijven.
+    if (await hasUserContent()) {
       return { action: "conflict", remoteModified: remote.lastModified };
     }
     const snap = await readRemote(token);

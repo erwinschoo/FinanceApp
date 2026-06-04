@@ -13,10 +13,8 @@ import { DonutChart } from "../charts/DonutChart";
 import { ProgressRing } from "../charts/ProgressRing";
 import { useMediaQuery } from "../charts/useMediaQuery";
 
-const START_BALANCE = 4200;
-
 export function Dashboard() {
-  const { transactions, months, monthIdx, budgets, goals, categories, catMap, setView } = useApp();
+  const { transactions, months, monthIdx, budgets, goals, categories, catMap, setView, startBalance } = useApp();
   const [donutActive, setDonutActive] = useState<number | null>(null);
   const [trendMode, setTrendMode] = useState<"beide" | "netto">("beide");
   const isPhone = useMediaQuery("(max-width: 560px)");
@@ -45,11 +43,11 @@ export function Dashboard() {
         const t = transactions.find((t) => t.date.slice(0, 7) <= end && t.balance != null);
         if (t) return t.balance as number;
       }
-      let b = START_BALANCE;
+      let b = startBalance;
       transactions.forEach((t) => { if (t.date.slice(0, 7) <= end) b += t.amount; });
       return b;
     },
-    [transactions, months, hasBalances],
+    [transactions, months, hasBalances, startBalance],
   );
   const balance = balanceAt(monthIdx);
   const prevBalance = monthIdx > 0 ? balanceAt(monthIdx - 1) : null;
@@ -96,6 +94,15 @@ export function Dashboard() {
 
   return (
     <div className="content-inner fade-in">
+      {transactions.length === 0 && (
+        <div className="notice" style={{ marginBottom: 18, background: "var(--blue-soft)", borderColor: "#CFE0F2" }}>
+          <span className="ni" style={{ color: "var(--blue)" }}><Ic name="info" size={20} /></span>
+          <div className="nt" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <span><b>Nog geen gegevens.</b> Importeer je transacties om je overzicht, budgetten en spaardoelen te vullen.</span>
+            <Button variant="primary" icon="upload" onClick={() => setView("import")}>Importeren</Button>
+          </div>
+        </div>
+      )}
       <div className="grid stagger grid-kpi" style={{ gridTemplateColumns: "repeat(4,1fr)", marginBottom: 18 }}>
         <KpiCard icon="wallet" iconColor="var(--blue)" iconBg="var(--blue-soft)" phone={isPhone}
           label="Saldo betaalrekening" value={eur(balance)} delta={prevBalance ? pct(balance, prevBalance) : null}

@@ -4,7 +4,8 @@ import { Ic } from "../components/Ic";
 import { Button } from "../components/Button";
 import { db } from "../db/schema";
 import { isSyncConfigured, getPca, getAccount, signIn, signOut } from "../sync/msal";
-import { syncNow, pushToOneDrive, getSyncMeta, refreshProfilePhoto, exportAll, importAll, fetchRemoteSnapshot, applyPull, isSubstantialTxLoss, type Snapshot } from "../sync/syncEngine";
+import { syncNow, pushToOneDrive, getSyncMeta, refreshProfilePhoto, exportAll, importAll, fetchRemoteSnapshot, applyPull, isSubstantialTxLoss, fetchCloudBackups, restoreCloudBackup, listLocalBackups, restoreLocalBackup, type Snapshot, type LocalBackup } from "../sync/syncEngine";
+import type { BackupItem } from "../sync/graphClient";
 import { syncAfterUnlock } from "../sync/autoSync";
 import { isEncEnvelope, type EncEnvelope } from "../sync/crypto";
 import {
@@ -232,6 +233,102 @@ function EncryptionCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: stri
   );
 }
 
+/* Herstel-UI: lokale momentopnames (vóór elke pull/herstel gemaakt) en cloud-backups
+ * (vóór elke cloud-overwrite gemaakt). Elk terug te zetten naar dit toestel. Air-tight
+ * vangnet zodat een verkeerde sync/overschrijving nooit definitief is. */
+function BackupsCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: string }) => void }) {
+  const [cloud, setCloud] = useState<BackupItem[] | null>(null);
+  const [local, setLocal] = useState<LocalBackup[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    setBusy(true);
+    try {
+      setLocal(await listLocalBackups());
+      try { setCloud(await fetchCloudBackups()); } catch { setCloud([]); } // cloud optioneel/offline
+    } finally { setBusy(false); }
+  }
+  useEffect(() => { void load(); }, []);
+
+  const fmt = (iso: string) => new Date(iso).toLocaleString("nl-NL");
+
+  async function doRestoreCloud(name: string) {
+    if (!confirm("Deze cloud-back-up vervangt je huidige gegevens op dit toestel. Je huidige staat wordt eerst als lokale momentopname bewaard. Daarna kun je met Uploaden de cloud bijwerken. Doorgaan?")) return;
+    setBusy(true);
+    try {
+      await restoreCloudBackup(name);
+      onMsg({ kind: "ok", text: "Cloud-back-up teruggezet op dit toestel. Controleer je gegevens en gebruik daarna Uploaden om de cloud bij te werken." });
+      await load();
+    } catch (e) {
+      onMsg({ kind: "err", text: e instanceof Error ? e.message : String(e) });
+    } finally { setBusy(false); }
+  }
+
+  async function doRestoreLocal(at: string) {
+    if (!confirm("Deze lokale momentopname vervangt je huidige gegevens op dit toestel. Je huidige staat wordt eerst als nieuwe momentopname bewaard. Doorgaan?")) return;
+    setBusy(true);
+    try {
+      await restoreLocalBackup(at);
+      onMsg({ kind: "ok", text: "Lokale momentopname teruggezet." });
+      await load();
+    } catch (e) {
+      onMsg({ kind: "err", text: e instanceof Error ? e.message : String(e) });
+    } finally { setBusy(false); }
+  }
+
+  const hasAny = local.length > 0 || (cloud && cloud.length > 0);
+
+  return (
+    <div className="card card-pad" style={{ marginTop: 18 }}>
+      <div className="card-h" style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+        <Ic name="clock" size={20} style={{ color: "var(--muted)" }} />
+        <h3 style={{ margin: 0 }}>Vorige versies</h3>
+      </div>
+      <p style={{ color: "var(--body)", fontSize: 14, lineHeight: 1.6, marginTop: 0 }}>
+        Vóór elke cloud-overschrijving en elke pull bewaart bokkiep automatisch een kopie. Raakt er ooit data zoek, dan zet je hier een eerdere versie terug.
+      </p>
+
+      {!hasAny ? (
+        <div className="notice" style={{ marginTop: 4 }}>
+          <span className="ni"><Ic name="info" size={20} /></span>
+          <div className="nt">{busy ? "Laden…" : "Nog geen eerdere versies. Die ontstaan zodra je gaat synchroniseren."}</div>
+        </div>
+      ) : (
+        <>
+          {cloud && cloud.length > 0 && (
+            <div style={{ marginBottom: local.length ? 16 : 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>In OneDrive</div>
+              {cloud.map((b) => (
+                <div key={b.name} className="prof-map-row">
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                    <Ic name="cloud" size={16} />
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fmt(b.lastModified)} · {Math.max(1, Math.round(b.size / 1024))} kB</span>
+                  </span>
+                  <Button variant="ghost" disabled={busy} onClick={() => doRestoreCloud(b.name)}>Terugzetten</Button>
+                </div>
+              ))}
+            </div>
+          )}
+          {local.length > 0 && (
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>Op dit toestel</div>
+              {local.map((b) => (
+                <div key={b.at} className="prof-map-row">
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                    <Ic name="wallet" size={16} />
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fmt(b.at)} · {b.txCount} transactie{b.txCount === 1 ? "" : "s"}</span>
+                  </span>
+                  <Button variant="ghost" disabled={busy} onClick={() => doRestoreLocal(b.at)}>Terugzetten</Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export function Sync() {
   const configured = isSyncConfigured();
   const [email, setEmail] = useState<string | null>(null);
@@ -306,6 +403,8 @@ export function Sync() {
         setMsg({ kind: "err", text: "De cloud en dit toestel verschillen te veel om automatisch te kiezen — om geen data te verliezen doet de sync niets. Kies bewust: Uploaden (dit toestel → cloud) of Ophalen (cloud → dit toestel)." });
       } else if (r.action === "locked") {
         setMsg({ kind: "err", text: "Je cloud-data is versleuteld. Ontgrendel eerst hieronder met je wachtwoord of biometrie om te kunnen synchroniseren." });
+      } else if (r.action === "noop") {
+        setMsg({ kind: "ok", text: "Niets te synchroniseren: dit toestel heeft nog geen gegevens. Importeer eerst je transacties." });
       } else {
         setMsg({ kind: "ok", text: r.action === "pulled" ? "Nieuwere versie opgehaald van OneDrive." : "Lokale data geüpload naar OneDrive." });
       }
@@ -348,7 +447,9 @@ export function Sync() {
           !confirm(`Let op: OneDrive bevat ${rs.remoteTx} transacties, dit toestel ${rs.localTx}. Uploaden overschrijft de cloud; daar verdwijnen mogelijk ${rs.remoteTx - rs.localTx} transactie(s). Doorgaan?`)) {
         setBusy(false); return;
       }
-      await pushToOneDrive();
+      // Bewuste upload: schrijf met de net-gelezen eTag (dekt een race tussen lezen
+      // en schrijven, maar overschrijft wél de huidige cloud zoals de gebruiker wil).
+      await pushToOneDrive({ expectedEtag: rs?.remoteEtag });
       const meta = await getSyncMeta();
       setLastSynced(meta?.lastSyncedAt ?? null);
       setMsg({ kind: "ok", text: "Geüpload naar OneDrive." });
@@ -425,6 +526,8 @@ export function Sync() {
       )}
 
       {configured && email && <EncryptionCard onMsg={setMsg} />}
+
+      {configured && email && <BackupsCard onMsg={setMsg} />}
 
       <div className="card card-pad" style={{ marginTop: 18 }}>
         <div className="card-h" style={{ marginBottom: 14 }}><h3>Lokale back-up</h3></div>

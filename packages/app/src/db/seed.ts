@@ -1,15 +1,8 @@
 import { db } from "./schema";
 import { DEFAULT_CATEGORIES, DEFAULT_GROUPS } from "../categories";
 import { DEFAULT_RULES } from "../categorize/rules";
-import { toCents } from "../lib/money";
 import { uid } from "../lib/id";
-import type { BudgetRow, ImportProfileRow } from "./types";
-
-/* Handige standaardbudgetten per categorie (euro/maand) — bewerkbaar in de app. */
-const DEFAULT_BUDGETS: Record<string, number> = {
-  boodschappen: 520, wonen: 1400, vervoer: 180, abonnementen: 140,
-  gezondheid: 90, vrijetijd: 320, verzekeringen: 230, overig: 80,
-};
+import type { ImportProfileRow } from "./types";
 
 const ING_PROFILE: ImportProfileRow = {
   id: "ing",
@@ -27,26 +20,18 @@ const ING_PROFILE: ImportProfileRow = {
   decimalSep: ",",
 };
 
-/* Seed alleen referentiedata bij een lege database (eerste start).
- * GEEN demo-transacties of -doelen: de app start schoon en jouw import is de basis. */
+/* Seed alleen functionele referentie-structuur bij een lege database (eerste start):
+ * categorieën, groepen, categorisatie-regels en het ING-importprofiel. Bewust GEEN
+ * verzonnen cijfers (geen budgetbedragen, geen startsaldo, geen demo-transacties) —
+ * alles wat op echte data lijkt start leeg, zodat een verse install nooit misleidt. */
 export async function seedIfEmpty(): Promise<void> {
   const count = await db.categories.count();
   if (count > 0) return;
 
-  await db.transaction("rw", [db.categories, db.categoryGroups, db.budgets, db.rules, db.importProfiles, db.meta], async () => {
+  await db.transaction("rw", [db.categories, db.categoryGroups, db.rules, db.importProfiles, db.meta], async () => {
     await db.categoryGroups.bulkPut(DEFAULT_GROUPS);
     await db.categories.bulkPut(DEFAULT_CATEGORIES);
     await db.rules.bulkPut(DEFAULT_RULES.map((r) => ({ ...r, id: uid("r") })));
-
-    const budgets: BudgetRow[] = Object.entries(DEFAULT_BUDGETS).map(([categoryId, euros]) => ({
-      id: `${categoryId}:recurring`,
-      categoryId,
-      month: null,
-      amountCents: toCents(euros),
-      carryOver: false,
-    }));
-    await db.budgets.bulkPut(budgets);
-
     await db.importProfiles.put(ING_PROFILE);
     await db.meta.put({ key: "seededAt", value: new Date().toISOString() });
   });

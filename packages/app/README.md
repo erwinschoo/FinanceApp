@@ -14,7 +14,9 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-Bij de eerste start wordt de database gevuld met **voorbeelddata** zodat alle schermen meteen werken. Verwijder de IndexedDB ("bokkiep") via DevTools → Application om opnieuw te seeden.
+Bij de eerste start wordt de database gevuld met alleen **functionele referentie-structuur** (categorieën, groepen, categorisatie-regels, ING-importprofiel) — bewust **geen** verzonnen cijfers (geen budgetbedragen, geen startsaldo, geen demo-transacties). Een verse install start dus leeg: het dashboard toont een banner die naar **Importeren** leidt. Verwijder de IndexedDB ("bokkiep") via DevTools → Application om opnieuw te seeden.
+
+Het **beginsaldo** van de betaalrekening stel je in onder **Profiel** (default €0). Het wordt alleen gebruikt zolang de import nog geen banksaldo meelevert; zodra dat er is, heeft het echte banksaldo voorrang.
 
 ```bash
 npm run build      # productie-build (typecheck + vite build)
@@ -47,7 +49,16 @@ Volledig los van een werk-/delaware-account — gebruik een **persoonlijk** Micr
    ```
 5. Herstart `npm run dev`. Ga naar **Synchroniseren** → **Inloggen met Microsoft**.
 
-Je data komt in een eigen mapje `Apps/bokkiep/data.json` in jouw OneDrive; de app krijgt alléén toegang tot dat mapje. **Sync nu** kiest automatisch op-/afhalen (last-write-wins op basis van wijzigingsdatum); met **Uploaden**/**Ophalen** stuur je het bewust.
+Je data komt in een eigen mapje `Apps/bokkiep/data.json` in jouw OneDrive; de app krijgt alléén toegang tot dat mapje. **Sync nu** kiest automatisch op-/afhalen; met **Uploaden**/**Ophalen** stuur je het bewust.
+
+### Databeveiliging (air-tight)
+
+De sync is opgezet zodat je **nooit stil data kunt verliezen**:
+
+- **Nooit een gevulde cloud overschrijven met een leeg/vers toestel.** Een toestel zonder echte gebruikersdata (alleen seed-structuur) doet bij sync altijd een *pull*, nooit een push. "Echte data" wordt centraal bepaald door `hasUserContent` (`src/db/userContent.ts`).
+- **Back-up vóór elke overschrijving.** Vóór een cloud-overwrite wordt de huidige `data.json` gekopieerd naar `Apps/bokkiep/backups/` (laatste 10). Vóór een lokale pull/herstel wordt een lokale momentopname bewaard (laatste 3). Beide terug te zetten onder **Synchroniseren → Vorige versies**.
+- **Optimistic concurrency.** Uploads gebruiken `If-Match` op de laatst gelezen eTag; is de cloud intussen door een ander toestel gewijzigd (412), dan wordt er niets overschreven en volgt een conflict.
+- **Fail closed.** Netwerkfouten, vergrendelde encryptie of een gewijzigde cloud leiden nooit tot een stille overschrijving — de lokale data blijft staan.
 
 ## Hosten op GitHub Pages
 

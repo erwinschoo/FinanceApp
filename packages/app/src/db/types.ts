@@ -177,6 +177,7 @@ export interface HouseholdProfile {
   hasCar: boolean;
   nibudHouseholdId?: string;                              // expliciete keuze; anders auto-match
   categoryMapOverrides?: Record<string, NibudPostId | null>; // per categoryId; null = niet vergelijken
+  startBalanceCents?: number;                            // beginsaldo betaalrekening; gebruikt als de import geen banksaldo meelevert
 }
 
 /* een geparste, nog niet opgeslagen rij uit een bankexport */

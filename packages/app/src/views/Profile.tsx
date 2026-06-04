@@ -24,9 +24,11 @@ export function Profile() {
 
   // Werk-kopie: bij eerste render afgeleid van wat in de DB staat (of de default).
   const [p, setP] = useState<HouseholdProfile>(() => stored ?? DEFAULT_PROFILE);
+  // Vrij in te typen tekstwaarde voor het beginsaldo (los van de centen-opslag).
+  const [balStr, setBalStr] = useState<string>(() => centsToInput(stored?.startBalanceCents));
   // Synchroniseer eenmalig wanneer de opgeslagen waarde binnenkomt (bv. na sync/refresh).
   const [hydrated, setHydrated] = useState(false);
-  if (!hydrated && stored) { setP(stored); setHydrated(true); }
+  if (!hydrated && stored) { setP(stored); setBalStr(centsToInput(stored.startBalanceCents)); setHydrated(true); }
   if (!hydrated && stored === null) setHydrated(true);
 
   function update(patch: Partial<HouseholdProfile>) {
@@ -98,6 +100,30 @@ export function Profile() {
         </div>
       </div>
 
+      <div className="card card-pad" style={{ marginBottom: 18 }}>
+        <div className="card-h" style={{ marginBottom: 4 }}>
+          <h3>Betaalrekening</h3>
+          <span className="hint">beginsaldo</span>
+        </div>
+        <p style={{ color: "var(--muted)", margin: "0 0 16px", fontSize: 13.5 }}>
+          Het saldo waarmee het overzicht begint te rekenen. Alleen gebruikt zolang je import nog geen banksaldo meelevert — zodra dat er wel is, heeft het echte banksaldo voorrang.
+        </p>
+        <label className="prof-field" style={{ maxWidth: 220 }}>
+          <span className="prof-field-lbl">Beginsaldo (€)</span>
+          <input
+            type="text" inputMode="decimal" value={balStr}
+            aria-label="Beginsaldo betaalrekening in euro"
+            style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid var(--line)", background: "var(--surface)", color: "var(--ink)", fontSize: 14, marginTop: 8 }}
+            onChange={(e) => {
+              const v = e.target.value;
+              setBalStr(v);
+              const euros = parseFloat(v.replace(",", "."));
+              update({ startBalanceCents: Number.isFinite(euros) ? Math.round(euros * 100) : 0 });
+            }}
+          />
+        </label>
+      </div>
+
       <details className="card card-pad" style={{ marginBottom: 18 }}>
         <summary className="prof-summary card-h">
           <h3>Categorie-koppeling</h3>
@@ -154,6 +180,12 @@ export function Profile() {
       </p>
     </div>
   );
+}
+
+/* Centen → vrij bewerkbare invoertekst in euro's ("" bij 0/leeg, zodat het veld leeg oogt). */
+function centsToInput(cents: number | undefined): string {
+  if (!cents) return "";
+  return String(cents / 100);
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

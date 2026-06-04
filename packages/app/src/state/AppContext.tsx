@@ -5,7 +5,7 @@ import { rowToTx, rowToGoal, rowToPot } from "../db/map";
 import { buildSavings, type SavingsGroup } from "../goals/savings";
 import { lastTwelveMonthKeys, txKey } from "../helpers/aggregations";
 import { fromCents } from "../lib/money";
-import type { Category, CategoryGroupRow, Transaction, Goal, RuleRow, PayeeRow } from "../db/types";
+import type { Category, CategoryGroupRow, Transaction, Goal, RuleRow, PayeeRow, HouseholdProfile } from "../db/types";
 
 export const VIEW_IDS = ["dashboard", "transacties", "budgetten", "vergelijken", "spaardoel", "tegenpartijen", "import", "sync", "beheer", "profiel", "feedback", "steun", "download", "informatie"] as const;
 export type ViewId = (typeof VIEW_IDS)[number];
@@ -36,6 +36,7 @@ interface AppState {
   view: ViewId;
   setView: (v: ViewId) => void;
   uncategorizedCount: number;
+  startBalance: number; // beginsaldo betaalrekening (euro); 0 als niet ingesteld
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -82,6 +83,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const ruleRows = useLiveQuery(() => db.rules.toArray(), [], undefined);
   const payeeRows = useLiveQuery(() => db.payees.toArray(), [], undefined);
   const potRows = useLiveQuery(() => db.pots.toArray(), [], undefined);
+  const profileRow = useLiveQuery(() => db.meta.get("profile"), [], undefined);
 
   const ready = !!categories && !!groupRows && !!txRows && !!budgetRows && !!goalRows && !!ruleRows && !!payeeRows && !!potRows;
 
@@ -124,12 +126,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const payees = (payeeRows ?? []) as PayeeRow[];
     const payeeMap = new Map(payees.filter((p) => p.categoryId).map((p) => [p.key, p.categoryId]));
     const uncategorizedCount = transactions.filter((t) => !t.category).length;
+    const profile = profileRow?.value as HouseholdProfile | undefined;
+    const startBalance = fromCents(profile?.startBalanceCents ?? 0);
 
     return {
       ready, categories: cats, catMap, categoryGroups, groupMap, transactions, budgets, goals, savingsGroups, savingsLibrary, rules, payees, payeeMap,
-      months, monthIdx, setMonthIdx: pickMonth, view, setView, uncategorizedCount,
+      months, monthIdx, setMonthIdx: pickMonth, view, setView, uncategorizedCount, startBalance,
     };
-  }, [categories, groupRows, transactions, budgetRows, goalRows, ruleRows, payeeRows, potRows, ready, months, monthIdx, view, pickMonth, setView]);
+  }, [categories, groupRows, transactions, budgetRows, goalRows, ruleRows, payeeRows, potRows, profileRow, ready, months, monthIdx, view, pickMonth, setView]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
