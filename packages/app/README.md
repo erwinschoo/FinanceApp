@@ -81,3 +81,11 @@ src/
   sync/       MSAL-auth, Graph-client, sync-engine
   charts/ components/ views/   geporte UI
 ```
+
+## Licentie & gebruik
+
+bokkiep is **source-available, niet-commercieel**, onder de
+[PolyForm Noncommercial License 1.0.0](../../LICENSE). Je mag de code vrij inzien, auditen,
+aanpassen en zelf privé (niet-commercieel) draaien; commercieel gebruik door derden is niet
+toegestaan. De code staat open zodat iedereen kan controleren hoe er met je gegevens wordt
+omgegaan.
