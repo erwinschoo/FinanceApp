@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Ic } from "./Ic";
 import { Button } from "./Button";
+import { PasswordInput } from "./PasswordInput";
 import { keepGet, setEncEnabled } from "../db/keep";
 import {
   unlockWithPassphrase, unlockWithRecovery, unlockWithBiometric, hasBiometricSlot,
@@ -113,8 +114,8 @@ export function UnlockGate({ atRest, onUnlocked }: { atRest: boolean; onUnlocked
           {/* Verborgen username helpt wachtwoordmanagers de juiste credential te bewaren/vullen. */}
           <input type="text" name="username" autoComplete="username" value={email} readOnly hidden aria-hidden="true" />
           {mode === "pass" ? (
-            <input style={inputStyle} type="password" autoComplete="current-password" autoFocus={!hasBio}
-              placeholder="Wachtwoord" value={value} onChange={(e) => setValue(e.target.value)} disabled={busy} />
+            <PasswordInput autoComplete="current-password" autoFocus={!hasBio} fontSize={15} style={{ marginTop: 10 }}
+              placeholder="Wachtwoord" value={value} onChange={setValue} disabled={busy} ariaLabel="Wachtwoord" />
           ) : (
             <input style={inputStyle} type="text" inputMode="text" autoFocus
               placeholder="Herstelcode (XXXX-XXXX-…)" value={value} onChange={(e) => setValue(e.target.value)} disabled={busy} />

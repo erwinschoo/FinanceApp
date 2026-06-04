@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Ic } from "../components/Ic";
 import { Button } from "../components/Button";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { PasswordInput } from "../components/PasswordInput";
 import { db } from "../db/schema";
 import { keepPut, keepDelete, useKeepMeta, setEncEnabled, clearVault } from "../db/keep";
 import { persistVaultNow, verifyVault, exportToPlaintextDb } from "../db/vault";
@@ -69,6 +70,10 @@ const inputStyle: React.CSSProperties = {
  * wijzigen en vergrendelen. Beheert eigen UI-state; meldingen lopen via onMsg. */
 function EncryptionCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: string }) => void }) {
   const unlocked = useEncUnlocked();
+  // E-mail als (verborgen) username in de wachtwoordformulieren: zo herkent de browser-/
+  // wachtwoordmanager de credential en biedt 'm aan om op te slaan.
+  const acc = useKeepMeta<{ email?: string }>("account");
+  const username = acc?.email ?? "bokkiep";
   const encRow = useKeepMeta<{ enabled?: boolean }>("enc");
   const devRow = useKeepMeta<unknown>("encDeviceKey");
   const enabled = !!encRow?.enabled;
@@ -173,17 +178,18 @@ function EncryptionCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: stri
       ) : !enabled ? (
         /* Nog niet ingeschakeld */
         mode === "setup" ? (
-          <>
+          <form onSubmit={(e) => { e.preventDefault(); doSetup(); }}>
             <p style={{ color: "var(--body)", fontSize: 14, lineHeight: 1.6, marginTop: 0 }}>
               Kies een sterk wachtwoord. Het blijft op je apparaten en gaat <b>nooit</b> naar Microsoft. Hiermee wordt al je data versleuteld bewaard — zowel op dit toestel als (zero-knowledge) in OneDrive. Bewaar je wachtwoord en herstelcode goed: kwijt = data niet terug te halen.
             </p>
-            <input style={inputStyle} type="password" autoComplete="new-password" placeholder="Wachtwoord (min. 8 tekens)" value={p1} onChange={(e) => setP1(e.target.value)} />
-            <input style={inputStyle} type="password" autoComplete="new-password" placeholder="Wachtwoord herhalen" value={p2} onChange={(e) => setP2(e.target.value)} />
+            <input type="text" name="username" autoComplete="username" value={username} readOnly hidden aria-hidden="true" />
+            <PasswordInput autoComplete="new-password" placeholder="Wachtwoord (min. 8 tekens)" value={p1} onChange={setP1} ariaLabel="Nieuw wachtwoord" disabled={busy} />
+            <PasswordInput autoComplete="new-password" placeholder="Wachtwoord herhalen" value={p2} onChange={setP2} ariaLabel="Wachtwoord herhalen" disabled={busy} />
             <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-              <Button variant="primary" icon="lock" disabled={busy} onClick={doSetup}>Inschakelen</Button>
+              <Button type="submit" variant="primary" icon="lock" disabled={busy}>Inschakelen</Button>
               <Button variant="ghost" disabled={busy} onClick={reset}>Annuleren</Button>
             </div>
-          </>
+          </form>
         ) : (
           <>
             <p style={{ color: "var(--body)", fontSize: 14, lineHeight: 1.6, marginTop: 0 }}>
@@ -212,27 +218,28 @@ function EncryptionCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: stri
               </div>
             </>
           ) : (
-            <>
-              <input style={inputStyle} type="password" autoComplete="current-password" placeholder="Wachtwoord" value={p1}
-                onChange={(e) => setP1(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") doUnlock("pass"); }} />
+            <form onSubmit={(e) => { e.preventDefault(); doUnlock("pass"); }}>
+              <input type="text" name="username" autoComplete="username" value={username} readOnly hidden aria-hidden="true" />
+              <PasswordInput autoComplete="current-password" placeholder="Wachtwoord" value={p1} onChange={setP1} ariaLabel="Wachtwoord" disabled={busy} style={{ marginTop: 0 }} />
               <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-                <Button variant="primary" icon="unlock" disabled={busy} onClick={() => doUnlock("pass")}>Ontgrendelen</Button>
+                <Button type="submit" variant="primary" icon="unlock" disabled={busy}>Ontgrendelen</Button>
                 <Button variant="ghost" disabled={busy} onClick={() => { setMode("recovery"); setP1(""); setErr(null); }}>Wachtwoord vergeten?</Button>
               </div>
-            </>
+            </form>
           )}
         </>
       ) : (
         /* Ingeschakeld én ontgrendeld */
         mode === "changepass" ? (
-          <>
-            <input style={inputStyle} type="password" autoComplete="new-password" placeholder="Nieuw wachtwoord (min. 8 tekens)" value={p1} onChange={(e) => setP1(e.target.value)} />
-            <input style={inputStyle} type="password" autoComplete="new-password" placeholder="Nieuw wachtwoord herhalen" value={p2} onChange={(e) => setP2(e.target.value)} />
+          <form onSubmit={(e) => { e.preventDefault(); doChangePass(); }}>
+            <input type="text" name="username" autoComplete="username" value={username} readOnly hidden aria-hidden="true" />
+            <PasswordInput autoComplete="new-password" placeholder="Nieuw wachtwoord (min. 8 tekens)" value={p1} onChange={setP1} ariaLabel="Nieuw wachtwoord" disabled={busy} style={{ marginTop: 0 }} />
+            <PasswordInput autoComplete="new-password" placeholder="Nieuw wachtwoord herhalen" value={p2} onChange={setP2} ariaLabel="Nieuw wachtwoord herhalen" disabled={busy} />
             <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-              <Button variant="primary" disabled={busy} onClick={doChangePass}>Opslaan</Button>
+              <Button type="submit" variant="primary" disabled={busy}>Opslaan</Button>
               <Button variant="ghost" disabled={busy} onClick={reset}>Annuleren</Button>
             </div>
-          </>
+          </form>
         ) : (
           <>
             <div className="notice" style={{ marginBottom: 14, background: "var(--pos-soft)", borderColor: "#CFE6DD" }}>

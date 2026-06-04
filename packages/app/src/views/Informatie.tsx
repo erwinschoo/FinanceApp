@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Ic } from "../components/Ic";
 import goatLogo from "../assets/ibex-orange.png";
 
@@ -15,16 +15,25 @@ const SCREENS: [string, string, string][] = ([
   ["settings", "Beheer", "Onderhoud je categorieën, groepen en categoriseer-regels."],
 ] as [string, string, string][]).sort((a, b) => a[1].localeCompare(b[1], "nl"));
 
-const FAQ: [string, string][] = ([
+const FAQ: [string, ReactNode][] = ([
   ["Hoe importeer ik mijn banktransacties?", "Ga naar Importeren en kies het Excel-bestand dat je via je bank exporteert. bokkiep leest de transacties in en deelt ze waar mogelijk automatisch in op basis van je regels en tegenpartijen."],
   ["Kan ik een bestand direct met bokkiep openen op mijn telefoon?", "Ja! Heb je bokkiep als app geïnstalleerd, dan open je een gedownloade Excel- of CSV-export rechtstreeks met bokkiep. Tik op je Android-telefoon bij het bestand op \"Delen\" (of op de computer op \"Openen met\") en kies bokkiep — de import-wizard opent meteen, met je transacties klaar om in te delen. Op iPhone en iPad kan dit nog niet; gebruik daar \"Kies een bestand\" op de Importeren-pagina."],
   ["Hoe installeer ik bokkiep als app?", "Open de pagina \"Download app\" in het menu. Daar vind je een installatieknop of instructies per apparaat. Eenmaal geïnstalleerd open je bokkiep als een gewone app, zonder browserbalk."],
-  ["Is mijn data veilig?", "Standaard staat je data lokaal op je eigen apparaat (en optioneel in jóuw eigen OneDrive); bokkiep heeft geen eigen server die je gegevens bewaart. Zonder versleuteling is je data daarmee net zo toegankelijk als je apparaat en je OneDrive zelf — dus ook voor wie toegang heeft tot dat apparaat, en in principe voor Microsoft of personen/apps met toegang tot jouw OneDrive. Wil je dat helemaal afzekeren? Schakel dan bij Synchroniseren de versleuteling in. Vanaf dat moment wordt ÁLLE data versleuteld bewaard — zowel op dit apparaat (at-rest) als vóór elke upload naar OneDrive — met AES-256-GCM, en een sleutel die uit jouw wachtwoord wordt afgeleid via PBKDF2 (SHA-256, 600.000 iteraties). Je ontgrendelt dan bij elke start met je wachtwoord, vingerafdruk of gezicht. Het is zero-knowledge: zonder jouw wachtwoord of herstelcode kan niemand de data lezen — ook wijzelf of Microsoft niet. Bewaar dat wachtwoord en de herstelcode dus goed; kwijt = data niet meer terug te halen."],
+  ["Is mijn data veilig?", (
+    <>
+      Standaard staat je data lokaal op je eigen apparaat (en optioneel in jóuw eigen OneDrive); bokkiep heeft geen eigen server die je gegevens bewaart. Zonder versleuteling is je data daarmee net zo toegankelijk als je apparaat en je OneDrive zelf — dus ook voor iedereen met toegang tot dat apparaat, Microsoft of personen/apps met toegang tot jouw OneDrive.
+      <br /><br />
+      Wil je dat helemaal afzekeren? Schakel dan bij Synchroniseren de versleuteling in. Vanaf dat moment wordt ÁLLE data versleuteld bewaard — zowel op dit apparaat (at-rest) als vóór elke upload naar OneDrive. Je ontgrendelt dan bij elke start met je wachtwoord, vingerafdruk of gezicht. Het is zero-knowledge: zonder jouw wachtwoord of herstelcode kan niemand de data lezen — ook wijzelf of Microsoft niet. Bewaar dat wachtwoord en de herstelcode dus goed; kwijt = data niet meer terug te halen.
+      <br /><br />
+      Voor meer informatie over de versleuteling verwijs ik je graag door naar de{" "}
+      <a href="https://github.com/erwinschoo/bokkiep" target="_blank" rel="noopener noreferrer">git repo</a>.
+    </>
+  )],
   ["Kan ik categorieën aanpassen?", "Zeker. Via Beheer pas je categorieën, groepen en categoriseer-regels aan. Wijzigingen werken door op je hele overzicht."],
   ["Kost het geld?", "Nee, bokkiep is en blijft gratis. Vind je de app handig? Dan kun je de ontwikkeling vrijwillig steunen via de pagina \"Steun bokkiep\"."],
   ["Waar worden mijn gegevens opgeslagen?", "Standaard local-first: al je gegevens blijven op je eigen apparaat, in de opslag van je browser. Er gaat niets naar een server. Schakel je zelf synchroniseren met OneDrive in, dan bewaart bokkiep al je gegevens in één bestand in de speciale app-map van jóuw OneDrive — te vinden onder \"Apps\" (of \"Toepassingen\") › \"bokkiep\" › data.json. Andere apps krijgen geen toegang tot die app-map, maar het bestand staat wél in jóuw OneDrive: jij kunt het bekijken, en in principe ook Microsoft of iemand met toegang tot je OneDrive. Wil je dat afzekeren, schakel dan de versleuteling in (zie \"Is mijn data veilig?\"). Wil je een back-up maken of overstappen naar een ander apparaat? Dan kun je dat bestand gewoon zelf kopiëren of bewaren. Zet je versleuteling aan, dan wordt ook de lokale opslag op dit apparaat versleuteld (zie \"Is mijn data veilig?\")."],
   ["Wat is bokkiep precies?", "bokkiep is een persoonlijk financieel overzicht: je importeert je banktransacties, categoriseert ze, stelt budgetten in en volgt spaardoelen. De app is volledig gratis en bevat geen advertenties of tracking."],
-] as [string, string][]).sort((a, b) => a[0].localeCompare(b[0], "nl"));
+] as [string, ReactNode][]).sort((a, b) => (a[0] as string).localeCompare(b[0] as string, "nl"));
 
 /* Build-informatie (geïnjecteerd via define in vite.config.ts). */
 const buildDate = new Date(__BUILD_DATE__);
@@ -37,7 +46,7 @@ const APP_INFO: [string, string][] = [
   ["Opslag", "Lokaal in je browser (IndexedDB); bij versleuteling een versleutelde vault. Optionele OneDrive-sync."],
 ];
 
-function FaqItem({ q, a }: { q: string; a: string }) {
+function FaqItem({ q, a }: { q: string; a: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ borderBottom: "1px solid var(--line-soft)" }}>
