@@ -352,6 +352,29 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   box-shadow:var(--shadow-pop); padding:12px; display:flex; flex-direction:column; gap:10px; min-width:210px; }
 .period-field { display:flex; flex-direction:column; gap:5px; }
 .period-lbl { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--faint); }
+
+/* synchroniseren — stappenplan-breadcrumbs */
+.sync-steps { margin-bottom:18px; }
+.sync-steps-row { display:flex; align-items:flex-start; }
+.sync-step { flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; padding:0 4px; }
+.sync-step-line { position:absolute; top:18px; right:50%; width:100%; height:2px; background:var(--line); z-index:0; }
+.sync-step-line.filled { background:var(--pos); }
+.sync-step-dot { position:relative; z-index:1; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:var(--surface); border:2px solid var(--line); color:var(--faint); margin-bottom:8px; transition:all .15s var(--ease); }
+.sync-step-dot.done { background:var(--pos); border-color:var(--pos); color:#fff; }
+.sync-step-dot.active { border-color:var(--blue); color:var(--blue); background:var(--blue-soft); }
+.sync-step-title { font-size:13px; font-weight:700; color:var(--ink); }
+.sync-step-sub { font-size:11.5px; color:var(--muted); margin-top:1px; }
+.sync-steps-cap { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:14px; padding-top:12px;
+  border-top:1px solid var(--line-soft); font-size:13px; color:var(--muted); }
+.sync-steps-cap.ok { color:var(--pos); font-weight:600; }
+.sync-steps-cap svg { color:var(--pos); flex:none; }
+@media (max-width: 560px) {
+  .sync-step-dot { width:32px; height:32px; }
+  .sync-step-line { top:15px; }
+  .sync-step-sub { display:none; }
+  .sync-step-title { font-size:12px; }
+}
 .cat-menu > div > .cat-opt { padding-left:18px; }
 
 /* gestylede dropdown-trigger (maand/categorie filters) */

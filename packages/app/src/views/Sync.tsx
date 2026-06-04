@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Ic } from "../components/Ic";
 import { Button } from "../components/Button";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { db } from "../db/schema";
 import { keepPut, keepDelete, useKeepMeta, setEncEnabled, clearVault } from "../db/keep";
 import { persistVaultNow, verifyVault, exportToPlaintextDb } from "../db/vault";
@@ -355,6 +356,48 @@ function BackupsCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: string 
   );
 }
 
+/* Stappenplan-breadcrumbs: laat zien hoe ver de gebruiker is richting een volledig beveiligde opzet —
+ * verbinden → back-up in de cloud → versleuteld. De actieve stap is de eerste die nog niet klaar is. */
+function SyncSteps({ connected, hasCloudFile, encrypted }: { connected: boolean; hasCloudFile: boolean; encrypted: boolean }) {
+  const done = [connected, hasCloudFile, encrypted];
+  const activeIdx = done.findIndex((d) => !d); // -1 = alles klaar
+  const steps = [
+    { icon: "onedrive", title: "Verbinden", sub: "met OneDrive" },
+    { icon: "clock", title: "Back-up", sub: "in de cloud" },
+    { icon: "lock", title: "Versleutelen", sub: "zero-knowledge" },
+  ];
+  const caption =
+    !connected ? "Volgende stap: verbind met OneDrive."
+    : !hasCloudFile ? "Volgende stap: maak een back-up met Sync nu."
+    : !encrypted ? "Volgende stap: schakel versleuteling in voor een volledig beveiligde opzet."
+    : "Je opzet is volledig beveiligd — verbonden, geback-upt én versleuteld.";
+  const allDone = activeIdx === -1;
+
+  return (
+    <div className="card card-pad sync-steps">
+      <div className="sync-steps-row">
+        {steps.map((s, i) => {
+          const state = done[i] ? "done" : i === activeIdx ? "active" : "todo";
+          return (
+            <div className="sync-step" key={s.title}>
+              {i > 0 && <span className={"sync-step-line" + (done[i - 1] ? " filled" : "")} />}
+              <span className={"sync-step-dot " + state}>
+                <Ic name={done[i] ? "check" : s.icon} size={18} />
+              </span>
+              <span className="sync-step-title">{s.title}</span>
+              <span className="sync-step-sub">{s.sub}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className={"sync-steps-cap" + (allDone ? " ok" : "")}>
+        {allDone && <Ic name="check" size={15} />}
+        <span>{caption}</span>
+      </div>
+    </div>
+  );
+}
+
 export function Sync() {
   const configured = isSyncConfigured();
   const [email, setEmail] = useState<string | null>(null);
@@ -365,6 +408,7 @@ export function Sync() {
   // gebruiker bewust Uploaden of Ophalen heeft gekozen — voorkomt blind doorklikken.
   const [conflict, setConflict] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showPlainExport, setShowPlainExport] = useState(false);
   const unlocked = useEncUnlocked();
   const encRow = useKeepMeta<{ enabled?: boolean }>("enc");
   const encEnabled = !!encRow?.enabled;
@@ -510,6 +554,8 @@ export function Sync() {
         </div>
       )}
 
+      {configured && <SyncSteps connected={!!email} hasCloudFile={!!lastSynced} encrypted={encEnabled} />}
+
       {!configured ? (
         <div className="card card-pad">
           <div className="card-h" style={{ marginBottom: 10 }}><h3>Synchroniseren met OneDrive</h3></div>
@@ -585,6 +631,11 @@ export function Sync() {
             onClick={() => run(() => exportToFile(encEnabled && unlocked), (encEnabled && unlocked) ? "Versleutelde back-up gedownload." : "Back-up gedownload.")}>
             {encEnabled && unlocked ? "Exporteren (versleuteld)" : "Exporteren naar bestand"}
           </Button>
+          {encEnabled && (
+            <Button icon="download" disabled={busy || !unlocked} onClick={() => setShowPlainExport(true)}>
+              Exporteren (onversleuteld)
+            </Button>
+          )}
           <Button icon="upload" disabled={busy} onClick={() => fileInputRef.current?.click()}>Importeren uit bestand</Button>
           <input ref={fileInputRef} type="file" accept="application/json,.json" hidden onChange={onFilePicked} />
         </div>
@@ -598,6 +649,17 @@ export function Sync() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showPlainExport}
+        title="Onversleutelde back-up maken?"
+        message="Dit bestand is niet beveiligd: iedereen die het bestand heeft kan al je gegevens lezen. Gebruik het alleen als bewuste back-up en bewaar het op een veilige plek waar niemand anders bij kan."
+        confirmLabel="Onversleuteld exporteren"
+        icon="download"
+        confirmVariant="primary"
+        onCancel={() => setShowPlainExport(false)}
+        onConfirm={() => { setShowPlainExport(false); void run(() => exportToFile(false), "Onversleutelde back-up gedownload."); }}
+      />
     </div>
   );
 }

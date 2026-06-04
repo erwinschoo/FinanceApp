@@ -5,11 +5,13 @@ interface Props {
   title: string;
   message: string;
   confirmLabel?: string;
+  icon?: string;                              // icoon op de bevestigknop (default "trash")
+  confirmVariant?: "danger" | "primary";      // stijl van de bevestigknop (default "danger")
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export function ConfirmDialog({ open, title, message, confirmLabel = "Verwijderen", onConfirm, onCancel }: Props) {
+export function ConfirmDialog({ open, title, message, confirmLabel = "Verwijderen", icon = "trash", confirmVariant = "danger", onConfirm, onCancel }: Props) {
   if (!open) return null;
   return (
     <div className="modal-overlay" onClick={onCancel}>
@@ -18,7 +20,7 @@ export function ConfirmDialog({ open, title, message, confirmLabel = "Verwijdere
         <p>{message}</p>
         <div style={{ display: "flex", gap: 10 }}>
           <Button style={{ flex: 1, justifyContent: "center" }} onClick={onCancel}>Annuleren</Button>
-          <Button variant="danger" style={{ flex: 1, justifyContent: "center" }} icon="trash" onClick={onConfirm}>{confirmLabel}</Button>
+          <Button variant={confirmVariant} style={{ flex: 1, justifyContent: "center" }} icon={icon} onClick={onConfirm}>{confirmLabel}</Button>
         </div>
       </div>
     </div>
