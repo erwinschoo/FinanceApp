@@ -2,20 +2,20 @@ import { useState } from "react";
 import { Ic } from "../components/Ic";
 import goatLogo from "../assets/ibex-orange.png";
 
-/* Korte uitleg per hoofdscherm — icoon + omschrijving, in dezelfde volgorde
- * als het menu. */
-const SCREENS: [string, string, string][] = [
+/* Korte uitleg per hoofdscherm — icoon + omschrijving, alfabetisch getoond. */
+const SCREENS: [string, string, string][] = ([
   ["dashboard", "Overzicht", "Je financiële beeld in één oogopslag: inkomsten, uitgaven en saldo per maand."],
   ["list", "Transacties", "Al je banktransacties op één plek, met filteren, zoeken en categoriseren."],
   ["sliders", "Budgetten", "Stel per categorie een budget in en zie direct hoeveel je nog over hebt."],
   ["target", "Spaardoelen", "Stel doelen in en volg je voortgang; bokkiep verdeelt je spaargeld automatisch."],
+  ["scale", "Vergelijken", "Zet je uitgaven af tegen een vergelijkbaar Nibud-huishouden en zie waar je hoger of lager uitkomt."],
   ["wallet", "Tegenpartijen", "Wijs een winkel of rekening één keer een categorie toe en bokkiep onthoudt het."],
   ["upload", "Importeren", "Laad je bank-export (Excel) in; transacties worden automatisch herkend en ingedeeld."],
   ["cloud", "Synchroniseren", "Optionele back-up en sync via je eigen OneDrive — jij houdt de controle."],
   ["sliders", "Beheer", "Onderhoud je categorieën, groepen en categoriseer-regels."],
-];
+] as [string, string, string][]).sort((a, b) => a[1].localeCompare(b[1], "nl"));
 
-const FAQ: [string, string][] = [
+const FAQ: [string, string][] = ([
   ["Hoe importeer ik mijn banktransacties?", "Ga naar Importeren en kies het Excel-bestand dat je via je bank exporteert. bokkiep leest de transacties in en deelt ze waar mogelijk automatisch in op basis van je regels en tegenpartijen."],
   ["Kan ik een bestand direct met bokkiep openen op mijn telefoon?", "Ja! Heb je bokkiep als app geïnstalleerd, dan open je een gedownloade Excel- of CSV-export rechtstreeks met bokkiep. Tik op je Android-telefoon bij het bestand op \"Delen\" (of op de computer op \"Openen met\") en kies bokkiep — de import-wizard opent meteen, met je transacties klaar om in te delen. Op iPhone en iPad kan dit nog niet; gebruik daar \"Kies een bestand\" op de Importeren-pagina."],
   ["Hoe installeer ik bokkiep als app?", "Open de pagina \"Download app\" in het menu. Daar vind je een installatieknop of instructies per apparaat. Eenmaal geïnstalleerd open je bokkiep als een gewone app, zonder browserbalk."],
@@ -24,7 +24,7 @@ const FAQ: [string, string][] = [
   ["Kost het geld?", "Nee, bokkiep is en blijft gratis. Vind je de app handig? Dan kun je de ontwikkeling vrijwillig steunen via de pagina \"Steun bokkiep\"."],
   ["Waar worden mijn gegevens opgeslagen?", "Standaard local-first: al je gegevens blijven op je eigen apparaat, in de opslag van je browser. Er gaat niets naar een server. Schakel je zelf synchroniseren met OneDrive in, dan bewaart bokkiep al je gegevens in één bestand in de speciale app-map van jóuw OneDrive — te vinden onder \"Apps\" (of \"Toepassingen\") › \"bokkiep\" › data.json. Andere apps krijgen geen toegang tot die app-map, maar het bestand staat wél in jóuw OneDrive: jij kunt het bekijken, en in principe ook Microsoft of iemand met toegang tot je OneDrive. Wil je dat afzekeren, schakel dan de versleuteling in (zie \"Is mijn data veilig?\"). Wil je een back-up maken of overstappen naar een ander apparaat? Dan kun je dat bestand gewoon zelf kopiëren of bewaren. Zet je versleuteling aan, dan wordt ook de lokale opslag op dit apparaat versleuteld (zie \"Is mijn data veilig?\")."],
   ["Wat is bokkiep precies?", "bokkiep is een persoonlijk financieel overzicht: je importeert je banktransacties, categoriseert ze, stelt budgetten in en volgt spaardoelen. De app is volledig gratis en bevat geen advertenties of tracking."],
-];
+] as [string, string][]).sort((a, b) => a[0].localeCompare(b[0], "nl"));
 
 /* Build-informatie (geïnjecteerd via define in vite.config.ts). */
 const buildDate = new Date(__BUILD_DATE__);
@@ -34,7 +34,7 @@ const APP_INFO: [string, string][] = [
   ["Build-datum", isNaN(buildDate.getTime()) ? "—" : buildDate.toLocaleString("nl-NL", { dateStyle: "long", timeStyle: "short" })],
   ["Framework", `React ${__REACT_VERSION__} · Vite ${__VITE_VERSION__}`],
   ["Taal", `TypeScript ${__TS_VERSION__}`],
-  ["Opslag", "Lokaal (IndexedDB), optionele OneDrive-sync"],
+  ["Opslag", "Lokaal in je browser (IndexedDB); bij versleuteling een versleutelde vault. Optionele OneDrive-sync."],
 ];
 
 function FaqItem({ q, a }: { q: string; a: string }) {

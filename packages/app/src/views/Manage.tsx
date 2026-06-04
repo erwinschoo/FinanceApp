@@ -279,7 +279,7 @@ function RulesTab() {
       <th style={{ ...style, cursor: "pointer", userSelect: "none" }}
         aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
         onClick={() => setSort((p) => (p.col === col ? { col, dir: p.dir === "asc" ? "desc" : "asc" } : { col, dir: "asc" }))}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: active ? "var(--ink)" : undefined, fontWeight: active ? 800 : undefined }}>
           {label}
           <span style={{ fontSize: 10, lineHeight: 1, opacity: active ? 0.9 : 0.25 }}>{active && sort.dir === "desc" ? "▼" : "▲"}</span>
         </span>

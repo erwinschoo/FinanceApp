@@ -101,8 +101,10 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
   const locked = connected && syncState === "locked";
   const iconStyle = !connected ? { color: "var(--faint)" } : statusColor ? { color: statusColor } : undefined;
 
-  const item = (it: NavItem) => (
-    <button key={it.id} className={"nav-item" + (view === it.id ? " active" : "")} onClick={() => { setView(it.id); onNavigate?.(); }}>
+  // sectionKey = de groep waarin dit item staat (null voor de losse top-items). Bij een klik
+  // zetten we openSection erop: navigeren naar een scherm buiten de open groep klapt die dicht.
+  const item = (it: NavItem, sectionKey: "data" | "overig" | null = null) => (
+    <button key={it.id} className={"nav-item" + (view === it.id ? " active" : "")} onClick={() => { setView(it.id); setOpenSection(sectionKey); onNavigate?.(); }}>
       <Ic name={it.icon} />
       <span className="nav-label">{it.label}</span>
       {it.id === "transacties" && uncategorizedCount ? <span className="nav-badge">{uncategorizedCount}</span> : null}
@@ -113,7 +115,7 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
   // Menusectie met kopje. Inklapbaar (accordion, max. één tegelijk) op mobiel én desktop. Alleen in
   // de ingeklapte desktop-icoonrail tonen we alles statisch — daar past geen accordion.
   const section = (key: "data" | "overig", label: string, items: NavItem[]) => {
-    const navEl = <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{items.map(item)}</nav>;
+    const navEl = <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{items.map((it) => item(it, key))}</nav>;
     if (!isMobile && collapsed) return <>{<div className="sb-sec">{label}</div>}{navEl}</>;
     const isOpen = openSection === key;
     return (
@@ -140,9 +142,9 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
         </button>
       </div>
 
-      <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{TOP.map(item)}</nav>
+      <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{TOP.map((it) => item(it))}</nav>
       <div className="sb-divider" />
-      <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{[...PRIMARY].sort(byLabel).map(item)}</nav>
+      <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{[...PRIMARY].sort(byLabel).map((it) => item(it))}</nav>
 
       {section("data", "Data", [...DATA].sort(byLabel))}
       {section("overig", "Overig", [...overig].sort(byLabel))}

@@ -168,7 +168,7 @@ input, textarea, select { font-family:inherit; color:var(--ink); }
 .sb-collapse:hover .nav-tip { opacity:1; }
 .sb-sec { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); padding:14px 10px 8px; }
 /* Scheiding tussen Overzicht (altijd bovenaan) en de overige schermen */
-.sb-divider { height:1px; background:var(--line-soft); margin:8px 12px; }
+.sb-divider { height:1px; background:var(--line-soft); margin:5px 12px; }
 /* Data/Overig als inklapbare accordion-koppen — mobiel én desktop (niet in de ingeklapte icoonrail) */
 .sb-sec-btn { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;
   border:0; background:transparent; text-align:left; border-radius:8px; cursor:pointer; }
