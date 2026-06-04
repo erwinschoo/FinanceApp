@@ -105,7 +105,7 @@ export function Transactions() {
                       </div>
                     </div>
                   </td>
-                  <td style={{ color: "var(--muted)", fontWeight: 600 }} className="tnum" data-label="Datum">{fmtDate(t.date)}</td>
+                  <td style={{ color: "var(--muted)", fontWeight: 400 }} className="tnum" data-label="Datum">{fmtDate(t.date)}</td>
                   <td data-label="Categorie">
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       {t.category === "inkomen" ? (

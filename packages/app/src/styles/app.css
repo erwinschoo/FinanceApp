@@ -72,6 +72,7 @@
 
 /* ── Dark mode — Teams-geïnspireerde neutralen, huisstijl-accenten behouden ── */
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --ink:        #F3F3F3;
   --body:       #D4D6D9;
   --muted:      #9AA0A8;
@@ -136,7 +137,7 @@ body {
 }
 #root { height:100vh; }
 button { font-family:inherit; cursor:pointer; }
-input { font-family:inherit; }
+input, textarea, select { font-family:inherit; color:var(--ink); }
 ::selection { background:var(--blue-soft); }
 
 /* numbers align nicely */
@@ -214,8 +215,7 @@ input { font-family:inherit; }
 .tooltip--left::after    { left:100%; top:50%; transform:translateY(-50%); border-left-color:var(--elevated); margin-left:-1px; }
 
 .nav-badge { margin-left:auto; font-size:11px; font-weight:700; background:var(--orange-soft); color:var(--orange); padding:1px 7px; border-radius:99px; }
-.sb-actions { margin-top:auto; display:flex; align-items:center; gap:8px; padding:0 4px 14px; }
-.sb-foot { padding-top:10px; border-top:1px solid var(--line-soft); }
+.sb-foot { margin-top:auto; padding-top:10px; border-top:1px solid var(--line-soft); }
 .sb-user { display:flex; align-items:center; gap:10px; padding:5px 6px; border-radius:10px; min-width:0; }
 .sb-user > .meta { min-width:0; }
 .sb-user .av { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,var(--blue-mid),var(--blue)); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex:none; overflow:hidden; }
@@ -228,10 +228,6 @@ input { font-family:inherit; }
 .sb-user .em.syncing svg { animation:syncPulse 1.1s var(--ease) infinite; }
 @keyframes syncPulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
 .sb-user .em .em-txt { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.theme-toggle { flex:none; width:36px; height:36px; display:flex; align-items:center; justify-content:center;
-  border:1px solid var(--line); background:transparent; border-radius:var(--radius-xs); color:var(--muted); transition:all .15s var(--ease); }
-.theme-toggle:hover { background:var(--subtle); color:var(--ink); border-color:var(--faint); }
-.theme-toggle svg { width:18px; height:18px; }
 
 /* main */
 .main { display:flex; flex-direction:column; min-width:0; overflow:hidden; }
@@ -301,12 +297,12 @@ input { font-family:inherit; }
 .tbl td { padding:13px 14px; border-bottom:1px solid var(--line-soft); font-size:14px; vertical-align:middle; }
 .tbl tr:last-child td { border-bottom:0; }
 .tbl tr.row:hover td { background:var(--subtle); }
-.tbl .amt { text-align:right; font-weight:700; color:var(--ink); }
+.tbl .amt { text-align:right; font-weight:400; color:var(--ink); }
 .tbl .amt.neg { color:var(--body); }
 .tbl .amt.pos { color:var(--pos); }
 .merchant { display:flex; align-items:center; gap:11px; }
 .merchant .mi { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; flex:none; }
-.merchant .mn { font-weight:700; color:var(--ink); }
+.merchant .mn { font-weight:400; color:var(--ink); }
 .merchant .md { font-size:12px; color:var(--muted); }
 
 /* progress */
@@ -317,9 +313,9 @@ input { font-family:inherit; }
 .bud { padding:15px 0; border-bottom:1px solid var(--line-soft); }
 .bud:last-child { border-bottom:0; }
 .bud-top { display:flex; align-items:center; gap:11px; margin-bottom:10px; }
-.bud-name { font-weight:700; color:var(--ink); font-size:14px; }
-.bud-fig { margin-left:auto; font-size:13px; color:var(--muted); font-weight:600; }
-.bud-fig b { color:var(--ink); }
+.bud-name { font-weight:400; color:var(--ink); font-size:14px; }
+.bud-fig { margin-left:auto; font-size:13px; color:var(--muted); font-weight:400; }
+.bud-fig b { color:var(--ink); font-weight:400; }
 
 /* range slider — calm. Het input-element is 20px hoog (grijpbare thumb), de track
    blijft visueel 4px dun via de track-pseudo-elementen. */
@@ -403,9 +399,9 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 .legend-row { display:flex; align-items:center; gap:10px; padding:7px 8px; border-radius:8px; transition:background .12s; cursor:default; }
 .legend-row:hover { background:var(--subtle); }
 .legend-row .d { width:10px; height:10px; border-radius:3px; flex:none; }
-.legend-row .ln { font-size:13px; font-weight:600; color:var(--body); }
-.legend-row .lv { margin-left:auto; font-size:13px; font-weight:700; color:var(--ink); }
-.legend-row .lp { font-size:11.5px; color:var(--muted); font-weight:600; width:40px; text-align:right; }
+.legend-row .ln { font-size:13px; font-weight:400; color:var(--body); }
+.legend-row .lv { margin-left:auto; font-size:13px; font-weight:400; color:var(--ink); }
+.legend-row .lp { font-size:11.5px; color:var(--muted); font-weight:400; width:40px; text-align:right; }
 
 .empty { text-align:center; color:var(--muted); padding:38px; font-size:14px; }
 
@@ -459,11 +455,6 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   :root[data-sidebar-collapsed="true"] .nav-badge { position:absolute; top:6px; right:6px;
     margin:0; padding:0; min-width:8px; height:8px; border-radius:50%; font-size:0; line-height:0; background:var(--orange); }
 
-  /* thema/instellingen verbergen — de margin-top:auto die de footer naar onder
-     duwde zat op .sb-actions, dus verplaats die naar .sb-foot */
-  :root[data-sidebar-collapsed="true"] .sb-actions { display:none; }
-  :root[data-sidebar-collapsed="true"] .sb-foot { margin-top:auto; }
-
   /* footer: alleen het wolkje + sync-tijd, gecentreerd gestapeld, wolkje groter */
   :root[data-sidebar-collapsed="true"] .sb-user { flex-direction:column; gap:4px; padding:8px 0; }
   :root[data-sidebar-collapsed="true"] .sb-user .av,
@@ -490,8 +481,6 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
     border-right:1px solid var(--line); overflow-y:auto; box-shadow:var(--shadow-pop);
     padding:20px 16px calc(10px + env(safe-area-inset-bottom)); }
   .sb.open { transform:none; }
-  /* meer ademruimte tussen het laatste menu-item en de actie-knoppen in de drawer */
-  .sb-actions { padding-top:28px; }
   .drawer-scrim { display:block; position:fixed; inset:0; background:var(--overlay); z-index:55;
     animation:fadeIn .16s var(--ease) both; }
 
@@ -550,8 +539,8 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   .legend-cell { padding:6px 8px; border-radius:8px; min-width:0; transition:background .12s; }
   .legend-cell .lc-top { display:flex; align-items:center; gap:8px; min-width:0; }
   .legend-cell .d { width:10px; height:10px; border-radius:3px; flex:none; }
-  .legend-cell .ln { font-size:12.5px; font-weight:600; color:var(--body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .legend-cell .lc-sub { font-size:11.5px; font-weight:700; color:var(--muted); margin-top:2px; padding-left:18px; }
+  .legend-cell .ln { font-size:12.5px; font-weight:400; color:var(--body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .legend-cell .lc-sub { font-size:11.5px; font-weight:400; color:var(--muted); margin-top:2px; padding-left:18px; }
 
   /* tabellen → kaarten (label-waarde gestapeld) */
   .tbl-cards thead { display:none; }
@@ -627,7 +616,7 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 /* ── Vergelijken-tabel ── */
 .cmp-row { display:grid; grid-template-columns:200px 1fr 120px 120px; align-items:center; gap:18px; padding:14px 0; border-bottom:1px solid var(--line-soft); }
 .cmp-head { display:grid; grid-template-columns:200px 1fr 120px 120px; gap:18px; padding-bottom:10px; font-size:12px; font-weight:700; color:var(--muted); border-bottom:1px solid var(--line); }
-.cmp-name { font-weight:700; color:var(--ink); font-size:14px; }
+.cmp-name { font-weight:400; color:var(--ink); font-size:14px; }
 .cmp-amt { text-align:right; font-size:14px; }
 .cmp-sub { margin-top:7px; font-size:12.5px; }
 .cmp-total { border-bottom:0; padding-top:18px; }

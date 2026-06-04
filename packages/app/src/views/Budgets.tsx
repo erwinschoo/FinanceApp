@@ -109,8 +109,8 @@ function BudgetLeafRow({ c, spent, budget, indent }: { c: Category; spent: numbe
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <span style={{ width: 10, height: 10, borderRadius: "50%", background: c.color, flex: "none" }}></span>
         <div>
-          <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14 }}>{c.name}</div>
-          <div style={{ fontSize: 12, color: over ? "var(--over)" : "var(--muted)", fontWeight: 600 }}>
+          <div style={{ fontWeight: 400, color: "var(--ink)", fontSize: 14 }}>{c.name}</div>
+          <div style={{ fontSize: 12, color: over ? "var(--over)" : "var(--muted)", fontWeight: 400 }}>
             {val === 0 ? "geen budget" : over ? `${eur(spent - val)} over` : `${eur(val - spent)} resterend`}
           </div>
         </div>
@@ -118,14 +118,14 @@ function BudgetLeafRow({ c, spent, budget, indent }: { c: Category; spent: numbe
       <div>
         <div className="bar" style={{ height: 9 }}><span style={{ width: Math.min(100, r * 100) + "%", background: budgetColor(r) }}></span></div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 7, fontSize: 12.5 }}>
-          <span className="tnum" style={{ color: "var(--muted)" }}><b style={{ color: "var(--ink)" }}>{eur(spent)}</b> uitgegeven</span>
-          <span className="tnum" style={{ color: over ? "var(--over)" : "var(--muted)", fontWeight: 700 }}>{val ? Math.round(r * 100) + "%" : "—"}</span>
+          <span className="tnum" style={{ color: "var(--muted)" }}><b style={{ color: "var(--ink)", fontWeight: 400 }}>{eur(spent)}</b> uitgegeven</span>
+          <span className="tnum" style={{ color: over ? "var(--over)" : "var(--muted)", fontWeight: 400 }}>{val ? Math.round(r * 100) + "%" : "—"}</span>
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 4, justifyContent: "flex-end" }}>
           <span style={{ fontSize: 13, color: "var(--muted)" }}>budget</span>
-          <span className="tnum" style={{ fontWeight: 800, color: "var(--ink)", fontSize: 16, minWidth: 64, textAlign: "right" }}>{eur(val)}</span>
+          <span className="tnum" style={{ fontWeight: 400, color: "var(--ink)", fontSize: 16, minWidth: 64, textAlign: "right" }}>{eur(val)}</span>
         </div>
         <input type="range" className="rng" min={0} max={max} step={10} value={val}
           onPointerDown={() => { dragging.current = true; }}

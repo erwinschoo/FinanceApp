@@ -102,13 +102,13 @@ export function Compare() {
                 </div>
                 <div className="cmp-sub">
                   {ref > 0
-                    ? <span style={{ color: over ? "var(--over)" : "var(--pos)", fontWeight: 700 }}>
+                    ? <span style={{ color: over ? "var(--over)" : "var(--pos)", fontWeight: 400 }}>
                         {Math.round(ratio * 100)}% · {over ? `${eur(got - ref)} meer` : `${eur(ref - got)} minder`}
                       </span>
                     : <span style={{ color: "var(--muted)" }}>geen referentie</span>}
                 </div>
               </div>
-              <div className="tnum cmp-amt"><b>{eur(got)}</b></div>
+              <div className="tnum cmp-amt"><b style={{ fontWeight: 400 }}>{eur(got)}</b></div>
               <div className="tnum cmp-amt" style={{ color: "var(--muted)" }}>{eur(ref)}</div>
             </div>
           );

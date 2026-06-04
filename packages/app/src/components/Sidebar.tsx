@@ -1,14 +1,12 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import { useApp, type ViewId } from "../state/AppContext";
-import { useTheme } from "../state/useTheme";
 import { useSidebarCollapsed } from "../state/useSidebarCollapsed";
 import { useMediaQuery } from "../charts/useMediaQuery";
 import { useInstallState } from "../pwa/install";
 import { useAutoSyncStatus } from "../sync/autoSync";
 import { db } from "../db/schema";
 import { Ic } from "./Ic";
-import { Tooltip } from "./Tooltip";
 import goatLogo from "../assets/ibex-orange.png";
 
 interface NavItem { id: ViewId; label: string; icon: string; tip: string }
@@ -59,7 +57,6 @@ function syncedLabel(iso: string): string {
 
 export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNavigate?: () => void } = {}) {
   const { view, setView, uncategorizedCount } = useApp();
-  const { theme, toggle } = useTheme();
   const { collapsed, toggle: toggleCollapsed } = useSidebarCollapsed();
   // Mobiel: Data en Overig zijn inklapbaar (accordion — max. één tegelijk open).
   const isMobile = useMediaQuery("(max-width: 860px)");
@@ -141,18 +138,6 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
 
       {section("data", "Data", DATA)}
       {section("overig", "Overig", overig)}
-
-      <div className="sb-actions">
-        <Tooltip label={theme === "dark" ? "Lichte modus" : "Donkere modus"} side="top">
-          <button
-            className="theme-toggle"
-            onClick={toggle}
-            aria-label="Donkere modus aan/uit"
-          >
-            <Ic name={theme === "dark" ? "sun" : "moon"} />
-          </button>
-        </Tooltip>
-      </div>
 
       <div className="sb-foot">
         <button type="button" className="sb-user sb-user-btn"

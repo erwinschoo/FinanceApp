@@ -269,7 +269,7 @@ export function Import() {
             <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", borderBottom: i < history.length - 1 ? "1px solid var(--line-soft)" : "0" }}>
               <span className="mi" style={{ background: "var(--blue-soft)", color: "var(--blue)", width: 34, height: 34, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center" }}><Ic name="file" size={17} /></span>
               <div>
-                <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14 }}>{h.filename}</div>
+                <div style={{ fontWeight: 400, color: "var(--ink)", fontSize: 14 }}>{h.filename}</div>
                 <div style={{ fontSize: 12, color: "var(--muted)" }}>{h.count} transacties · {new Date(h.importedAt).toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "numeric" })}</div>
               </div>
               <span className="tag" style={{ marginLeft: "auto", background: "var(--pos-soft)", color: "var(--pos)" }}><span className="dot" style={{ background: "var(--pos)" }}></span>Verwerkt</span>

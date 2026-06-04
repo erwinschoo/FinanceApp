@@ -61,7 +61,7 @@ function GoalRow({ group, row, idx, count }: { group: SavingsGroup; row: Savings
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
           <input value={row.goal.name} onChange={(e) => updateGoal(row.goal.id, { name: e.target.value })}
             placeholder="Naam je doel"
-            style={{ border: "1px solid transparent", borderRadius: 7, padding: "3px 6px", margin: "-3px -6px", fontSize: 14.5, fontWeight: 700, color: "var(--ink)", background: "transparent", width: "100%", maxWidth: 280, outline: "none" }}
+            style={{ border: "1px solid transparent", borderRadius: 7, padding: "3px 6px", margin: "-3px -6px", fontSize: 14.5, fontWeight: 400, color: "var(--ink)", background: "transparent", width: "100%", maxWidth: 280, outline: "none" }}
             onFocus={(e) => (e.target.style.background = "var(--bg)")} onBlur={(e) => (e.target.style.background = "transparent")} />
           <span className="tag" style={{ background: st.bg, color: st.color, flex: "none" }}>
             <span className="dot" style={{ background: st.color }}></span>{st.label}
@@ -71,8 +71,8 @@ function GoalRow({ group, row, idx, count }: { group: SavingsGroup; row: Savings
           <span style={{ width: Math.min(100, row.pct * 100) + "%", background: row.done ? "var(--pos)" : c }}></span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 12.5 }}>
-          <span className="tnum" style={{ color: "var(--muted)" }}><b style={{ color: "var(--ink)" }}>{eur(row.filled)}</b> van {eur(row.goal.target)}</span>
-          <span className="tnum" style={{ color: "var(--muted)", fontWeight: 700 }}>{Math.round(row.pct * 100)}%</span>
+          <span className="tnum" style={{ color: "var(--muted)" }}><b style={{ color: "var(--ink)", fontWeight: 400 }}>{eur(row.filled)}</b> van {eur(row.goal.target)}</span>
+          <span className="tnum" style={{ color: "var(--muted)", fontWeight: 400 }}>{Math.round(row.pct * 100)}%</span>
         </div>
       </div>
 
@@ -81,7 +81,7 @@ function GoalRow({ group, row, idx, count }: { group: SavingsGroup; row: Savings
           <span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>doel €</span>
           <input type="number" value={row.goal.target} step={500} min={0}
             onChange={(e) => updateGoal(row.goal.id, { target: Number(e.target.value) || 0 })}
-            className="tnum" style={{ width: 84, border: "1px solid var(--line)", borderRadius: 8, padding: "6px 8px", fontSize: 13.5, fontWeight: 700, color: "var(--ink)", outline: "none", textAlign: "right", background: "var(--surface)" }} />
+            className="tnum" style={{ width: 84, border: "1px solid var(--line)", borderRadius: 8, padding: "6px 8px", fontSize: 13.5, fontWeight: 400, color: "var(--ink)", outline: "none", textAlign: "right", background: "var(--surface)" }} />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           <Tooltip label="Hogere prioriteit">

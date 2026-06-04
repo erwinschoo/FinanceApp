@@ -147,7 +147,7 @@ function CatRow({
         <span className="cat-grip" title="Sleep naar een andere groep" onPointerDown={(e) => onGripPointerDown(c.id, e)}><Ic name="grip" size={16} /></span>
         <div className="cat-main">
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: c.color, flex: "none" }}></span>
-          <div className="cat-name" style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14 }}>{c.name}</div>
+          <div className="cat-name" style={{ fontWeight: 400, color: "var(--ink)", fontSize: 14 }}>{c.name}</div>
           <span className="tag" style={{ background: "var(--subtle)", color: "var(--muted)", fontSize: 11 }}>{TYPE_LABEL[c.type]}</span>
         </div>
         <span style={{ marginLeft: "auto", fontSize: 12.5, color: "var(--muted)" }} className="tnum">{usage} transacties</span>
