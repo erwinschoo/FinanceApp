@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useApp } from "../state/AppContext";
-import { useProfile, saveProfile } from "../state/profile";
+import { useProfile, saveProfile, DEFAULT_PROFILE } from "../state/profile";
 import { useTheme } from "../state/useTheme";
 import { Dropdown, type DropdownOption } from "../components/Dropdown";
 import { Ic } from "../components/Ic";
@@ -10,10 +10,6 @@ import {
 } from "../nibud/referenceData";
 import { DEFAULT_NIBUD_MAPPING } from "../nibud/mapping";
 import type { HouseholdProfile, IncomeBand, NibudPostId } from "../db/types";
-
-const DEFAULT_PROFILE: HouseholdProfile = {
-  adults: 1, children: 0, incomeBand: "modaal", housing: "huur", hasCar: false,
-};
 
 const INCOME_LABELS: Record<IncomeBand, string> = {
   "minimum": "Minimuminkomen",
@@ -103,8 +99,8 @@ export function Profile() {
       </div>
 
       <details className="card card-pad" style={{ marginBottom: 18 }}>
-        <summary className="prof-summary">
-          <h3 style={{ margin: 0 }}>Categorie-koppeling</h3>
+        <summary className="prof-summary card-h">
+          <h3>Categorie-koppeling</h3>
           <span className="hint">geavanceerd</span>
         </summary>
         <p style={{ color: "var(--muted)", margin: "12px 0 14px", fontSize: 13.5 }}>

@@ -4,6 +4,12 @@ import type { HouseholdProfile } from "../db/types";
 
 const PROFILE_KEY = "profile";
 
+/* Verstandige standaard zodat de Nibud-vergelijking out-of-the-box werkt,
+ * ook als de gebruiker het profiel nog niet expliciet heeft aangepast. */
+export const DEFAULT_PROFILE: HouseholdProfile = {
+  adults: 1, children: 0, incomeBand: "modaal", housing: "huur", hasCar: false,
+};
+
 /* Live het opgeslagen huishoudprofiel. `undefined` zolang nog niet geladen,
  * `null` wanneer er (nog) geen profiel is ingevuld. */
 export function useProfile(): HouseholdProfile | null | undefined {

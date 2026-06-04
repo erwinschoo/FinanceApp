@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useApp } from "../state/AppContext";
-import { useProfile } from "../state/profile";
+import { useProfile, DEFAULT_PROFILE } from "../state/profile";
 import { eur, monthKeyLabelFull } from "../lib/format";
 import { txInMonth, spendByCat } from "../helpers/aggregations";
 import { budgetColor } from "../helpers/budgetColor";
@@ -18,23 +18,26 @@ export function Compare() {
   const profile = useProfile();
   const key = months[monthIdx];
 
-  // Het actieve voorbeeldhuishouden: expliciete keuze in het profiel wint, anders auto-match.
+  // Het actieve voorbeeldhuishouden: expliciete keuze in het profiel wint, anders
+  // auto-match. Zonder opgeslagen profiel vallen we terug op verstandige defaults,
+  // zodat de vergelijking ook out-of-the-box werkt.
   const household = useMemo(() => {
-    if (!profile) return null;
-    if (profile.nibudHouseholdId) {
-      const chosen = NIBUD_HOUSEHOLDS.find((h) => h.id === profile.nibudHouseholdId);
+    const pf = profile ?? DEFAULT_PROFILE;
+    if (pf.nibudHouseholdId) {
+      const chosen = NIBUD_HOUSEHOLDS.find((h) => h.id === pf.nibudHouseholdId);
       if (chosen) return chosen;
     }
-    return matchHousehold(compositionFrom(profile.adults, profile.children), profile.incomeBand);
+    return matchHousehold(compositionFrom(pf.adults, pf.children), pf.incomeBand);
   }, [profile]);
 
   // Eigen uitgaven per Nibud-post: tel per categorie het maandbedrag op bij de gemapte post.
   const { mine, unmapped } = useMemo(() => {
+    const pf = profile ?? DEFAULT_PROFILE;
     const mine: Record<string, number> = {};
     const unmapped: { name: string; amount: number }[] = [];
     const spend = spendByCat(txInMonth(transactions, key), catMap);
     for (const [catId, amount] of Object.entries(spend)) {
-      const post = postForCategory(catId, profile);
+      const post = postForCategory(catId, pf);
       if (post) mine[post] = (mine[post] || 0) + amount;
       else if (amount > 0) unmapped.push({ name: catMap[catId]?.name ?? catId, amount });
     }
@@ -44,7 +47,7 @@ export function Compare() {
 
   if (profile === undefined) return <div className="empty">Laden…</div>;
 
-  if (!profile || !household) {
+  if (!household) {
     return (
       <div className="content-inner fade-in">
         <div className="card card-pad" style={{ textAlign: "center", padding: "44px 24px" }}>
