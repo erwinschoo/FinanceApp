@@ -24,6 +24,8 @@ import { Informatie } from "./views/Informatie";
 const Import = lazy(() => import("./views/Import").then((m) => ({ default: m.Import })));
 const Sync = lazy(() => import("./views/Sync").then((m) => ({ default: m.Sync })));
 const Manage = lazy(() => import("./views/Manage").then((m) => ({ default: m.Manage })));
+// Feedback laadt MSAL (Graph sendMail) — pas inladen wanneer het scherm wordt geopend.
+const Feedback = lazy(() => import("./views/Feedback").then((m) => ({ default: m.Feedback })));
 
 const META: Record<ViewId, { title: string; month: boolean }> = {
   dashboard: { title: "Overzicht", month: true },
@@ -36,6 +38,7 @@ const META: Record<ViewId, { title: string; month: boolean }> = {
   sync: { title: "Synchroniseren", month: false },
   beheer: { title: "Beheer", month: false },
   profiel: { title: "Profiel & instellingen", month: false },
+  feedback: { title: "Feedback & bugs", month: false },
   steun: { title: "Steun bokkiep", month: false },
   download: { title: "Download app", month: false },
   informatie: { title: "Informatie", month: false },
@@ -52,6 +55,7 @@ const VIEWS: Record<ViewId, ComponentType> = {
   sync: Sync,
   beheer: Manage,
   profiel: Profile,
+  feedback: Feedback,
   steun: Steun,
   download: Download,
   informatie: Informatie,
@@ -112,7 +116,7 @@ export default function App() {
           )}
           <div className="spacer"></div>
           {meta.month && <div className="month-slot"><MonthPicker /></div>}
-          {view !== "import" && view !== "steun" && view !== "download" && view !== "informatie" && (
+          {view !== "import" && view !== "steun" && view !== "download" && view !== "informatie" && view !== "feedback" && (
             <Button variant="primary" onClick={() => setView("import")} title="Importeren" icon="upload">
               <span className="btn-label">Importeren</span>
             </Button>

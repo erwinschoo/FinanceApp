@@ -7,7 +7,7 @@ import { lastTwelveMonthKeys, txKey } from "../helpers/aggregations";
 import { fromCents } from "../lib/money";
 import type { Category, CategoryGroupRow, Transaction, Goal, RuleRow, PayeeRow } from "../db/types";
 
-export const VIEW_IDS = ["dashboard", "transacties", "budgetten", "vergelijken", "spaardoel", "tegenpartijen", "import", "sync", "beheer", "profiel", "steun", "download", "informatie"] as const;
+export const VIEW_IDS = ["dashboard", "transacties", "budgetten", "vergelijken", "spaardoel", "tegenpartijen", "import", "sync", "beheer", "profiel", "feedback", "steun", "download", "informatie"] as const;
 export type ViewId = (typeof VIEW_IDS)[number];
 
 /* Leidt de actieve view af uit de URL-hash (bijv. "#sync"); null bij ontbrekende/onbekende hash. */

@@ -26,6 +26,7 @@ const DATA: NavItem[] = [
 ];
 const OVERIG: NavItem[] = [
   { id: "profiel", label: "Profiel & instellingen", icon: "user", tip: "Je huishouden, categorie-koppeling en weergave" },
+  { id: "feedback", label: "Feedback & bugs", icon: "feedback", tip: "Meld een idee of bug" },
   { id: "steun", label: "Steun bokkiep", icon: "heart", tip: "Steun de ontwikkeling van bokkiep" },
   { id: "download", label: "Download app", icon: "download", tip: "Installeer bokkiep als app" },
   { id: "informatie", label: "Informatie", icon: "info", tip: "Over bokkiep: uitleg en veelgestelde vragen" },

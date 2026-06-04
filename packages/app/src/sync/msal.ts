@@ -75,3 +75,19 @@ export async function getTokenSilent(): Promise<string | null> {
     return null;
   }
 }
+
+/* Token met de Mail.Send-scope — voor het feedback-formulier (Graph /me/sendMail).
+ * Bewust NIET in GRAPH_SCOPES opgenomen: anders zou elke sync-gebruiker bij het
+ * verbinden onnodig toestemming voor het versturen van e-mail moeten geven. We vragen
+ * de scope incrementeel op, en loggen eerst in als er nog geen account is. */
+export async function acquireMailToken(): Promise<string> {
+  const app = await getPca();
+  let account = getAccount();
+  if (!account) account = await signIn();
+  const req = { scopes: ["Mail.Send"], account };
+  try {
+    return (await app.acquireTokenSilent(req)).accessToken;
+  } catch {
+    return (await app.acquireTokenPopup(req)).accessToken; // eerste keer: consent-popup
+  }
+}
