@@ -15,7 +15,7 @@
  * wordt daarnaast als non-extractable CryptoKey gebruikt voor de snapshot-en/decrypt. */
 
 import { useSyncExternalStore } from "react";
-import { db } from "../db/schema";
+import { keepGet, keepPut, keepDelete } from "../db/keep";
 import {
   generateDekRaw, importDek, makeSlot, openSlot, encryptSnapshot, decryptSnapshot,
   importWrapKey, wrapDek, unwrapDek, bytesToB64, b64ToBytes,
@@ -66,15 +66,13 @@ export function lock(): void {
 
 /* ── Status uit meta ── */
 export async function getEncMeta(): Promise<EncMeta | null> {
-  const r = await db.meta.get("enc");
-  return (r?.value as EncMeta | undefined) ?? null;
+  return (await keepGet<EncMeta>("enc")) ?? null;
 }
 export async function isEncryptionEnabled(): Promise<boolean> {
   return !!(await getEncMeta())?.enabled;
 }
 async function getDeviceSlot(): Promise<DeviceSlot | null> {
-  const r = await db.meta.get("encDeviceKey");
-  return (r?.value as DeviceSlot | undefined) ?? null;
+  return (await keepGet<DeviceSlot>("encDeviceKey")) ?? null;
 }
 export async function hasBiometricSlot(): Promise<boolean> {
   return !!(await getDeviceSlot());
@@ -92,7 +90,7 @@ export async function setupEncryption(passphrase: string): Promise<{ recoveryCod
     recovery: await makeSlot(raw, recoveryCode),
   };
   cachedSlots = slots;
-  await db.meta.put({ key: "enc", value: { enabled: true, slots } satisfies EncMeta });
+  await keepPut("enc", { enabled: true, slots } satisfies EncMeta);
   await setSession(raw);
   return { recoveryCode };
 }
@@ -119,7 +117,7 @@ export async function unlockWithRecovery(code: string, cloudSlots?: EncEnvelope[
 
 async function persistSlots(slots: EncMeta["slots"]) {
   cachedSlots = slots;
-  await db.meta.put({ key: "enc", value: { enabled: true, slots } satisfies EncMeta });
+  await keepPut("enc", { enabled: true, slots } satisfies EncMeta);
 }
 
 /* ── Verzegelen / openen van een snapshot voor de sync-laag ── */
@@ -206,7 +204,7 @@ export async function enableBiometric(): Promise<void> {
     prfSalt: bytesToB64(prfSalt),
     wrapIv, wrappedDek,
   };
-  await db.meta.put({ key: "encDeviceKey", value: slot });
+  await keepPut("encDeviceKey", slot);
   emit();
 }
 
@@ -220,7 +218,7 @@ export async function unlockWithBiometric(): Promise<void> {
 }
 
 export async function disableBiometric(): Promise<void> {
-  await db.meta.delete("encDeviceKey");
+  await keepDelete("encDeviceKey");
   emit();
 }
 

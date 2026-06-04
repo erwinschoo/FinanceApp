@@ -1,10 +1,12 @@
 import { useSyncExternalStore } from "react";
-import { db } from "../db/schema";
-import { markUserTouched } from "../db/userContent";
+import { keepGet } from "../db/keep";
+import { markUserTouched, hasUserContent } from "../db/userContent";
+import { schedulePersistVault } from "../db/vault";
+import { isUnlocked } from "./encSession";
 
 /* Lichte, MSAL-vrije sync-scheduler.
  * - Importeert syncEngine (en daarmee MSAL) PAS dynamisch bij een echte sync,
- *   en alleen als de gebruiker is ingelogd (db.meta "account" aanwezig).
+ *   en alleen als de gebruiker is ingelogd (keep-store "account" aanwezig).
  *   Zo blijft MSAL uit de hoofdbundle voor lokale/uitgelogde gebruikers.
  * - Push na elke datawijziging (gedebouncet); pull-verzoening bij app-start. */
 
@@ -32,8 +34,8 @@ export function useAutoSyncStatus(): SyncStatus {
 /* Goedkope gate: is er een ingelogd OneDrive-account? Laadt geen MSAL. */
 async function hasAccount(): Promise<boolean> {
   try {
-    const acc = await db.meta.get("account");
-    return !!(acc?.value as { email?: string } | undefined)?.email;
+    const acc = await keepGet<{ email?: string }>("account");
+    return !!acc?.email;
   } catch {
     return false;
   }
@@ -49,6 +51,10 @@ export function scheduleSync(): void {
   // Elke datamutatie loopt hierlangs → hét moment om dit toestel als "heeft echte
   // gebruikersdata" te markeren (seeden/pull doen dit niet). Fire-and-forget.
   void markUserTouched();
+  // At-rest: ontgrendeld ⟹ versleuteling staat aan → schrijf de versleutelde vault
+  // (gedebounced). Onafhankelijk van een OneDrive-account: lokaal opslaan mag niet
+  // van sync afhangen.
+  if (isUnlocked()) schedulePersistVault();
   if (timer) clearTimeout(timer);
   timer = setTimeout(() => {
     timer = null;
@@ -64,7 +70,6 @@ async function flush(): Promise<void> {
   setStatus("syncing");
   try {
     const { pushToOneDrive, getSyncMeta, RemoteChangedError } = await import("./syncEngine");
-    const { hasUserContent } = await import("../db/userContent");
     // Veiligheid: alleen automatisch pushen als dit toestel al een sync-baseline
     // heeft. Zonder baseline (nog nooit verzoend) zou een push de cloud-backup
     // kunnen overschrijven met mogelijk lege/verse data. Sla dan over; zodra de

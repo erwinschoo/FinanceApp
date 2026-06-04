@@ -1,11 +1,10 @@
-import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import { useApp, type ViewId } from "../state/AppContext";
 import { useSidebarCollapsed } from "../state/useSidebarCollapsed";
 import { useMediaQuery } from "../charts/useMediaQuery";
 import { useInstallState } from "../pwa/install";
 import { useAutoSyncStatus } from "../sync/autoSync";
-import { db } from "../db/schema";
+import { useKeepMeta } from "../db/keep";
 import { Ic } from "./Ic";
 import goatLogo from "../assets/ibex-orange.png";
 
@@ -68,13 +67,12 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
   const overig = installed ? OVERIG.filter((it) => it.id !== "download") : OVERIG;
 
   const syncState = useAutoSyncStatus();
-  const account = useLiveQuery(() => db.meta.get("account"), [], undefined);
-  const syncMeta = useLiveQuery(() => db.meta.get("sync"), [], undefined);
-  const photoMeta = useLiveQuery(() => db.meta.get("accountPhoto"), [], undefined);
-  const acc = account?.value as { email?: string; name?: string } | undefined;
+  const acc = useKeepMeta<{ email?: string; name?: string }>("account");
+  const syncMeta = useKeepMeta<{ lastSyncedAt?: string }>("sync");
+  const photoMeta = useKeepMeta<{ dataUrl?: string }>("accountPhoto");
   const connected = !!acc?.email;
-  const photo = connected ? (photoMeta?.value as { dataUrl?: string } | undefined)?.dataUrl : undefined;
-  const lastSynced = (syncMeta?.value as { lastSyncedAt?: string } | undefined)?.lastSyncedAt;
+  const photo = connected ? photoMeta?.dataUrl : undefined;
+  const lastSynced = syncMeta?.lastSyncedAt;
   const displayName = connected ? (acc?.email ?? acc?.name ?? "Verbonden") : "Niet verbonden";
 
   // Status-regel onder de naam: toont achtergrond-sync-activiteit/fouten of de laatste sync-tijd.

@@ -1,5 +1,5 @@
 import "fake-indexeddb/auto";
-import { beforeEach, describe, it, expect, vi } from "vitest";
+import { beforeAll, beforeEach, describe, it, expect, vi } from "vitest";
 import type { RemoteMeta } from "./graphClient";
 
 /* De externe afhankelijkheden mocken zodat we de beslislogica + de echte (fake)
@@ -42,6 +42,8 @@ vi.mock("./encSession", () => ({
 }));
 
 import { db } from "../db/schema";
+import { initDb } from "../db/initDb";
+import { keep } from "../db/keep";
 import { seedIfEmpty } from "../db/seed";
 import { hasUserContent } from "../db/userContent";
 import {
@@ -71,13 +73,15 @@ async function addLocalTx(id = "local1"): Promise<void> {
   });
 }
 
-const TABLES = [
-  db.categories, db.categoryGroups, db.transactions, db.budgets, db.rules, db.goals,
-  db.importBatches, db.importProfiles, db.pots, db.payees, db.meta,
-];
+// db wordt door initDb toegewezen (geen const-singleton meer) → eenmalig initialiseren.
+beforeAll(async () => { await initDb(); });
 
 beforeEach(async () => {
-  await Promise.all(TABLES.map((t) => t.clear()));
+  await Promise.all([
+    db.categories, db.categoryGroups, db.transactions, db.budgets, db.rules, db.goals,
+    db.importBatches, db.importProfiles, db.pots, db.payees, db.meta,
+  ].map((t) => t.clear()));
+  await keep.kv.clear(); // sync-baseline/flags niet laten lekken tussen tests
   remote.meta = null; remote.content = null;
   uploaded.length = 0; backupCalls.length = 0;
   vi.clearAllMocks();

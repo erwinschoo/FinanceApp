@@ -18,8 +18,11 @@ export class FinanceDB extends Dexie {
   payees!: Table<PayeeRow, string>;
   pots!: Table<PotRow, string>;
 
-  constructor() {
-    super("bokkiep");
+  /* `opts` laat een alternatieve IndexedDB-backend injecteren (in-memory via
+   * fake-indexeddb) wanneer at-rest-versleuteling aanstaat — zodat plaintext nooit
+   * op schijf belandt. Zonder opts: de normale browser-IndexedDB (persistent). */
+  constructor(opts?: { indexedDB?: IDBFactory; IDBKeyRange?: typeof IDBKeyRange }) {
+    super("bokkiep", opts);
     this.version(1).stores({
       categories: "id",
       transactions: "id, date, category, dedupeHash, importBatchId",
@@ -107,4 +110,9 @@ export class FinanceDB extends Dexie {
   }
 }
 
-export const db = new FinanceDB();
+/* De actieve hoofd-db. Eénmalig toegewezen in initDb() (zie db/initDb.ts), als
+ * állereerste stap in de bootstrap — vóór enige consumer wordt aangeroepen. Daarna
+ * niet meer hertoegewezen binnen een sessie (enable/disable doen een page-reload),
+ * zodat live-queries en transactie-tabelreferenties nooit verouderen. */
+export let db: FinanceDB;
+export function setDb(instance: FinanceDB): void { db = instance; }

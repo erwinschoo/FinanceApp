@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
 import { Ic } from "../components/Ic";
 import { Button } from "../components/Button";
 import { db } from "../db/schema";
+import { keepPut, keepDelete, useKeepMeta, setEncEnabled, clearVault } from "../db/keep";
+import { persistVaultNow, verifyVault, exportToPlaintextDb } from "../db/vault";
 import { isSyncConfigured, getPca, getAccount, signIn, signOut } from "../sync/msal";
 import { syncNow, pushToOneDrive, getSyncMeta, refreshProfilePhoto, exportAll, importAll, fetchRemoteSnapshot, applyPull, isSubstantialTxLoss, fetchCloudBackups, restoreCloudBackup, listLocalBackups, restoreLocalBackup, type Snapshot, type LocalBackup } from "../sync/syncEngine";
 import type { BackupItem } from "../sync/graphClient";
@@ -17,8 +18,8 @@ import {
 /* Houdt de verbindingsstatus in db.meta zodat de zijbalk hem reactief kan tonen
  * zonder MSAL te hoeven laden. Bij uitloggen ook de gecachte profielfoto wissen. */
 async function setAccountMeta(acc: { email?: string; name?: string } | null) {
-  if (acc?.email) await db.meta.put({ key: "account", value: { email: acc.email, name: acc.name } });
-  else { await db.meta.delete("account"); await db.meta.delete("accountPhoto"); }
+  if (acc?.email) await keepPut("account", { email: acc.email, name: acc.name });
+  else { await keepDelete("account"); await keepDelete("accountPhoto"); }
 }
 
 /* Download de volledige dataset als één bestand naar dit apparaat. Als de sessie
@@ -67,10 +68,10 @@ const inputStyle: React.CSSProperties = {
  * wijzigen en vergrendelen. Beheert eigen UI-state; meldingen lopen via onMsg. */
 function EncryptionCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: string }) => void }) {
   const unlocked = useEncUnlocked();
-  const encRow = useLiveQuery(() => db.meta.get("enc"), [], undefined);
-  const devRow = useLiveQuery(() => db.meta.get("encDeviceKey"), [], undefined);
-  const enabled = !!(encRow?.value as { enabled?: boolean } | undefined)?.enabled;
-  const hasBio = !!devRow?.value;
+  const encRow = useKeepMeta<{ enabled?: boolean }>("enc");
+  const devRow = useKeepMeta<unknown>("encDeviceKey");
+  const enabled = !!encRow?.enabled;
+  const hasBio = !!devRow;
   const [bioAvail, setBioAvail] = useState(false);
   const [mode, setMode] = useState<null | "setup" | "recovery" | "changepass">(null);
   const [p1, setP1] = useState("");
@@ -95,11 +96,31 @@ function EncryptionCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: stri
   function doSetup() {
     if (!validatePair()) return;
     void guard(async () => {
+      // 1) DEK + slots aanmaken (sessie wordt ontgrendeld). 2) versleutelde vault
+      // schrijven en verifiëren dat hij terug-ontsleutelt. 3) pas dán at-rest aanzetten.
+      // 4) best-effort directe cloud-kopie. De plaintext-db op schijf wordt bij de
+      // eerstvolgende boot opgeruimd (initDb). Reload gebeurt na het tonen van de herstelcode.
       const { recoveryCode } = await setupEncryption(p1);
-      await pushToOneDrive(); // schrijft direct de versleutelde envelope naar OneDrive
+      await persistVaultNow();
+      if (!(await verifyVault())) throw new Error("Kon de versleutelde vault niet verifiëren — niets gewijzigd.");
+      await setEncEnabled(true);
+      try { await pushToOneDrive(); } catch { /* cloud-kopie is best-effort */ }
       setP1(""); setP2(""); setMode(null);
       setRecovery(recoveryCode);
-      onMsg({ kind: "ok", text: "Versleuteling ingeschakeld — je data staat nu zero-knowledge versleuteld in OneDrive." });
+      onMsg({ kind: "ok", text: "Versleuteling ingeschakeld — al je data wordt nu versleuteld op dit toestel bewaard." });
+    });
+  }
+  /* Uitschakelen: schrijf de ontsleutelde data terug naar een persistente plaintext-db
+   * (met verificatie), wis daarna de versleuteling, en herlaad. */
+  function doDisable() {
+    void guard(async () => {
+      if (!confirm("Versleuteling uitschakelen? Je data wordt daarna onversleuteld op dit toestel bewaard (zoals voor het inschakelen). Doorgaan?")) return;
+      await exportToPlaintextDb();
+      await clearVault();
+      await keepDelete("enc");
+      await keepDelete("encDeviceKey");
+      await setEncEnabled(false);
+      location.reload();
     });
   }
   function doUnlock(kind: "pass" | "recovery") {
@@ -140,12 +161,12 @@ function EncryptionCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: stri
         <>
           <div className="notice" style={{ marginBottom: 12 }}>
             <span className="ni"><Ic name="info" size={20} /></span>
-            <div className="nt"><b>Bewaar je herstelcode op een veilige plek.</b> Hiermee kun je je data ontgrendelen als je je wachtwoord vergeet. Zonder wachtwoord én zonder herstelcode is je data <b>niet</b> terug te halen — ook niet door ons of Microsoft.</div>
+            <div className="nt"><b>Bewaar je herstelcode op een veilige plek.</b> Hiermee kun je je data ontgrendelen als je je wachtwoord vergeet. Zonder wachtwoord én zonder herstelcode is je data <b>niet</b> terug te halen — ook niet door ons of Microsoft. bokkiep wordt na deze stap opnieuw geladen en vraagt je te ontgrendelen.</div>
           </div>
           <div style={{ fontFamily: "monospace", fontSize: 16, letterSpacing: 1, padding: "12px 14px", background: "var(--blue-soft)", borderRadius: 10, color: "var(--ink)", userSelect: "all", wordBreak: "break-all" }}>{recovery}</div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <Button onClick={() => { void navigator.clipboard?.writeText(recovery); }}>Kopiëren</Button>
-            <Button variant="primary" onClick={() => setRecovery(null)}>Ik heb hem opgeslagen</Button>
+            <Button variant="primary" onClick={() => location.reload()}>Ik heb hem opgeslagen</Button>
           </div>
         </>
       ) : !enabled ? (
@@ -153,7 +174,7 @@ function EncryptionCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: stri
         mode === "setup" ? (
           <>
             <p style={{ color: "var(--body)", fontSize: 14, lineHeight: 1.6, marginTop: 0 }}>
-              Kies een sterk wachtwoord. Dit blijft op je apparaten en gaat <b>nooit</b> naar Microsoft — het versleutelt je data vóór de upload.
+              Kies een sterk wachtwoord. Het blijft op je apparaten en gaat <b>nooit</b> naar Microsoft. Hiermee wordt al je data versleuteld bewaard — zowel op dit toestel als (zero-knowledge) in OneDrive. Bewaar je wachtwoord en herstelcode goed: kwijt = data niet terug te halen.
             </p>
             <input style={inputStyle} type="password" autoComplete="new-password" placeholder="Wachtwoord (min. 8 tekens)" value={p1} onChange={(e) => setP1(e.target.value)} />
             <input style={inputStyle} type="password" autoComplete="new-password" placeholder="Wachtwoord herhalen" value={p2} onChange={(e) => setP2(e.target.value)} />
@@ -165,7 +186,7 @@ function EncryptionCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: stri
         ) : (
           <>
             <p style={{ color: "var(--body)", fontSize: 14, lineHeight: 1.6, marginTop: 0 }}>
-              Versleutel je data <b>vóór</b> ze naar OneDrive gaat (zero-knowledge): Microsoft ziet dan alleen onleesbare data. Je ontgrendelt op dit toestel met je wachtwoord of — indien beschikbaar — je vingerafdruk/gezicht.
+              Versleutel <b>al je data</b>: op dit toestel (at-rest) én vóór elke upload naar OneDrive (zero-knowledge — Microsoft ziet alleen onleesbare data). Je ontgrendelt bij elke start met je wachtwoord of — indien beschikbaar — je vingerafdruk/gezicht.
             </p>
             <Button variant="primary" icon="shield" onClick={() => setMode("setup")}>Versleuteling inschakelen</Button>
           </>
@@ -174,7 +195,7 @@ function EncryptionCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: stri
         /* Ingeschakeld maar vergrendeld */
         <>
           <p style={{ color: "var(--body)", fontSize: 14, lineHeight: 1.6, marginTop: 0 }}>
-            Je cloud-data is versleuteld en op dit toestel <b>vergrendeld</b>. Ontgrendel om te synchroniseren.
+            Je data is versleuteld en op dit toestel <b>vergrendeld</b>. Ontgrendel om te synchroniseren.
           </p>
           {hasBio && (
             <div style={{ marginBottom: 12 }}>
@@ -215,7 +236,7 @@ function EncryptionCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: stri
           <>
             <div className="notice" style={{ marginBottom: 14, background: "var(--pos-soft)", borderColor: "#CFE6DD" }}>
               <span className="ni" style={{ color: "var(--pos)" }}><Ic name="check" size={20} /></span>
-              <div className="nt">Versleuteld en ontgrendeld. Je data wordt zero-knowledge versleuteld vóór elke upload naar OneDrive.</div>
+              <div className="nt">Versleuteld en ontgrendeld. Al je data wordt versleuteld bewaard op dit toestel en zero-knowledge versleuteld vóór elke upload naar OneDrive.</div>
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {hasBio ? (
@@ -224,7 +245,8 @@ function EncryptionCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: stri
                 <Button icon="fingerprint" disabled={busy} onClick={() => void guard(async () => { await enableBiometric(); onMsg({ kind: "ok", text: "Biometrie ingeschakeld op dit toestel." }); })}>Biometrie inschakelen</Button>
               ) : null}
               <Button icon="edit" disabled={busy} onClick={() => { setMode("changepass"); setP1(""); setP2(""); setErr(null); }}>Wachtwoord wijzigen</Button>
-              <Button variant="ghost" icon="lock" disabled={busy} onClick={() => { lock(); onMsg({ kind: "ok", text: "Vergrendeld op dit toestel." }); }}>Vergrendelen</Button>
+              <Button variant="ghost" icon="lock" disabled={busy} onClick={() => { lock(); location.reload(); }}>Vergrendelen</Button>
+              <Button variant="ghost" disabled={busy} onClick={doDisable}>Versleuteling uitschakelen</Button>
             </div>
           </>
         )
@@ -340,8 +362,8 @@ export function Sync() {
   const [conflict, setConflict] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const unlocked = useEncUnlocked();
-  const encRow = useLiveQuery(() => db.meta.get("enc"), [], undefined);
-  const encEnabled = !!(encRow?.value as { enabled?: boolean } | undefined)?.enabled;
+  const encRow = useKeepMeta<{ enabled?: boolean }>("enc");
+  const encEnabled = !!encRow?.enabled;
 
   useEffect(() => {
     if (!configured) return;

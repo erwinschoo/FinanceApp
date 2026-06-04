@@ -1,12 +1,16 @@
 import { db } from "../db/schema";
+import { keepGet, keepPut, keepDelete } from "../db/keep";
 import { hasUserContent } from "../db/userContent";
+import { exportAll, importAll, snapshotTxCount, type Snapshot } from "../db/snapshot";
+import { persistVaultNow } from "../db/vault";
 import { getToken, getTokenSilent } from "./msal";
 import { getRemoteMeta, downloadData, uploadData, downloadProfilePhoto, backupRemote, listBackups, downloadBackup, RemoteChangedError, type BackupItem } from "./graphClient";
 import { isEncEnvelope, type EncEnvelope } from "./crypto";
 import { isUnlocked, isEncryptionEnabled, sealSnapshot, openEnvelope, adoptCloudSlots } from "./encSession";
 
-const SCHEMA_VERSION = 1;
-
+// De pure snapshot-laag woont in db/snapshot.ts (MSAL-vrij). Hier her-exporteren
+// zodat bestaande imports vanuit syncEngine (Sync.tsx e.a.) blijven werken.
+export { exportAll, importAll, snapshotTxCount, type Snapshot };
 export { RemoteChangedError };
 
 /* Gegooid wanneer de cloud-data versleuteld is maar de sleutel (DEK) nog niet in
@@ -19,83 +23,24 @@ export class SyncLockedError extends Error {
   }
 }
 
-export interface Snapshot {
-  schemaVersion: number;
-  exportedAt: string;
-  categories: unknown[];
-  transactions: unknown[];
-  budgets: unknown[];
-  rules: unknown[];
-  goals: unknown[];
-  importBatches: unknown[];
-  importProfiles: unknown[];
-  pots?: unknown[];
-  categoryGroups?: unknown[];
-  payees?: unknown[];
-  /* Huishoudprofiel (meta["profile"]). Apparaat-onafhankelijk, dus wél meegesynct —
-   * in tegenstelling tot de overige meta-keys (account/foto/sync-state). */
-  profile?: unknown;
-}
-
-export async function exportAll(): Promise<Snapshot> {
-  const [categories, categoryGroups, transactions, budgets, rules, goals, importBatches, importProfiles, pots, payees, profileRow] = await Promise.all([
-    db.categories.toArray(), db.categoryGroups.toArray(), db.transactions.toArray(), db.budgets.toArray(),
-    db.rules.toArray(), db.goals.toArray(), db.importBatches.toArray(), db.importProfiles.toArray(), db.pots.toArray(), db.payees.toArray(),
-    db.meta.get("profile"),
-  ]);
-  return {
-    schemaVersion: SCHEMA_VERSION,
-    exportedAt: new Date().toISOString(),
-    categories, categoryGroups, transactions, budgets, rules, goals, importBatches, importProfiles, pots, payees,
-    profile: profileRow?.value ?? null,
-  };
-}
-
-export async function importAll(snap: Snapshot): Promise<void> {
-  await db.transaction("rw", [db.categories, db.categoryGroups, db.transactions, db.budgets, db.rules, db.goals, db.importBatches, db.importProfiles, db.pots, db.payees], async () => {
-    await Promise.all([
-      db.categories.clear(), db.categoryGroups.clear(), db.transactions.clear(), db.budgets.clear(),
-      db.rules.clear(), db.goals.clear(), db.importBatches.clear(), db.importProfiles.clear(), db.pots.clear(), db.payees.clear(),
-    ]);
-    await Promise.all([
-      db.categories.bulkPut(snap.categories as never[]),
-      db.categoryGroups.bulkPut((snap.categoryGroups ?? []) as never[]),
-      db.transactions.bulkPut(snap.transactions as never[]),
-      db.budgets.bulkPut(snap.budgets as never[]),
-      db.rules.bulkPut(snap.rules as never[]),
-      db.goals.bulkPut(snap.goals as never[]),
-      db.importBatches.bulkPut(snap.importBatches as never[]),
-      db.importProfiles.bulkPut(snap.importProfiles as never[]),
-      db.pots.bulkPut((snap.pots ?? []) as never[]),
-      db.payees.bulkPut((snap.payees ?? []) as never[]),
-    ]);
-  });
-  // Huishoudprofiel buiten de data-transactie toepassen (meta-tabel). Alleen
-  // overschrijven wanneer de snapshot een profiel meelevert; ontbreekt het veld
-  // (oudere snapshot) → lokaal profiel ongemoeid laten.
-  if (snap.profile !== undefined) {
-    if (snap.profile === null) await db.meta.delete("profile");
-    else await db.meta.put({ key: "profile", value: snap.profile });
-  }
-}
-
+// sync-baseline, account-foto e.d. staan in de keep-store (persistent, ook wanneer de
+// hoofd-db in-memory draait bij at-rest-versleuteling). Zie db/keep.ts.
 async function setSyncMeta(v: { lastSyncedAt: string; remoteEtag: string }) {
-  await db.meta.put({ key: "sync", value: v });
+  await keepPut("sync", v);
 }
 export async function getSyncMeta(): Promise<{ lastSyncedAt: string; remoteEtag: string } | null> {
-  const r = await db.meta.get("sync");
-  return (r?.value as { lastSyncedAt: string; remoteEtag: string }) ?? null;
+  return (await keepGet<{ lastSyncedAt: string; remoteEtag: string }>("sync")) ?? null;
 }
 
-/* Haal de profielfoto van de ingelogde gebruiker op en cache 'm in db.meta ("accountPhoto").
+/* Haal de profielfoto van de ingelogde gebruiker op en cache 'm in de keep-store ("accountPhoto").
  * Stil: gebruikt alleen een silent token en faalt geruisloos (geen popup, geen sync-fout). */
 export async function refreshProfilePhoto(): Promise<void> {
   try {
     const token = await getTokenSilent();
     if (!token) return;
     const dataUrl = await downloadProfilePhoto(token);
-    if (dataUrl) await db.meta.put({ key: "accountPhoto", value: { dataUrl } });
-    else await db.meta.delete("accountPhoto");
+    if (dataUrl) await keepPut("accountPhoto", { dataUrl });
+    else await keepDelete("accountPhoto");
   } catch { /* genegeerd */ }
 }
 
@@ -135,11 +80,6 @@ export async function pushToOneDrive(opts?: { expectedEtag?: string }): Promise<
   const snap = await exportAll();
   const meta = await uploadData(token, await buildPayload(snap), expected || undefined);
   await setSyncMeta({ lastSyncedAt: new Date().toISOString(), remoteEtag: meta.eTag });
-}
-
-/* Aantal transacties in een snapshot (de zwaarste, onvervangbare data). */
-export function snapshotTxCount(snap: Snapshot): number {
-  return Array.isArray(snap.transactions) ? snap.transactions.length : 0;
 }
 
 /* "Substantieel verlies": de vervangende dataset heeft fors minder transacties dan
@@ -192,12 +132,20 @@ async function snapshotLocal(): Promise<void> {
   await db.meta.put({ key: LOCAL_BACKUPS_KEY, value: next });
 }
 
+/* Na een lokale (her)vulling die NIET via een gewone mutatie loopt (pull/herstel):
+ * bij at-rest direct de versleutelde vault bijwerken, anders zou een reload de oude
+ * data terugzetten. In niet-versleutelde modus (locked) een no-op. */
+async function persistVaultIfUnlocked(): Promise<void> {
+  if (isUnlocked()) { try { await persistVaultNow(); } catch { /* niet fataal */ } }
+}
+
 /* Pas een opgehaalde snapshot toe als 'pull' (vervangt lokaal + zet de sync-baseline).
  * Maakt eerst een lokale momentopname (best-effort; mag de pull niet blokkeren). */
 export async function applyPull(snap: Snapshot, remoteEtag: string): Promise<void> {
   try { await snapshotLocal(); } catch { /* vangnet; blokkeert de pull niet */ }
   await importAll(snap);
   await setSyncMeta({ lastSyncedAt: new Date().toISOString(), remoteEtag });
+  await persistVaultIfUnlocked();
 }
 
 /* Zet een eerdere lokale momentopname terug (vervangt lokaal). Bewaart eerst de
@@ -208,6 +156,7 @@ export async function restoreLocalBackup(at: string): Promise<void> {
   if (!b) throw new Error("Lokale back-up niet gevonden.");
   await snapshotLocal();
   await importAll(b.snap);
+  await persistVaultIfUnlocked();
 }
 
 /* ── Cloud-backups (approot/backups) ── */
@@ -231,6 +180,7 @@ export async function restoreCloudBackup(name: string): Promise<void> {
   }
   await snapshotLocal();
   await importAll(snap);
+  await persistVaultIfUnlocked();
 }
 
 export type SyncOutcome =
