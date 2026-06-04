@@ -1,17 +1,36 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../state/AppContext";
+import { useProfile, DEFAULT_PROFILE } from "../state/profile";
 import { eur, eurSign, monthKeyLabelFull } from "../lib/format";
 import { txInMonth, incomeOf, spendByCat } from "../helpers/aggregations";
 import { budgetColor } from "../helpers/budgetColor";
+import { postForCategory } from "../nibud/mapping";
+import { NIBUD_HOUSEHOLDS, matchHousehold, compositionFrom } from "../nibud/referenceData";
 import { setRecurringBudget } from "../db/repo";
 import type { Category, CategoryGroupRow } from "../db/types";
 
 export function Budgets() {
   const { transactions, months, monthIdx, budgets, categories, categoryGroups, catMap } = useApp();
+  const profile = useProfile();
   const key = months[monthIdx];
   const monthTxs = txInMonth(transactions, key);
   const spend = spendByCat(monthTxs, catMap);
   const income = incomeOf(monthTxs, catMap);
+
+  // Actief Nibud-voorbeeldhuishouden (defaults wanneer nog geen profiel opgeslagen),
+  // zodat we per categorie een indicatieve referentiewaarde op de slider tonen.
+  const household = useMemo(() => {
+    const pf = profile ?? DEFAULT_PROFILE;
+    if (pf.nibudHouseholdId) {
+      const chosen = NIBUD_HOUSEHOLDS.find((h) => h.id === pf.nibudHouseholdId);
+      if (chosen) return chosen;
+    }
+    return matchHousehold(compositionFrom(pf.adults, pf.children), pf.incomeBand);
+  }, [profile]);
+  const referenceFor = (catId: string): number | null => {
+    const post = postForCategory(catId, profile ?? DEFAULT_PROFILE);
+    return post ? household.posts[post] ?? null : null;
+  };
 
   const byName = (a: Category, b: Category) => a.name.localeCompare(b.name, "nl");
   // budgetteerbare uitgave-categorieën per groep (alfabetisch)
@@ -75,7 +94,7 @@ export function Budgets() {
             return (
               <div key={g.id}>
                 <GroupHeader g={g} members={members} />
-                {members.map((k) => <BudgetLeafRow key={k.id} c={k} spent={spend[k.id] || 0} budget={budgets[k.id] || 0} indent />)}
+                {members.map((k) => <BudgetLeafRow key={k.id} c={k} spent={spend[k.id] || 0} budget={budgets[k.id] || 0} reference={referenceFor(k.id)} indent />)}
               </div>
             );
           })}
@@ -93,12 +112,14 @@ export function Budgets() {
  * lokale sliderwaarde niet reset bij elke parent-render. De slider gebruikt lokale state
  * (de thumb volgt direct), met een stabiele bovengrens (geen herschaling tijdens slepen),
  * en schrijft pas naar de DB bij loslaten — zo "verspringt" of verliest de grab niet meer. */
-function BudgetLeafRow({ c, spent, budget, indent }: { c: Category; spent: number; budget: number; indent?: boolean }) {
+function BudgetLeafRow({ c, spent, budget, reference, indent }: { c: Category; spent: number; budget: number; reference?: number | null; indent?: boolean }) {
   const [val, setVal] = useState(budget);
   const dragging = useRef(false);
   useEffect(() => { if (!dragging.current) setVal(budget); }, [budget]);
-  // Bovengrens hangt alleen van 'spent' af → blijft constant tijdens het slepen.
-  const max = useMemo(() => Math.max(800, Math.ceil(Math.max(spent, budget) / 100) * 100 * 2), [spent]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Bovengrens hangt alleen van 'spent'/referentie af → blijft constant tijdens het slepen.
+  // De referentie wordt meegenomen zodat de marker altijd op de schaal valt.
+  const max = useMemo(() => Math.max(800, Math.ceil(Math.max(spent, budget, reference ?? 0) / 100) * 100 * 2), [spent, reference]); // eslint-disable-line react-hooks/exhaustive-deps
+  const refPct = reference != null ? Math.max(0, Math.min(1, reference / max)) : 0;
 
   const r = val ? spent / val : 0;
   const over = val > 0 && spent > val;
@@ -127,13 +148,24 @@ function BudgetLeafRow({ c, spent, budget, indent }: { c: Category; spent: numbe
           <span style={{ fontSize: 13, color: "var(--muted)" }}>budget</span>
           <span className="tnum" style={{ fontWeight: 400, color: "var(--ink)", fontSize: 16, minWidth: 64, textAlign: "right" }}>{eur(val)}</span>
         </div>
-        <input type="range" className="rng" min={0} max={max} step={10} value={val}
-          onPointerDown={() => { dragging.current = true; }}
-          onChange={(e) => setVal(Number(e.target.value))}
-          onPointerUp={(e) => commit(Number(e.currentTarget.value))}
-          onPointerCancel={() => { dragging.current = false; }}
-          onKeyUp={(e) => commit(Number(e.currentTarget.value))}
-          onBlur={(e) => commit(Number(e.currentTarget.value))} />
+        <div style={{ position: "relative" }}>
+          <input type="range" className="rng" min={0} max={max} step={10} value={val}
+            onPointerDown={() => { dragging.current = true; }}
+            onChange={(e) => setVal(Number(e.target.value))}
+            onPointerUp={(e) => commit(Number(e.currentTarget.value))}
+            onPointerCancel={() => { dragging.current = false; }}
+            onKeyUp={(e) => commit(Number(e.currentTarget.value))}
+            onBlur={(e) => commit(Number(e.currentTarget.value))} />
+          {reference != null && (
+            <span aria-hidden style={{ position: "absolute", top: 4, left: `calc(${refPct} * (100% - 18px) + 9px)`, transform: "translateX(-50%)", width: 2, height: 12, borderRadius: 2, background: "var(--orange)", pointerEvents: "none" }} />
+          )}
+        </div>
+        {reference != null && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5, fontSize: 11, color: "var(--muted)" }}>
+            <span style={{ width: 2, height: 9, borderRadius: 2, background: "var(--orange)", flex: "none" }} />
+            <span className="tnum">Nibud {eur(reference)}</span>
+          </div>
+        )}
       </div>
     </div>
   );
