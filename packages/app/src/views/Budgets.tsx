@@ -7,6 +7,7 @@ import { budgetColor } from "../helpers/budgetColor";
 import { postForCategory } from "../nibud/mapping";
 import { NIBUD_HOUSEHOLDS, matchHousehold, compositionFrom } from "../nibud/referenceData";
 import { setRecurringBudget } from "../db/repo";
+import { Tooltip } from "../components/Tooltip";
 import type { Category, CategoryGroupRow } from "../db/types";
 
 export function Budgets() {
@@ -157,15 +158,12 @@ function BudgetLeafRow({ c, spent, budget, reference, indent }: { c: Category; s
             onKeyUp={(e) => commit(Number(e.currentTarget.value))}
             onBlur={(e) => commit(Number(e.currentTarget.value))} />
           {reference != null && (
-            <span aria-hidden style={{ position: "absolute", top: 4, left: `calc(${refPct} * (100% - 18px) + 9px)`, transform: "translateX(-50%)", width: 2, height: 12, borderRadius: 2, background: "var(--orange)", pointerEvents: "none" }} />
+            <Tooltip label={`Nibud: ${eur(reference)}`} side="top"
+              style={{ position: "absolute", top: 1, left: `calc(${refPct} * (100% - 18px) + 9px)`, transform: "translateX(-50%)", width: 14, height: 18, alignItems: "center", justifyContent: "center", cursor: "help" }}>
+              <span aria-hidden style={{ width: 2, height: 12, borderRadius: 2, background: "var(--orange)" }} />
+            </Tooltip>
           )}
         </div>
-        {reference != null && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5, fontSize: 11, color: "var(--muted)" }}>
-            <span style={{ width: 2, height: 9, borderRadius: 2, background: "var(--orange)", flex: "none" }} />
-            <span className="tnum">Nibud {eur(reference)}</span>
-          </div>
-        )}
       </div>
     </div>
   );
