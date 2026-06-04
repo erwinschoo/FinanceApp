@@ -335,6 +335,9 @@ export function Sync() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
+  // Na een conflict ("Sync nu" kan niet veilig kiezen) blokkeren we de knop tot de
+  // gebruiker bewust Uploaden of Ophalen heeft gekozen — voorkomt blind doorklikken.
+  const [conflict, setConflict] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const unlocked = useEncUnlocked();
   const encRow = useLiveQuery(() => db.meta.get("enc"), [], undefined);
@@ -400,6 +403,7 @@ export function Sync() {
       const meta = await getSyncMeta();
       setLastSynced(meta?.lastSyncedAt ?? null);
       if (r.action === "conflict") {
+        setConflict(true);
         setMsg({ kind: "err", text: "De cloud en dit toestel verschillen te veel om automatisch te kiezen — om geen data te verliezen doet de sync niets. Kies bewust: Uploaden (dit toestel → cloud) of Ophalen (cloud → dit toestel)." });
       } else if (r.action === "locked") {
         setMsg({ kind: "err", text: "Je cloud-data is versleuteld. Ontgrendel eerst hieronder met je wachtwoord of biometrie om te kunnen synchroniseren." });
@@ -427,6 +431,7 @@ export function Sync() {
         setBusy(false); return;
       }
       await applyPull(rs.snap, rs.remoteEtag);
+      setConflict(false); // bewust opgelost → "Sync nu" weer vrijgeven
       const meta = await getSyncMeta();
       setLastSynced(meta?.lastSyncedAt ?? null);
       setMsg({ kind: "ok", text: "Opgehaald uit OneDrive." });
@@ -450,6 +455,7 @@ export function Sync() {
       // Bewuste upload: schrijf met de net-gelezen eTag (dekt een race tussen lezen
       // en schrijven, maar overschrijft wél de huidige cloud zoals de gebruiker wil).
       await pushToOneDrive({ expectedEtag: rs?.remoteEtag });
+      setConflict(false); // bewust opgelost → "Sync nu" weer vrijgeven
       const meta = await getSyncMeta();
       setLastSynced(meta?.lastSyncedAt ?? null);
       setMsg({ kind: "ok", text: "Geüpload naar OneDrive." });
@@ -506,7 +512,7 @@ export function Sync() {
                 <Button variant="ghost" style={{ marginLeft: "auto" }} disabled={busy} onClick={() => run(async () => { await signOut(); setEmail(null); await setAccountMeta(null); }, "Uitgelogd.")}>Uitloggen</Button>
               </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <Button variant="primary" icon="cloud" disabled={busy} onClick={syncNowClick}>
+                <Button variant="primary" icon="cloud" disabled={busy || conflict} onClick={syncNowClick}>
                   Sync nu
                 </Button>
                 <Button icon="upload" disabled={busy} onClick={uploadClick}>Uploaden</Button>
@@ -514,7 +520,9 @@ export function Sync() {
               </div>
               <div className="notice" style={{ marginTop: 18 }}>
                 <span className="ni"><Ic name="info" size={20} /></span>
-                <div className="nt"><b>Sync nu</b> kiest automatisch: is de OneDrive-versie nieuwer (ander apparaat), dan haalt hij op; anders uploadt hij. Bij twijfel gebruik je <b>Uploaden</b>/<b>Ophalen</b> bewust.</div>
+                <div className="nt">{conflict
+                  ? <><b>Sync nu</b> is even uitgeschakeld: de cloud en dit toestel verschillen te veel. Kies bewust <b>Uploaden</b> (dit toestel → cloud) of <b>Ophalen</b> (cloud → dit toestel); daarna werkt <b>Sync nu</b> weer.</>
+                  : <><b>Sync nu</b> kiest automatisch: is de OneDrive-versie nieuwer (ander apparaat), dan haalt hij op; anders uploadt hij. Bij twijfel gebruik je <b>Uploaden</b>/<b>Ophalen</b> bewust.</>}</div>
               </div>
             </>
           ) : (
