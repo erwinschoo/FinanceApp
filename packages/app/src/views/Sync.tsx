@@ -304,11 +304,11 @@ function BackupsCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: string 
 
   return (
     <details className="card card-pad" style={{ marginTop: 18 }}>
-      <summary className="prof-summary card-h" style={{ marginBottom: 12, gap: 8 }}>
-        <Ic name="clock" size={20} style={{ color: "var(--muted)" }} />
+      <summary className="prof-summary card-h" style={{ gap: 8 }}>
+        <Ic name="clock" size={20} style={{ color: "var(--muted)", flex: "none" }} />
         <h3 style={{ margin: 0 }}>Vorige versies</h3>
-        {count > 0 && <span className="hint">{count}</span>}
-        <Ic name="chevronDown" size={16} style={{ marginLeft: count > 0 ? 8 : "auto", color: "var(--faint)" }} />
+        {count > 0 && <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--muted)" }}>{count}</span>}
+        <Ic name="chevronDown" size={16} style={{ marginLeft: "auto", color: "var(--faint)", flex: "none" }} />
       </summary>
       <p style={{ color: "var(--body)", fontSize: 14, lineHeight: 1.6, margin: "12px 0 14px" }}>
         Vóór elke cloud-overschrijving en elke pull bewaart bokkiep automatisch een kopie. Raakt er ooit data zoek, dan zet je hier een eerdere versie terug.
