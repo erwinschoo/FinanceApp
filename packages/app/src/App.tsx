@@ -3,7 +3,7 @@ import { useApp, type ViewId } from "./state/AppContext";
 import { runStartupSync } from "./sync/autoSync";
 import { initOpenWithHandlers } from "./import/incoming";
 import { Sidebar } from "./components/Sidebar";
-import { MonthPicker } from "./components/MonthPicker";
+import { PeriodPicker } from "./components/PeriodPicker";
 import { Ic } from "./components/Ic";
 import { Button } from "./components/Button";
 import { ConfirmDialog } from "./components/ConfirmDialog";
@@ -115,7 +115,7 @@ export default function App() {
             </Button>
           )}
           <div className="spacer"></div>
-          {meta.month && <div className="month-slot"><MonthPicker /></div>}
+          {meta.month && <div className="month-slot"><PeriodPicker /></div>}
           {view !== "import" && view !== "steun" && view !== "download" && view !== "informatie" && view !== "feedback" && (
             <Button variant="primary" onClick={() => setView("import")} title="Importeren" icon="upload">
               <span className="btn-label">Importeren</span>

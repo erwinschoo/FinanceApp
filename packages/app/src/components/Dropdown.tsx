@@ -7,6 +7,7 @@ export interface DropdownOption {
   label: string;
   color?: string;   // optioneel kleurbolletje (zoals categorieën)
   group?: string;   // optionele groepskop
+  divider?: boolean; // render een scheidingslijn vóór deze optie
 }
 
 /* Gestylede dropdown in dezelfde stijl als de categorie-dropdown (cat-menu).
@@ -72,6 +73,7 @@ export function Dropdown({
         lastGroup = o.group;
         return (
           <div key={o.value}>
+            {o.divider && <div className="cat-div" />}
             {header && <div className="cat-group">{header}</div>}
             <button
               type="button"

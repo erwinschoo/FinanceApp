@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { useApp } from "../state/AppContext";
 import { useProfile, DEFAULT_PROFILE } from "../state/profile";
-import { eur, monthKeyLabelFull } from "../lib/format";
-import { txInMonth, spendByCat } from "../helpers/aggregations";
+import { eur } from "../lib/format";
+import { txInMonths, spendByCat } from "../helpers/aggregations";
 import { budgetColor } from "../helpers/budgetColor";
 import { postForCategory } from "../nibud/mapping";
 import {
@@ -14,9 +14,8 @@ import { Button } from "../components/Button";
 import { Ic } from "../components/Ic";
 
 export function Compare() {
-  const { transactions, months, monthIdx, catMap, setView } = useApp();
+  const { transactions, catMap, setView, periodMode, periodMonthKeys, periodMonthCount, periodLabel } = useApp();
   const profile = useProfile();
-  const key = months[monthIdx];
 
   // Het actieve voorbeeldhuishouden: expliciete keuze in het profiel wint, anders
   // auto-match. Zonder opgeslagen profiel vallen we terug op verstandige defaults,
@@ -35,7 +34,7 @@ export function Compare() {
     const pf = profile ?? DEFAULT_PROFILE;
     const mine: Record<string, number> = {};
     const unmapped: { name: string; amount: number }[] = [];
-    const spend = spendByCat(txInMonth(transactions, key), catMap);
+    const spend = spendByCat(txInMonths(transactions, periodMonthKeys), catMap);
     for (const [catId, amount] of Object.entries(spend)) {
       const post = postForCategory(catId, pf);
       if (post) mine[post] = (mine[post] || 0) + amount;
@@ -43,7 +42,7 @@ export function Compare() {
     }
     unmapped.sort((a, b) => b.amount - a.amount);
     return { mine, unmapped };
-  }, [transactions, key, catMap, profile]);
+  }, [transactions, periodMonthKeys, catMap, profile]);
 
   if (profile === undefined) return <div className="empty">Laden…</div>;
 
@@ -64,7 +63,7 @@ export function Compare() {
   }
 
   const rows = NIBUD_POST_ORDER.map((post: NibudPostId) => {
-    const ref = household.posts[post] ?? 0;
+    const ref = (household.posts[post] ?? 0) * periodMonthCount; // schaal de maand-referentie naar de periode
     const got = mine[post] ?? 0;
     const ratio = ref > 0 ? got / ref : got > 0 ? 1 : 0;
     return { post, ref, got, ratio };
@@ -79,7 +78,8 @@ export function Compare() {
           <h3>Vergeleken met: {household.label}</h3>
         </div>
         <p style={{ color: "var(--muted)", margin: 0, fontSize: 13.5 }}>
-          Je uitgaven over <b>{monthKeyLabelFull(key)}</b> per categorie, afgezet tegen de Nibud-referentie voor dit huishoudtype.
+          Je uitgaven over <b>{periodLabel}</b> per categorie, afgezet tegen de Nibud-referentie voor dit huishoudtype
+          {periodMode === "year" && periodMonthCount > 0 ? ` (referentie × ${periodMonthCount} maanden)` : ""}.
           <span style={{ color: "var(--pos)", fontWeight: 600 }}> Groen</span> = onder de referentie,
           <span style={{ color: "var(--over)", fontWeight: 600 }}> rood</span> = erboven.
         </p>

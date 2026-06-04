@@ -8,6 +8,32 @@ export function txKey(t: Transaction): string {
 export function txInMonth(txs: Transaction[], key: string): Transaction[] {
   return txs.filter((t) => txKey(t) === key);
 }
+/* Transacties binnen een set maand-keys (voor periode-aggregatie: maand óf heel jaar). */
+export function txInMonths(txs: Transaction[], keys: string[]): Transaction[] {
+  const set = new Set(keys);
+  return txs.filter((t) => set.has(txKey(t)));
+}
+
+/* Het jaar (als string) uit een maand-key ("2026-05" → "2026"). */
+export function yearOf(key: string): string {
+  return key.slice(0, 4);
+}
+/* De 12 kalendermaand-keys van een jaar ("2026-01" … "2026-12"). */
+export function monthKeysOfYear(year: number): string[] {
+  return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
+}
+/* De 12 maand-keys eindigend op (en inclusief) `key`. */
+export function twelveMonthsEndingAt(key: string): string[] {
+  const [y, m] = key.split("-").map(Number);
+  const keys: string[] = [];
+  for (let i = 11; i >= 0; i--) {
+    let mm = m - 1 - i;
+    let yy = y;
+    while (mm < 0) { mm += 12; yy -= 1; }
+    keys.push(`${yy}-${String(mm + 1).padStart(2, "0")}`);
+  }
+  return keys;
+}
 
 function typeOf(catId: string, catMap: CatMap): Category["type"] | undefined {
   return catMap[catId]?.type;

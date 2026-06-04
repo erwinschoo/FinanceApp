@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useApp } from "../state/AppContext";
-import { eur, eurSign, fmtDate, monthKeyLabelFull } from "../lib/format";
-import { txInMonth, incomeOf, expensesOf, savingsOf, spendByCat } from "../helpers/aggregations";
+import { eur, eurSign, fmtDate } from "../lib/format";
+import { txInMonths, incomeOf, expensesOf, savingsOf, spendByCat, twelveMonthsEndingAt, monthKeysOfYear } from "../helpers/aggregations";
 import { budgetColor } from "../helpers/budgetColor";
 import { KpiCard } from "../components/KpiCard";
 import { CatTag } from "../components/CatTag";
@@ -14,31 +14,39 @@ import { ProgressRing } from "../charts/ProgressRing";
 import { useMediaQuery } from "../charts/useMediaQuery";
 
 export function Dashboard() {
-  const { transactions, months, monthIdx, budgets, goals, categories, catMap, setView, startBalance, hasImportedBalance, startBalanceKnown } = useApp();
+  const {
+    transactions, budgets, goals, categories, catMap, setView, startBalance, hasImportedBalance, startBalanceKnown,
+    periodMode, periodKey, periodYear, periodMonthKeys, periodMonthCount, periodLabel, dataMonthKeys,
+  } = useApp();
   const [donutActive, setDonutActive] = useState<number | null>(null);
   const [trendMode, setTrendMode] = useState<"beide" | "netto">("beide");
   const isPhone = useMediaQuery("(max-width: 560px)");
 
-  const key = months[monthIdx];
+  // Totalen over een set maand-keys (inkomsten/uitgaven/gespaard).
+  const totalsOf = useCallback((keys: string[]) => {
+    const txs = txInMonths(transactions, keys);
+    return { income: incomeOf(txs, catMap), expense: expensesOf(txs, catMap), saved: savingsOf(txs, catMap) };
+  }, [transactions, catMap]);
 
-  const series = useMemo(
-    () =>
-      months.map((mk) => {
-        const txs = txInMonth(transactions, mk);
-        return { key: mk, income: incomeOf(txs, catMap), expense: expensesOf(txs, catMap), saved: savingsOf(txs, catMap) };
-      }),
-    [transactions, months, catMap],
-  );
+  // Vorige periode (voor de delta's): vorige maand of vorig jaar.
+  const prevKeys = useMemo(() => {
+    if (periodMode === "month") {
+      const w = twelveMonthsEndingAt(periodKey as string);
+      return [w[w.length - 2]];
+    }
+    const prefix = `${periodYear - 1}-`;
+    return dataMonthKeys.filter((k) => k.startsWith(prefix));
+  }, [periodMode, periodKey, periodYear, dataMonthKeys]);
 
-  const cur = series[monthIdx];
-  const prev = monthIdx > 0 ? series[monthIdx - 1] : null;
+  const cur = totalsOf(periodMonthKeys);
+  const prev = prevKeys.length ? totalsOf(prevKeys) : null;
   const pct = (a: number, b: number) => (b ? ((a - b) / b) * 100 : 0);
+  const deltaNote = periodMode === "month" ? "vs. vorige maand" : "vs. vorig jaar";
 
+  // Saldo aan het eind van een maand (key); valt terug op cumulatief vanaf het beginsaldo.
   const hasBalances = useMemo(() => transactions.some((t) => t.balance != null), [transactions]);
-  const balanceAt = useCallback(
-    (idx: number) => {
-      const end = months[idx];
-      // transacties zijn aflopend op datum gesorteerd → eerste match = meest recente ≤ maandeinde
+  const balanceAtKey = useCallback(
+    (end: string) => {
       if (hasBalances) {
         const t = transactions.find((t) => t.date.slice(0, 7) <= end && t.balance != null);
         if (t) return t.balance as number;
@@ -47,24 +55,35 @@ export function Dashboard() {
       transactions.forEach((t) => { if (t.date.slice(0, 7) <= end) b += t.amount; });
       return b;
     },
-    [transactions, months, hasBalances, startBalance],
+    [transactions, hasBalances, startBalance],
   );
-  const balance = balanceAt(monthIdx);
-  const prevBalance = monthIdx > 0 ? balanceAt(monthIdx - 1) : null;
+  const lastKey = periodMonthKeys[periodMonthKeys.length - 1] ?? (periodKey as string);
+  const balance = balanceAtKey(lastKey);
+  const prevBalance = prevKeys.length ? balanceAtKey(prevKeys[prevKeys.length - 1]) : null;
 
-  const monthTxs = txInMonth(transactions, key);
-  const spend = spendByCat(monthTxs, catMap); // per leaf-categorie
+  // Trend "Inkomsten & uitgaven": volgt de periode — 12 maanden t/m de gekozen maand, of jan–dec van het jaar.
+  const trendKeys = periodMode === "month" ? twelveMonthsEndingAt(periodKey as string) : monthKeysOfYear(periodYear);
+  const series = useMemo(
+    () => trendKeys.map((mk) => {
+      const txs = txInMonths(transactions, [mk]);
+      return { key: mk, income: incomeOf(txs, catMap), expense: expensesOf(txs, catMap), saved: savingsOf(txs, catMap) };
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [transactions, catMap, trendKeys.join(",")],
+  );
+
+  const periodTxs = txInMonths(transactions, periodMonthKeys);
+  const spend = spendByCat(periodTxs, catMap); // per leaf-categorie
   const donutData = categories
     .filter((c) => c.type === "uitgave" && spend[c.id])
     .map((c) => ({ label: c.name, value: spend[c.id], color: c.color, id: c.id }))
     .sort((a, b) => b.value - a.value);
   const totalSpend = donutData.reduce((s, d) => s + d.value, 0) || 1;
 
-  const last6 = (sel: (s: typeof series[number]) => number) =>
-    series.slice(Math.max(0, monthIdx - 5), monthIdx + 1).map(sel);
+  const last6 = (sel: (s: typeof series[number]) => number) => series.slice(-6).map(sel);
 
   const MONTH_ABBR = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
-  const labels = months.map((mk) => {
+  const labels = trendKeys.map((mk) => {
     const [y, m] = mk.split("-");
     return `${MONTH_ABBR[+m - 1]} '${y.slice(2)}`;
   });
@@ -76,20 +95,19 @@ export function Dashboard() {
         ]
       : [{ key: "netto", name: "Netto over", color: "var(--pos)", data: series.map((s) => Math.max(0, s.income - s.expense)) }];
 
-  // Mobiel: kleinere tijdschaal (laatste 6 maanden t/m de geselecteerde maand) met
-  // maand-only labels, zodat de datums niet in elkaar overlopen. Desktop: volledige reeks.
-  const from = isPhone ? Math.max(0, monthIdx + 1 - 6) : 0;
-  const to = isPhone ? monthIdx + 1 : months.length;
-  const trendLabels = (isPhone ? months.map((mk) => MONTH_ABBR[+mk.split("-")[1] - 1]) : labels).slice(from, to);
-  const trendSeriesView = trendSeries.map((s) => ({ ...s, data: s.data.slice(from, to) }));
+  // Mobiel: in maand-modus de laatste 6 maanden tonen (anders lopen labels in elkaar). Jaar-modus en
+  // desktop: de volledige reeks van 12.
+  const from = isPhone && periodMode === "month" ? 6 : 0;
+  const trendLabels = (isPhone ? trendKeys.map((mk) => MONTH_ABBR[+mk.split("-")[1] - 1]) : labels).slice(from);
+  const trendSeriesView = trendSeries.map((s) => ({ ...s, data: s.data.slice(from) }));
 
   const budgetRows = categories
     .filter((c) => budgets[c.id])
-    .map((c) => ({ c, spent: spend[c.id] || 0, budget: budgets[c.id] }))
+    .map((c) => ({ c, spent: spend[c.id] || 0, budget: budgets[c.id] * periodMonthCount }))
     .sort((a, b) => b.spent / b.budget - a.spent / a.budget)
     .slice(0, 5);
 
-  const recent = monthTxs.slice(0, 6);
+  const recent = periodTxs.slice(0, 6);
   const goal = goals[0];
 
   return (
@@ -115,13 +133,13 @@ export function Dashboard() {
       <div className="grid stagger grid-kpi" style={{ gridTemplateColumns: "repeat(4,1fr)", marginBottom: 18 }}>
         <KpiCard icon="wallet" iconColor="var(--blue)" iconBg="var(--blue-soft)" phone={isPhone}
           label="Saldo betaalrekening" value={eur(balance)} delta={prevBalance ? pct(balance, prevBalance) : null}
-          deltaNote="vs. vorige maand" spark={last6((s) => s.income - s.expense)} sparkColor="var(--blue)" />
+          deltaNote={deltaNote} spark={last6((s) => s.income - s.expense)} sparkColor="var(--blue)" />
         <KpiCard icon="arrowDown" iconColor="var(--pos)" iconBg="var(--pos-soft)" phone={isPhone}
           label="Inkomsten" value={eur(cur.income)} delta={prev ? pct(cur.income, prev.income) : null}
-          deltaNote="vs. vorige maand" spark={last6((s) => s.income)} sparkColor="var(--pos)" />
+          deltaNote={deltaNote} spark={last6((s) => s.income)} sparkColor="var(--pos)" />
         <KpiCard icon="arrowUp" iconColor="var(--orange)" iconBg="var(--orange-soft)" phone={isPhone}
           label="Uitgaven" value={eur(cur.expense)} delta={prev ? pct(cur.expense, prev.expense) : null}
-          deltaNote="vs. vorige maand" spark={last6((s) => s.expense)} sparkColor="var(--orange)" />
+          deltaNote={deltaNote} spark={last6((s) => s.expense)} sparkColor="var(--orange)" />
         <KpiCard icon="piggy" iconColor="var(--cat-4)" iconBg="#F2EFF7" phone={isPhone}
           label="Gespaard" value={eur(cur.saved)} delta={prev ? pct(cur.saved, prev.saved) : null}
           deltaNote="naar spaardoel" spark={last6((s) => s.saved)} sparkColor="var(--cat-4)" />
@@ -148,7 +166,7 @@ export function Dashboard() {
 
         <div className="card card-pad">
           <div className="card-h"><h3>Uitgaven per categorie</h3></div>
-          <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 14 }}>{monthKeyLabelFull(key)}</div>
+          <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 14 }}>{periodLabel}</div>
           <div className="cat-body">
             <div className="ring-wrap" style={{ flex: "none" }}>
               <DonutChart data={donutData} size={isPhone ? 190 : 158} thickness={22} active={donutActive} onHover={setDonutActive} />

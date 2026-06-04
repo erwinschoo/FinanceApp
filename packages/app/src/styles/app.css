@@ -346,6 +346,12 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 .cat-opt.sel { color:var(--ink); font-weight:700; }
 .cat-opt .ck { margin-left:auto; width:15px; height:15px; color:var(--blue); }
 .cat-group { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); padding:8px 10px 4px; }
+.cat-div { height:1px; background:var(--line-soft); margin:4px 8px; }
+/* periode-kiezer popover (jaar + maand) */
+.period-pop { z-index:70; background:var(--elevated); border:1px solid var(--line); border-radius:12px;
+  box-shadow:var(--shadow-pop); padding:12px; display:flex; flex-direction:column; gap:10px; min-width:210px; }
+.period-field { display:flex; flex-direction:column; gap:5px; }
+.period-lbl { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--faint); }
 .cat-menu > div > .cat-opt { padding-left:18px; }
 
 /* gestylede dropdown-trigger (maand/categorie filters) */

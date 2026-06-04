@@ -3,7 +3,8 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db/schema";
 import { rowToTx, rowToGoal, rowToPot } from "../db/map";
 import { buildSavings, type SavingsGroup } from "../goals/savings";
-import { lastTwelveMonthKeys, txKey } from "../helpers/aggregations";
+import { txKey, yearOf } from "../helpers/aggregations";
+import { monthKeyLabelFull } from "../lib/format";
 import { fromCents } from "../lib/money";
 import type { Category, CategoryGroupRow, Transaction, Goal, RuleRow, PayeeRow, HouseholdProfile } from "../db/types";
 
@@ -30,9 +31,18 @@ interface AppState {
   rules: RuleRow[];
   payees: PayeeRow[];
   payeeMap: Map<string, string>; // key -> categoryId
-  months: string[];
-  monthIdx: number;
-  setMonthIdx: (i: number) => void;
+  // Periode-selectie: een maand ("YYYY-MM") of een heel jaar (periodMonth === "all").
+  periodYear: number;
+  periodMonth: number | "all"; // 1..12 of "all" (heel jaar)
+  setPeriodYear: (y: number) => void;
+  setPeriodMonth: (m: number | "all") => void;
+  periodMode: "month" | "year";
+  periodKey: string | null;       // "YYYY-MM" in maand-modus, anders null
+  periodMonthKeys: string[];      // maand: [periodKey]; jaar: data-maanden van dat jaar (oplopend)
+  periodMonthCount: number;       // aantal maanden in de periode (maand=1; jaar=aantal data-maanden)
+  periodLabel: string;            // "mei 2026" of "Heel 2026"
+  dataMonthKeys: string[];        // unieke maand-keys in de data (oplopend)
+  dataYears: number[];            // jaren in de data (aflopend)
   view: ViewId;
   setView: (v: ViewId, focus?: string) => void;
   focusTarget: string | null; // optioneel scroll/focus-doel binnen het zojuist geopende scherm
@@ -54,8 +64,9 @@ export function useApp(): AppState {
 export function AppProvider({ children }: { children: ReactNode }) {
   const [view, setViewState] = useState<ViewId>(() => viewFromHash() ?? "dashboard");
   const [focusTarget, setFocusTarget] = useState<string | null>(null);
-  const months = useMemo(() => lastTwelveMonthKeys(), []);
-  const [monthIdx, setMonthIdx] = useState(months.length - 1);
+  const now = useMemo(() => new Date(), []);
+  const [periodYear, setPeriodYearState] = useState<number>(() => now.getFullYear());
+  const [periodMonth, setPeriodMonthState] = useState<number | "all">(() => now.getMonth() + 1);
 
   // Navigatie schrijft de view in de URL-hash, zodat deep links, verversen en de
   // (mobiele) terug-knop blijven werken zonder een router-library. Een optioneel
@@ -100,20 +111,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [txRows],
   );
 
-  // Default-maand = nieuwste maand binnen het 12-maandsvenster waarvoor er data is (anders de huidige
-  // maand). Zo toont een lege huidige maand toch de laatste maand mét cijfers i.p.v. nullen + een leeg
-  // maandveld. Eenmalig toegepast zodra de data klaar is; een handmatige keuze (pickMonth) wint daarna.
-  const defaultMonthIdx = useMemo(() => {
-    const keys = new Set(transactions.map(txKey));
-    for (let i = months.length - 1; i >= 0; i--) if (keys.has(months[i])) return i;
-    return months.length - 1;
-  }, [transactions, months]);
+  // Unieke maand-keys/jaren in de data (oplopend resp. aflopend) — bron voor de periode-picker.
+  const dataMonthKeys = useMemo(
+    () => Array.from(new Set(transactions.map(txKey))).sort(),
+    [transactions],
+  );
+  const dataYears = useMemo(
+    () => Array.from(new Set(dataMonthKeys.map((k) => Number(yearOf(k))))).sort((a, b) => b - a),
+    [dataMonthKeys],
+  );
 
-  const monthTouched = useRef(false);
-  const pickMonth = useCallback((i: number) => { monthTouched.current = true; setMonthIdx(i); }, []);
+  // Default-periode = nieuwste maand mét data (anders de huidige maand). Zo toont de app meteen de
+  // laatste maand mét cijfers. Eenmalig toegepast zodra de data klaar is; een handmatige keuze wint daarna.
+  const periodTouched = useRef(false);
+  const setPeriodMonth = useCallback((m: number | "all") => { periodTouched.current = true; setPeriodMonthState(m); }, []);
+  const setPeriodYear = useCallback((y: number) => { periodTouched.current = true; setPeriodYearState(y); }, []);
   useEffect(() => {
-    if (ready && !monthTouched.current) setMonthIdx(defaultMonthIdx);
-  }, [ready, defaultMonthIdx]);
+    if (!ready || periodTouched.current) return;
+    const latest = dataMonthKeys[dataMonthKeys.length - 1];
+    if (latest) {
+      const [y, m] = latest.split("-").map(Number);
+      setPeriodYearState(y);
+      setPeriodMonthState(m);
+    }
+  }, [ready, dataMonthKeys]);
 
   const value = useMemo<AppState>(() => {
     const cats = categories ?? [];
@@ -147,12 +168,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     const startBalanceKnown = hasImportedBalance || (profile?.startBalanceCents ?? 0) !== 0;
 
+    // Afgeleide periode-waarden.
+    const periodMode: "month" | "year" = periodMonth === "all" ? "year" : "month";
+    const periodKey = periodMode === "month" ? `${periodYear}-${String(periodMonth).padStart(2, "0")}` : null;
+    const yearPrefix = `${periodYear}-`;
+    const periodMonthKeys = periodMode === "month"
+      ? [periodKey as string]
+      : dataMonthKeys.filter((k) => k.startsWith(yearPrefix));
+    const periodMonthCount = periodMonthKeys.length;
+    const periodLabel = periodMode === "month" ? monthKeyLabelFull(periodKey as string) : `Heel ${periodYear}`;
+
     return {
       ready, categories: cats, catMap, categoryGroups, groupMap, transactions, budgets, goals, savingsGroups, savingsLibrary, rules, payees, payeeMap,
-      months, monthIdx, setMonthIdx: pickMonth, view, setView, focusTarget, uncategorizedCount,
+      periodYear, periodMonth, setPeriodYear, setPeriodMonth, periodMode, periodKey, periodMonthKeys, periodMonthCount, periodLabel, dataMonthKeys, dataYears,
+      view, setView, focusTarget, uncategorizedCount,
       startBalance, hasImportedBalance, derivedStartBalance, startBalanceKnown,
     };
-  }, [categories, groupRows, transactions, budgetRows, goalRows, ruleRows, payeeRows, potRows, profileRow, ready, months, monthIdx, view, focusTarget, pickMonth, setView]);
+  }, [categories, groupRows, transactions, budgetRows, goalRows, ruleRows, payeeRows, potRows, profileRow, ready,
+      periodYear, periodMonth, setPeriodYear, setPeriodMonth, dataMonthKeys, dataYears, view, focusTarget, setView]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
