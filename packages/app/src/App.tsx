@@ -8,6 +8,8 @@ import { Ic } from "./components/Ic";
 import { Button } from "./components/Button";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { InstallPrompt } from "./components/InstallPrompt";
+import { ForcePasswordReset } from "./components/ForcePasswordReset";
+import { isRecoveryResetPending } from "./sync/encSession";
 import { clearTransactions, clearPayees } from "./db/repo";
 import { Dashboard } from "./views/Dashboard";
 import { Transactions } from "./views/Transactions";
@@ -65,6 +67,9 @@ export default function App() {
   const { ready, view, setView } = useApp();
   const [confirm, setConfirm] = useState<null | "transacties" | "tegenpartijen">(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Met de herstelcode ontgrendeld (wachtwoord vergeten)? Toon — op elk scherm — direct een
+  // popup om een nieuw wachtwoord te kiezen. De vlag staat al vóór het mounten (UnlockGate).
+  const [showPwReset, setShowPwReset] = useState(() => isRecoveryResetPending());
   const contentRef = useRef<HTMLElement>(null);
 
   // Bij navigatie naar een ander scherm: altijd bovenaan beginnen. Op desktop scrollt .content,
@@ -147,6 +152,8 @@ export default function App() {
       />
 
       <InstallPrompt />
+
+      {showPwReset && <ForcePasswordReset onClose={() => setShowPwReset(false)} />}
 
       {/* Kleurt de onderste systeem-/navigatiebalk (Android safe-area) zwart in elk thema. */}
       <div className="safe-bottom" />

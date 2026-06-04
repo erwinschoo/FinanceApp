@@ -12,8 +12,6 @@ import { TrendChart, type TrendSeries } from "../charts/TrendChart";
 import { DonutChart } from "../charts/DonutChart";
 import { ProgressRing } from "../charts/ProgressRing";
 import { useMediaQuery } from "../charts/useMediaQuery";
-import { isRecoveryResetPending } from "../sync/encSession";
-import { ForcePasswordReset } from "../components/ForcePasswordReset";
 
 export function Dashboard() {
   const {
@@ -23,8 +21,6 @@ export function Dashboard() {
   const [donutActive, setDonutActive] = useState<number | null>(null);
   const [trendMode, setTrendMode] = useState<"beide" | "netto">("beide");
   const isPhone = useMediaQuery("(max-width: 560px)");
-  // Met de herstelcode ontgrendeld? Vraag direct om een nieuw wachtwoord (eenmalig bij mount).
-  const [showPwReset, setShowPwReset] = useState(() => isRecoveryResetPending());
 
   // Totalen over een set maand-keys (inkomsten/uitgaven/gespaard).
   const totalsOf = useCallback((keys: string[]) => {
@@ -116,7 +112,6 @@ export function Dashboard() {
 
   return (
     <div className="content-inner fade-in">
-      {showPwReset && <ForcePasswordReset onClose={() => setShowPwReset(false)} />}
       {transactions.length === 0 && (
         <div className="notice" style={{ marginBottom: 18, background: "var(--blue-soft)", borderColor: "#CFE0F2" }}>
           <span className="ni" style={{ color: "var(--blue)" }}><Ic name="info" size={20} /></span>
