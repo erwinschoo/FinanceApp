@@ -31,7 +31,15 @@ const FAQ: [string, ReactNode][] = ([
   )],
   ["Kan ik categorieën aanpassen?", "Zeker. Via Beheer pas je categorieën, groepen en categoriseer-regels aan. Wijzigingen werken door op je hele overzicht."],
   ["Kost het geld?", "Nee, bokkiep is en blijft gratis. Vind je de app handig? Dan kun je de ontwikkeling vrijwillig steunen via de pagina \"Steun bokkiep\"."],
-  ["Waar worden mijn gegevens opgeslagen?", "Standaard local-first: al je gegevens blijven op je eigen apparaat, in de opslag van je browser. Er gaat niets naar een server. Schakel je zelf synchroniseren met OneDrive in, dan bewaart bokkiep al je gegevens in één bestand in de speciale app-map van jóuw OneDrive — te vinden onder \"Apps\" (of \"Toepassingen\") › \"bokkiep\" › data.json. Andere apps krijgen geen toegang tot die app-map, maar het bestand staat wél in jóuw OneDrive: jij kunt het bekijken, en in principe ook Microsoft of iemand met toegang tot je OneDrive. Wil je dat afzekeren, schakel dan de versleuteling in (zie \"Is mijn data veilig?\"). Wil je een back-up maken of overstappen naar een ander apparaat? Dan kun je dat bestand gewoon zelf kopiëren of bewaren. Zet je versleuteling aan, dan wordt ook de lokale opslag op dit apparaat versleuteld (zie \"Is mijn data veilig?\")."],
+  ["Waar worden mijn gegevens opgeslagen?", (
+    <>
+      Standaard local-first: al je gegevens blijven op je eigen apparaat, in de opslag van je browser. Er gaat niets naar een server.
+      <br /><br />
+      Schakel je zelf synchroniseren met OneDrive in, dan bewaart bokkiep al je gegevens in één bestand in de speciale app-map van jóuw OneDrive — te vinden onder “Apps” (of “Toepassingen”) › “bokkiep” › data.json. Andere apps krijgen geen toegang tot die app-map, maar het bestand staat wél in jóuw OneDrive: jij kunt het bekijken, en in principe ook Microsoft of iemand met toegang tot je OneDrive. Een back-up maken of overstappen naar een ander apparaat? Dan kun je dat bestand gewoon zelf kopiëren of bewaren.
+      <br /><br />
+      Wil je dit afzekeren? Zet de versleuteling aan; dan wordt zowel de lokale opslag op dit apparaat als het bestand in OneDrive versleuteld bewaard (zie “Is mijn data veilig?”).
+    </>
+  )],
   ["Wat is bokkiep precies?", "bokkiep is een persoonlijk financieel overzicht: je importeert je banktransacties, categoriseert ze, stelt budgetten in en volgt spaardoelen. De app is volledig gratis en bevat geen advertenties of tracking."],
 ] as [string, ReactNode][]).sort((a, b) => (a[0] as string).localeCompare(b[0] as string, "nl"));
 

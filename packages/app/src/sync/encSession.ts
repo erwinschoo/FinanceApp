@@ -57,6 +57,13 @@ async function setSession(raw: Bytes) {
 
 export function isUnlocked(): boolean { return !!dekKey; }
 
+/* Vlag: de sessie is met de HERSTELCODE ontgrendeld (wachtwoord vergeten). De app vraagt dan
+ * om direct een nieuw wachtwoord te kiezen. In-memory (sessie); gewist zodra een nieuw wachtwoord
+ * is ingesteld of de gebruiker het uitstelt. */
+let recoveryResetPending = false;
+export function isRecoveryResetPending(): boolean { return recoveryResetPending; }
+export function clearRecoveryReset(): void { recoveryResetPending = false; }
+
 export function lock(): void {
   if (dekRaw) dekRaw.fill(0);
   dekRaw = null;
@@ -113,6 +120,7 @@ export async function unlockWithRecovery(code: string, cloudSlots?: EncEnvelope[
   const raw = await openSlot(slots.recovery, normalizeRecoveryCode(code));
   await persistSlots(slots);
   await setSession(raw);
+  recoveryResetPending = true; // wachtwoord vergeten → vraag om een nieuw wachtwoord
 }
 
 async function persistSlots(slots: EncMeta["slots"]) {
@@ -154,6 +162,7 @@ export async function changePassphrase(newPassphrase: string): Promise<void> {
   if (!slots) throw new Error("Geen versleuteling ingesteld.");
   const updated: EncMeta["slots"] = { ...slots, passphrase: await makeSlot(dekRaw, newPassphrase) };
   await persistSlots(updated);
+  recoveryResetPending = false; // nieuw wachtwoord ingesteld → reset-prompt niet meer nodig
 }
 
 /* ════════════════════════ Biometrie (WebAuthn-PRF) ════════════════════════ */
