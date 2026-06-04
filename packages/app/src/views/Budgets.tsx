@@ -76,10 +76,12 @@ export function Budgets() {
       </div>
 
       <div className="card card-pad">
-        <div className="card-h" style={{ marginBottom: 8 }}>
+        <div className="card-h" style={{ marginBottom: 6 }}>
           <h3>Budget per categorie</h3>
-          <span className="hint">Vul je maandbudget in · {monthKeyLabelFull(key)}</span>
         </div>
+        <p style={{ color: "var(--muted)", margin: "0 0 12px", fontSize: 13.5 }}>
+          Vul je maandbudget in · {monthKeyLabelFull(key)}
+        </p>
         <div style={{ display: "flex", gap: 16, marginBottom: 6, flexWrap: "wrap" }}>
           {([["#2E7D4F", "tot 70%"], ["#D9772E", "70–85%"], ["#B23B2E", "85% of meer"]] as const).map(([c, l]) => (
             <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 600, color: "var(--muted)" }}>

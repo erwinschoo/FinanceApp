@@ -265,10 +265,12 @@ export function Savings() {
           {/* rechts — prioriteitenlijst + projectie */}
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
             <div className="card card-pad">
-              <div className="card-h" style={{ marginBottom: 12 }}>
+              <div className="card-h" style={{ marginBottom: 6 }}>
                 <h3>Doelen op prioriteit</h3>
-                <span className="hint">Je inleg vult de doelen van boven naar beneden</span>
               </div>
+              <p style={{ color: "var(--muted)", margin: "0 0 12px", fontSize: 13.5 }}>
+                Je inleg vult de doelen van boven naar beneden.
+              </p>
               <div>
                 {group.rows.map((row, i) => (
                   <GoalRow key={row.goal.id} group={group} row={row} idx={i} count={group.rows.length} />

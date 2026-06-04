@@ -34,9 +34,13 @@ interface AppState {
   monthIdx: number;
   setMonthIdx: (i: number) => void;
   view: ViewId;
-  setView: (v: ViewId) => void;
+  setView: (v: ViewId, focus?: string) => void;
+  focusTarget: string | null; // optioneel scroll/focus-doel binnen het zojuist geopende scherm
   uncategorizedCount: number;
   startBalance: number; // beginsaldo betaalrekening (euro); 0 als niet ingesteld
+  hasImportedBalance: boolean; // import levert een echt banksaldo mee
+  derivedStartBalance: number | null; // beginsaldo afgeleid uit de oudste transactie met banksaldo
+  startBalanceKnown: boolean; // beginsaldo is bekend (import óf handmatig ingevuld)
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -49,12 +53,15 @@ export function useApp(): AppState {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [view, setViewState] = useState<ViewId>(() => viewFromHash() ?? "dashboard");
+  const [focusTarget, setFocusTarget] = useState<string | null>(null);
   const months = useMemo(() => lastTwelveMonthKeys(), []);
   const [monthIdx, setMonthIdx] = useState(months.length - 1);
 
   // Navigatie schrijft de view in de URL-hash, zodat deep links, verversen en de
-  // (mobiele) terug-knop blijven werken zonder een router-library.
-  const setView = useCallback((v: ViewId) => {
+  // (mobiele) terug-knop blijven werken zonder een router-library. Een optioneel
+  // focus-doel laat het doelscherm naar een specifieke sectie scrollen.
+  const setView = useCallback((v: ViewId, focus?: string) => {
+    setFocusTarget(focus ?? null);
     setViewState(v);
     if (window.location.hash.replace(/^#\/?/, "") !== v) window.history.pushState(null, "", `#${v}`);
   }, []);
@@ -129,11 +136,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const profile = profileRow?.value as HouseholdProfile | undefined;
     const startBalance = fromCents(profile?.startBalanceCents ?? 0);
 
+    // Beginsaldo afleiden uit de import: de oudste transactie met een banksaldo
+    // (transacties staan nieuwste-eerst) geeft het saldo ná die transactie; het
+    // openingssaldo dáárvoor is dat saldo minus het bedrag van die transactie.
+    const hasImportedBalance = transactions.some((t) => t.balance != null);
+    let derivedStartBalance: number | null = null;
+    for (let i = transactions.length - 1; i >= 0; i--) {
+      const t = transactions[i];
+      if (t.balance != null) { derivedStartBalance = t.balance - t.amount; break; }
+    }
+    const startBalanceKnown = hasImportedBalance || (profile?.startBalanceCents ?? 0) !== 0;
+
     return {
       ready, categories: cats, catMap, categoryGroups, groupMap, transactions, budgets, goals, savingsGroups, savingsLibrary, rules, payees, payeeMap,
-      months, monthIdx, setMonthIdx: pickMonth, view, setView, uncategorizedCount, startBalance,
+      months, monthIdx, setMonthIdx: pickMonth, view, setView, focusTarget, uncategorizedCount,
+      startBalance, hasImportedBalance, derivedStartBalance, startBalanceKnown,
     };
-  }, [categories, groupRows, transactions, budgetRows, goalRows, ruleRows, payeeRows, potRows, profileRow, ready, months, monthIdx, view, pickMonth, setView]);
+  }, [categories, groupRows, transactions, budgetRows, goalRows, ruleRows, payeeRows, potRows, profileRow, ready, months, monthIdx, view, focusTarget, pickMonth, setView]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

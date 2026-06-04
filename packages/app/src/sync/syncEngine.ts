@@ -184,11 +184,19 @@ export async function restoreCloudBackup(name: string): Promise<void> {
 }
 
 export type SyncOutcome =
-  | { action: "pushed" }
-  | { action: "pulled" }
+  | { action: "pushed"; localTx: number; remoteModified: string }
+  | { action: "pulled"; localTx: number; remoteModified: string }
   | { action: "conflict"; remoteModified: string }
   | { action: "locked" }
   | { action: "noop" }; // niets te doen (bv. vers/leeg toestel zonder cloudbestand)
+
+/* Versie-info na een geslaagde push/pull: na afloop zijn cloud en dit toestel gelijk,
+ * dus het lokale aantal transacties is ook het cloud-aantal. De wijzigingsdatum lezen
+ * we (opnieuw) uit de cloud zodat een verse push de juiste tijd toont. */
+async function syncedResult(action: "pushed" | "pulled", token: string): Promise<SyncOutcome> {
+  const meta = await getRemoteMeta(token);
+  return { action, localTx: await db.transactions.count(), remoteModified: meta?.lastModified ?? new Date().toISOString() };
+}
 
 /* Automatische sync: vergelijk remote wijzigingsdatum met onze laatste sync.
  * - geen remote bestand → push (eerste upload ooit)
@@ -218,7 +226,7 @@ async function syncNowInner(): Promise<SyncOutcome> {
     // Eerste upload ooit — maar NOOIT een vers/leeg toestel als "waarheid" wegschrijven.
     if (!(await hasUserContent())) return { action: "noop" };
     await pushToOneDrive();
-    return { action: "pushed" };
+    return syncedResult("pushed", token);
   }
   if (!local) {
     // Nog nooit verzoend op dit toestel én er staat al data in de cloud. Heeft dit
@@ -229,17 +237,17 @@ async function syncNowInner(): Promise<SyncOutcome> {
     }
     const snap = await readRemote(token);
     if (snap) await applyPull(snap, remote.eTag);
-    return { action: "pulled" };
+    return syncedResult("pulled", token);
   }
   if (remote.eTag !== local.remoteEtag && remote.lastModified > local.lastSyncedAt) {
     const snap = await readRemote(token);
-    if (!snap) { await pushToOneDrive(); return { action: "pushed" }; }
+    if (!snap) { await pushToOneDrive(); return syncedResult("pushed", token); }
     if (isSubstantialTxLoss(await db.transactions.count(), snapshotTxCount(snap))) {
       return { action: "conflict", remoteModified: remote.lastModified };
     }
     await applyPull(snap, remote.eTag);
-    return { action: "pulled" };
+    return syncedResult("pulled", token);
   }
   await pushToOneDrive();
-  return { action: "pushed" };
+  return syncedResult("pushed", token);
 }

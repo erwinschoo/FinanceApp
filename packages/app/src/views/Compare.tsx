@@ -77,10 +77,9 @@ export function Compare() {
       <div className="card card-pad" style={{ marginBottom: 18 }}>
         <div className="card-h" style={{ marginBottom: 6 }}>
           <h3>Vergeleken met: {household.label}</h3>
-          <span className="hint">{monthKeyLabelFull(key)}</span>
         </div>
         <p style={{ color: "var(--muted)", margin: 0, fontSize: 13.5 }}>
-          Je uitgaven per categorie, afgezet tegen de Nibud-referentie voor dit huishoudtype.
+          Je uitgaven over <b>{monthKeyLabelFull(key)}</b> per categorie, afgezet tegen de Nibud-referentie voor dit huishoudtype.
           <span style={{ color: "var(--pos)", fontWeight: 600 }}> Groen</span> = onder de referentie,
           <span style={{ color: "var(--over)", fontWeight: 600 }}> rood</span> = erboven.
         </p>
@@ -133,10 +132,9 @@ export function Compare() {
         <div className="card card-pad" style={{ marginTop: 18 }}>
           <div className="card-h" style={{ marginBottom: 8 }}>
             <h3>Niet vergeleken</h3>
-            <span className="hint">geen Nibud-post gekoppeld</span>
           </div>
           <p style={{ color: "var(--muted)", margin: "0 0 10px", fontSize: 13 }}>
-            Deze categorieën tellen niet mee in de vergelijking. Koppel ze aan een Nibud-post op je{" "}
+            Deze categorieën hebben geen Nibud-post gekoppeld en tellen niet mee in de vergelijking. Koppel ze aan een Nibud-post op je{" "}
             <button className="lnk" onClick={() => setView("profiel")}>profiel</button>.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>

@@ -10,26 +10,33 @@ import goatLogo from "../assets/ibex-orange.png";
 
 interface NavItem { id: ViewId; label: string; icon: string; tip: string }
 
-const MAIN: NavItem[] = [
+// Overzicht staat altijd los bovenaan (boven een divider).
+const TOP: NavItem[] = [
   { id: "dashboard", label: "Overzicht", icon: "dashboard", tip: "Je financiële beeld in één oogopslag" },
-  { id: "transacties", label: "Transacties", icon: "list", tip: "Controleer en deel je uitgaven in" },
+];
+// Primaire schermen (geen kop) — alfabetisch.
+const PRIMARY: NavItem[] = [
   { id: "budgetten", label: "Budgetten", icon: "sliders", tip: "Stem je budget af per categorie" },
-  { id: "vergelijken", label: "Vergelijken", icon: "scale", tip: "Zet je uitgaven af tegen een vergelijkbaar huishouden (Nibud)" },
   { id: "spaardoel", label: "Spaardoelen", icon: "target", tip: "Stel doelen en volg je voortgang" },
-  { id: "tegenpartijen", label: "Tegenpartijen", icon: "wallet", tip: "Wijs per winkel of rekening één keer een categorie toe" },
+  { id: "vergelijken", label: "Vergelijken", icon: "scale", tip: "Zet je uitgaven af tegen een vergelijkbaar huishouden (Nibud)" },
 ];
 const DATA: NavItem[] = [
+  { id: "beheer", label: "Beheer", icon: "settings", tip: "Categorieën en categoriseer-regels onderhouden" },
   { id: "import", label: "Importeren", icon: "upload", tip: "Laad je banktransacties in via Excel" },
   { id: "sync", label: "Synchroniseren", icon: "cloud", tip: "Back-up en sync via je eigen OneDrive" },
-  { id: "beheer", label: "Beheer", icon: "settings", tip: "Categorieën en categoriseer-regels onderhouden" },
+  { id: "tegenpartijen", label: "Tegenpartijen", icon: "wallet", tip: "Wijs per winkel of rekening één keer een categorie toe" },
+  { id: "transacties", label: "Transacties", icon: "list", tip: "Controleer en deel je uitgaven in" },
 ];
 const OVERIG: NavItem[] = [
-  { id: "profiel", label: "Profiel & instellingen", icon: "user", tip: "Je huishouden, categorie-koppeling en weergave" },
-  { id: "feedback", label: "Feedback & bugs", icon: "feedback", tip: "Meld een idee of bug" },
-  { id: "steun", label: "Steun bokkiep", icon: "heart", tip: "Steun de ontwikkeling van bokkiep" },
   { id: "download", label: "Download app", icon: "download", tip: "Installeer bokkiep als app" },
+  { id: "feedback", label: "Feedback & bugs", icon: "feedback", tip: "Meld een idee of bug" },
   { id: "informatie", label: "Informatie", icon: "info", tip: "Over bokkiep: uitleg en veelgestelde vragen" },
+  { id: "profiel", label: "Profiel & instellingen", icon: "user", tip: "Je huishouden, categorie-koppeling en weergave" },
+  { id: "steun", label: "Steun bokkiep", icon: "heart", tip: "Steun de ontwikkeling van bokkiep" },
 ];
+
+// Alfabetisch (NL) — defensief, zodat de lijsten gesorteerd blijven ongeacht de bronvolgorde.
+const byLabel = (a: NavItem, b: NavItem) => a.label.localeCompare(b.label, "nl");
 
 /* Initialen afgeleid van de account-naam (val terug op het e-mailadres). */
 function initialsFrom(name?: string, email?: string): string {
@@ -133,10 +140,12 @@ export function Sidebar({ open = false, onNavigate }: { open?: boolean; onNaviga
         </button>
       </div>
 
-      <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{MAIN.map(item)}</nav>
+      <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{TOP.map(item)}</nav>
+      <div className="sb-divider" />
+      <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>{[...PRIMARY].sort(byLabel).map(item)}</nav>
 
-      {section("data", "Data", DATA)}
-      {section("overig", "Overig", overig)}
+      {section("data", "Data", [...DATA].sort(byLabel))}
+      {section("overig", "Overig", [...overig].sort(byLabel))}
 
       <div className="sb-foot">
         <button type="button" className="sb-user sb-user-btn"

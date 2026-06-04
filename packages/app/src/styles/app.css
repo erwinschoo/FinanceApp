@@ -167,6 +167,8 @@ input, textarea, select { font-family:inherit; color:var(--ink); }
 .sb-collapse svg { width:18px; height:18px; }
 .sb-collapse:hover .nav-tip { opacity:1; }
 .sb-sec { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); padding:14px 10px 8px; }
+/* Scheiding tussen Overzicht (altijd bovenaan) en de overige schermen */
+.sb-divider { height:1px; background:var(--line-soft); margin:8px 12px; }
 /* Data/Overig als inklapbare accordion-koppen — mobiel én desktop (niet in de ingeklapte icoonrail) */
 .sb-sec-btn { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;
   border:0; background:transparent; text-align:left; border-radius:8px; cursor:pointer; }
@@ -542,10 +544,11 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   .legend-cell .ln { font-size:12.5px; font-weight:400; color:var(--body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .legend-cell .lc-sub { font-size:11.5px; font-weight:400; color:var(--muted); margin-top:2px; padding-left:18px; }
 
-  /* tabellen → kaarten (label-waarde gestapeld) */
+  /* tabellen → gestapelde regels met dividers (zoals desktop, geen omkaderde boxes) */
   .tbl-cards thead { display:none; }
   .tbl-cards, .tbl-cards tbody, .tbl-cards tr, .tbl-cards td { display:block; width:auto !important; }
-  .tbl-cards tr.row { border:1px solid var(--line); border-radius:12px; margin-bottom:10px; padding:6px 14px; }
+  .tbl-cards tr.row { border:0; border-bottom:1px solid var(--line-soft); border-radius:0; margin-bottom:0; padding:12px 4px; }
+  .tbl-cards tr.row:last-child { border-bottom:0; }
   .tbl-cards tr.row td { background:transparent !important; }
   .tbl-cards td { border:0 !important; padding:9px 0 !important; display:flex; align-items:center; justify-content:space-between; gap:14px; }
   .tbl-cards td[data-label]::before { content:attr(data-label); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--faint); flex:none; }

@@ -6,7 +6,7 @@ export const DEFAULT_GROUPS: CategoryGroupRow[] = [
   { id: "grp-vaste-lasten", name: "Vaste lasten", color: "var(--blue)", order: 1 },
   { id: "grp-dagelijks", name: "Dagelijkse uitgaven", color: "var(--cat-1)", order: 2 },
   { id: "grp-vrije-tijd", name: "Vrije tijd & overig", color: "var(--cat-6)", order: 3 },
-  { id: "grp-sparen", name: "Sparen & overboekingen", color: "var(--cat-4)", order: 4 },
+  { id: "grp-sparen", name: "Vermogen", color: "var(--cat-4)", order: 4 },
 ];
 
 /* Canonieke categorielijst — elke categorie hoort bij precies één groep (groupId).
@@ -32,9 +32,10 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: "vrijetijd", name: "Vrije tijd", color: "var(--cat-6)", tint: "#F7EEF1", initial: "T", type: "uitgave", groupId: "grp-vrije-tijd", order: 0 },
   { id: "overig", name: "Overig", color: "var(--cat-8)", tint: "#F1F2F4", initial: "O", type: "uitgave", groupId: "grp-vrije-tijd", order: 1 },
 
-  // Sparen & overboekingen
+  // Vermogen
   { id: "sparen", name: "Sparen", color: "var(--cat-4)", tint: "#F2EFF7", initial: "S", type: "sparen", groupId: "grp-sparen", order: 0 },
-  { id: "overboekingen", name: "Overboekingen", color: "#97A0AB", tint: "#F1F2F4", initial: "↔", type: "overboeking", groupId: "grp-sparen", order: 1 },
+  { id: "beleggingen", name: "Beleggingen", color: "var(--cat-4)", tint: "#F2EFF7", initial: "B", type: "sparen", groupId: "grp-sparen", order: 1 },
+  { id: "overboekingen", name: "Overboekingen", color: "#97A0AB", tint: "#F1F2F4", initial: "↔", type: "overboeking", groupId: "grp-sparen", order: 2 },
 ];
 
 /* Categorieën die via de v3-migratie aan bestaande databases zijn toegevoegd. */
@@ -66,6 +67,7 @@ export const V5_GROUPING: Record<string, string> = {
   vrijetijd: "grp-vrije-tijd",
   overig: "grp-vrije-tijd",
   sparen: "grp-sparen",
+  beleggingen: "grp-sparen",
   overboekingen: "grp-sparen",
 };
 

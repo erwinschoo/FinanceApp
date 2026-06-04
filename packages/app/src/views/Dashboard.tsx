@@ -14,7 +14,7 @@ import { ProgressRing } from "../charts/ProgressRing";
 import { useMediaQuery } from "../charts/useMediaQuery";
 
 export function Dashboard() {
-  const { transactions, months, monthIdx, budgets, goals, categories, catMap, setView, startBalance } = useApp();
+  const { transactions, months, monthIdx, budgets, goals, categories, catMap, setView, startBalance, hasImportedBalance, startBalanceKnown } = useApp();
   const [donutActive, setDonutActive] = useState<number | null>(null);
   const [trendMode, setTrendMode] = useState<"beide" | "netto">("beide");
   const isPhone = useMediaQuery("(max-width: 560px)");
@@ -100,6 +100,15 @@ export function Dashboard() {
           <div className="nt" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <span><b>Nog geen gegevens.</b> Importeer je transacties om je overzicht, budgetten en spaardoelen te vullen.</span>
             <Button variant="primary" icon="upload" onClick={() => setView("import")}>Importeren</Button>
+          </div>
+        </div>
+      )}
+      {transactions.length > 0 && !hasImportedBalance && !startBalanceKnown && (
+        <div className="notice" style={{ marginBottom: 18, background: "var(--orange-soft)", borderColor: "var(--orange)" }}>
+          <span className="ni" style={{ color: "var(--orange)" }}><Ic name="info" size={20} /></span>
+          <div className="nt" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <span><b>Beginsaldo ontbreekt.</b> Vul je startsaldo in zodat het saldo-overzicht klopt — je import levert (nog) geen banksaldo mee.</span>
+            <Button variant="primary" onClick={() => setView("profiel", "beginsaldo")}>Beginsaldo invullen</Button>
           </div>
         </div>
       )}

@@ -300,13 +300,17 @@ function BackupsCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: string 
 
   const hasAny = local.length > 0 || (cloud && cloud.length > 0);
 
+  const count = (cloud?.length ?? 0) + local.length;
+
   return (
-    <div className="card card-pad" style={{ marginTop: 18 }}>
-      <div className="card-h" style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+    <details className="card card-pad" style={{ marginTop: 18 }}>
+      <summary className="prof-summary card-h" style={{ marginBottom: 12, gap: 8 }}>
         <Ic name="clock" size={20} style={{ color: "var(--muted)" }} />
         <h3 style={{ margin: 0 }}>Vorige versies</h3>
-      </div>
-      <p style={{ color: "var(--body)", fontSize: 14, lineHeight: 1.6, marginTop: 0 }}>
+        {count > 0 && <span className="hint">{count}</span>}
+        <Ic name="chevronDown" size={16} style={{ marginLeft: count > 0 ? 8 : "auto", color: "var(--faint)" }} />
+      </summary>
+      <p style={{ color: "var(--body)", fontSize: 14, lineHeight: 1.6, margin: "12px 0 14px" }}>
         Vóór elke cloud-overschrijving en elke pull bewaart bokkiep automatisch een kopie. Raakt er ooit data zoek, dan zet je hier een eerdere versie terug.
       </p>
 
@@ -347,7 +351,7 @@ function BackupsCard({ onMsg }: { onMsg: (m: { kind: "ok" | "err"; text: string 
           )}
         </>
       )}
-    </div>
+    </details>
   );
 }
 
@@ -355,7 +359,7 @@ export function Sync() {
   const configured = isSyncConfigured();
   const [email, setEmail] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string; detail?: string } | null>(null);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   // Na een conflict ("Sync nu" kan niet veilig kiezen) blokkeren we de knop tot de
   // gebruiker bewust Uploaden of Ophalen heeft gekozen — voorkomt blind doorklikken.
@@ -432,7 +436,12 @@ export function Sync() {
       } else if (r.action === "noop") {
         setMsg({ kind: "ok", text: "Niets te synchroniseren: dit toestel heeft nog geen gegevens. Importeer eerst je transacties." });
       } else {
-        setMsg({ kind: "ok", text: r.action === "pulled" ? "Nieuwere versie opgehaald van OneDrive." : "Lokale data geüpload naar OneDrive." });
+        const when = r.remoteModified ? new Date(r.remoteModified).toLocaleString("nl-NL") : "";
+        const tx = `${r.localTx} transactie${r.localTx === 1 ? "" : "s"}`;
+        const detail = r.action === "pulled"
+          ? `OneDrive → dit toestel · nieuwere versie van een ander apparaat opgehaald · ${tx}.`
+          : `Dit toestel → OneDrive · ${tx}${when ? ` · OneDrive-versie bijgewerkt ${when}` : ""}.`;
+        setMsg({ kind: "ok", text: "Data is gesynchroniseerd met OneDrive.", detail });
       }
     } catch (e) {
       setMsg({ kind: "err", text: e instanceof Error ? e.message : String(e) });
@@ -494,7 +503,10 @@ export function Sync() {
         <div className="notice sync-msg" role="status" onClick={() => setMsg(null)} title="Verbergen"
           style={{ marginBottom: 18, cursor: "pointer", background: msg.kind === "ok" ? "var(--pos-soft)" : "var(--over-soft)", borderColor: msg.kind === "ok" ? "#CFE6DD" : "#F3D9D5" }}>
           <span className="ni" style={{ color: msg.kind === "ok" ? "var(--pos)" : "var(--over)" }}><Ic name={msg.kind === "ok" ? "check" : "info"} size={20} /></span>
-          <div className="nt">{msg.text}</div>
+          <div className="nt">
+            {msg.text}
+            {msg.detail && <div style={{ color: "var(--muted)", fontSize: 12.5, marginTop: 4 }}>{msg.detail}</div>}
+          </div>
         </div>
       )}
 
@@ -518,10 +530,14 @@ export function Sync() {
         </div>
       ) : (
         <div className="card card-pad">
-          <div className="card-h" style={{ marginBottom: 14 }}>
+          <div className="card-h" style={{ marginBottom: lastSynced ? 4 : 14 }}>
             <h3>Synchroniseren met OneDrive</h3>
-            {lastSynced && <span className="hint">Laatst gesynct: {new Date(lastSynced).toLocaleString("nl-NL")}</span>}
           </div>
+          {lastSynced && (
+            <p style={{ color: "var(--muted)", margin: "0 0 14px", fontSize: 13 }}>
+              Laatst gesynct: {new Date(lastSynced).toLocaleString("nl-NL")}
+            </p>
+          )}
 
           {email ? (
             <>

@@ -247,9 +247,45 @@ function GroupEditor({ group, onSave, onCancel }: {
 }
 
 /* ── Regels ── */
+const FIELD_LABEL: Record<RuleRow["field"], string> = { rawDescription: "Omschrijving", merchant: "Naam (merchant)" };
+const MATCH_LABEL: Record<RuleRow["matchType"], string> = { contains: "bevat", regex: "regex" };
+type SortCol = "field" | "matchType" | "pattern" | "categoryId" | "priority";
+
 function RulesTab() {
-  const { rules, categories, categoryGroups } = useApp();
-  const sorted = [...rules].sort((a, b) => a.priority - b.priority);
+  const { rules, categories, categoryGroups, catMap } = useApp();
+  // Klikbare kolomkoppen: eerste klik = A-Z (oplopend), nogmaals = Z-A. Standaard op prioriteit.
+  const [sort, setSort] = useState<{ col: SortCol; dir: "asc" | "desc" }>({ col: "priority", dir: "asc" });
+
+  const sortVal = (r: RuleRow): string | number => {
+    switch (sort.col) {
+      case "field": return FIELD_LABEL[r.field] ?? r.field;
+      case "matchType": return MATCH_LABEL[r.matchType] ?? r.matchType;
+      case "pattern": return r.pattern ?? "";
+      case "categoryId": return catMap[r.categoryId]?.name ?? "";
+      case "priority": return r.priority;
+    }
+  };
+  const sorted = [...rules].sort((a, b) => {
+    const va = sortVal(a), vb = sortVal(b);
+    const cmp = typeof va === "number" && typeof vb === "number"
+      ? va - vb
+      : String(va).localeCompare(String(vb), "nl");
+    return sort.dir === "asc" ? cmp : -cmp;
+  });
+
+  const Th = ({ col, label, style }: { col: SortCol; label: string; style?: React.CSSProperties }) => {
+    const active = sort.col === col;
+    return (
+      <th style={{ ...style, cursor: "pointer", userSelect: "none" }}
+        aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
+        onClick={() => setSort((p) => (p.col === col ? { col, dir: p.dir === "asc" ? "desc" : "asc" } : { col, dir: "asc" }))}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          {label}
+          <span style={{ fontSize: 10, lineHeight: 1, opacity: active ? 0.9 : 0.25 }}>{active && sort.dir === "desc" ? "▼" : "▲"}</span>
+        </span>
+      </th>
+    );
+  };
 
   // categorie-opties (gegroepeerd per categoriegroep) voor de gestylede Dropdown
   const catDropdownOptions = () =>
@@ -275,7 +311,12 @@ function RulesTab() {
       <div className="tbl-wrap">
       <table className="tbl">
         <thead><tr>
-          <th style={{ paddingLeft: 0 }}>Veld</th><th>Type</th><th>Patroon (tekst)</th><th>Categorie</th><th style={{ width: 70 }}>Prio</th><th></th>
+          <Th col="field" label="Veld" style={{ paddingLeft: 0 }} />
+          <Th col="matchType" label="Type" />
+          <Th col="pattern" label="Patroon (tekst)" />
+          <Th col="categoryId" label="Categorie" />
+          <Th col="priority" label="Prio" style={{ width: 70 }} />
+          <th></th>
         </tr></thead>
         <tbody>
           {sorted.length === 0 && <tr><td colSpan={6}><div className="empty">Nog geen regels.</div></td></tr>}
