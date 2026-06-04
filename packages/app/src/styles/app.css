@@ -469,18 +469,21 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 
   /* ingeklapte rail: groep als letter-knop ("D"/"O") die een flyout opent */
   .sb-rail-group { position:relative; }
-  .sb-rail-letter { font-weight:800; font-size:15px; color:var(--body); letter-spacing:0; }
+  .sb-rail-letter { font-weight:800; font-size:15px; color:var(--muted); letter-spacing:0; }
   .sb-rail-letter.active { background:var(--blue-soft); color:var(--blue); }
 
-  /* flyout naast de rail met de schermen van de groep (volle labels) */
+  /* flyout naast de rail met de schermen van de groep (volle labels). De selectors zijn
+     bewust met :root[data-sidebar-collapsed] geprefixt zodat ze de collapsed-iconregels
+     (die labels verbergen en items op 44px centreren) qua specificiteit overschrijven. */
   .sb-flyout { position:absolute; left:calc(100% + 8px); top:0; z-index:70; min-width:210px;
     background:var(--elevated); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow-pop); padding:6px;
     display:flex; flex-direction:column; gap:2px; }
   .sb-flyout-h { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); padding:4px 10px 6px; }
-  .sb-flyout .nav-item { width:auto; justify-content:flex-start; padding:9px 12px; margin:0; }
-  .sb-flyout .nav-item .nav-label { display:inline; }
-  .sb-flyout .nav-badge { position:static; margin-left:auto; width:auto; height:auto; min-width:0;
-    font-size:11px; line-height:normal; padding:1px 7px; border-radius:99px; background:var(--orange-soft); color:var(--orange); }
+  :root[data-sidebar-collapsed="true"] .sb-flyout .nav-item { width:auto; justify-content:flex-start; padding:9px 12px; margin:0; }
+  :root[data-sidebar-collapsed="true"] .sb-flyout .nav-item .nav-label { display:inline; }
+  :root[data-sidebar-collapsed="true"] .sb-flyout .nav-badge { position:static; margin-left:auto; top:auto; right:auto;
+    width:auto; height:auto; min-width:0; font-size:11px; line-height:normal; padding:1px 7px; border-radius:99px;
+    background:var(--orange-soft); color:var(--orange); }
   .sb-flyout-backdrop { position:fixed; inset:0; z-index:65; background:transparent; }
 }
 
