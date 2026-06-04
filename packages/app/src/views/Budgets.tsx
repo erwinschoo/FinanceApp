@@ -7,7 +7,6 @@ import { budgetColor } from "../helpers/budgetColor";
 import { postForCategory } from "../nibud/mapping";
 import { NIBUD_HOUSEHOLDS, matchHousehold, compositionFrom } from "../nibud/referenceData";
 import { setRecurringBudget } from "../db/repo";
-import { Tooltip } from "../components/Tooltip";
 import type { Category, CategoryGroupRow } from "../db/types";
 
 export function Budgets() {
@@ -46,7 +45,7 @@ export function Budgets() {
     const sp = members.reduce((s, k) => s + (spend[k.id] || 0), 0);
     const r = b ? sp / b : 0;
     return (
-      <div className="bud-grid" style={{ display: "grid", gridTemplateColumns: "180px 1fr 150px", alignItems: "center", gap: 22, padding: "16px 0 8px" }}>
+      <div className="bud-grid" style={{ display: "grid", gridTemplateColumns: "180px 1fr 170px", alignItems: "center", gap: 22, padding: "16px 0 8px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ fontWeight: 800, color: "var(--ink)", fontSize: 14.5 }}>{g.name}</div>
         </div>
@@ -79,7 +78,7 @@ export function Budgets() {
       <div className="card card-pad">
         <div className="card-h" style={{ marginBottom: 8 }}>
           <h3>Budget per categorie</h3>
-          <span className="hint">Versleep om bij te stellen · {monthKeyLabelFull(key)}</span>
+          <span className="hint">Vul je maandbudget in · {monthKeyLabelFull(key)}</span>
         </div>
         <div style={{ display: "flex", gap: 16, marginBottom: 6, flexWrap: "wrap" }}>
           {([["#2E7D4F", "tot 70%"], ["#D9772E", "70–85%"], ["#B23B2E", "85% of meer"]] as const).map(([c, l]) => (
@@ -109,25 +108,20 @@ export function Budgets() {
   );
 }
 
-/* Eén budget-categorie met slider. Top-level component (stabiele identiteit) zodat de
- * lokale sliderwaarde niet reset bij elke parent-render. De slider gebruikt lokale state
- * (de thumb volgt direct), met een stabiele bovengrens (geen herschaling tijdens slepen),
- * en schrijft pas naar de DB bij loslaten — zo "verspringt" of verliest de grab niet meer. */
+/* Eén budget-categorie met een invoerveld naast de balk. Top-level component
+ * (stabiele identiteit) zodat de lokale waarde niet reset bij elke parent-render:
+ * tijdens het typen volgt de balk live, en pas bij blur/Enter schrijven we naar de DB. */
 function BudgetLeafRow({ c, spent, budget, reference, indent }: { c: Category; spent: number; budget: number; reference?: number | null; indent?: boolean }) {
   const [val, setVal] = useState(budget);
-  const dragging = useRef(false);
-  useEffect(() => { if (!dragging.current) setVal(budget); }, [budget]);
-  // Bovengrens hangt alleen van 'spent'/referentie af → blijft constant tijdens het slepen.
-  // De referentie wordt meegenomen zodat de marker altijd op de schaal valt.
-  const max = useMemo(() => Math.max(800, Math.ceil(Math.max(spent, budget, reference ?? 0) / 100) * 100 * 2), [spent, reference]); // eslint-disable-line react-hooks/exhaustive-deps
-  const refPct = reference != null ? Math.max(0, Math.min(1, reference / max)) : 0;
+  const editing = useRef(false);
+  useEffect(() => { if (!editing.current) setVal(budget); }, [budget]);
 
   const r = val ? spent / val : 0;
   const over = val > 0 && spent > val;
-  const commit = (v: number) => { dragging.current = false; setRecurringBudget(c.id, v); };
+  const commit = (v: number) => { editing.current = false; setRecurringBudget(c.id, v); };
 
   return (
-    <div className="bud-grid" style={{ display: "grid", gridTemplateColumns: "180px 1fr 150px", alignItems: "center", gap: 22, padding: "14px 0", paddingLeft: indent ? 18 : 0, borderBottom: "1px solid var(--line-soft)" }}>
+    <div className="bud-grid" style={{ display: "grid", gridTemplateColumns: "180px 1fr 170px", alignItems: "center", gap: 22, padding: "14px 0", paddingLeft: indent ? 18 : 0, borderBottom: "1px solid var(--line-soft)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <span style={{ width: 10, height: 10, borderRadius: "50%", background: c.color, flex: "none" }}></span>
         <div>
@@ -144,29 +138,23 @@ function BudgetLeafRow({ c, spent, budget, reference, indent }: { c: Category; s
           <span className="tnum" style={{ color: over ? "var(--over)" : "var(--muted)", fontWeight: 400 }}>{val ? Math.round(r * 100) + "%" : "—"}</span>
         </div>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 4, justifyContent: "flex-end" }}>
-          <span style={{ fontSize: 13, color: "var(--muted)" }}>budget</span>
-          <span className="tnum" style={{ fontWeight: 400, color: "var(--ink)", fontSize: 16, minWidth: 64, textAlign: "right" }}>{eur(val)}</span>
+      <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-end" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 14, color: "var(--muted)" }}>Budget</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, border: "1px solid var(--line)", borderRadius: 9, padding: "5px 10px", background: "var(--surface)" }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "var(--ink)" }}>€</span>
+            <input type="number" min={0} step={10} value={val} aria-label={`Budget voor ${c.name}`}
+              className="tnum"
+              onFocus={() => { editing.current = true; }}
+              onChange={(e) => setVal(Number(e.target.value) || 0)}
+              onBlur={(e) => commit(Number(e.currentTarget.value) || 0)}
+              onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+              style={{ width: 64, border: 0, outline: "none", background: "transparent", textAlign: "right", fontSize: 17, fontWeight: 700, color: "var(--ink)" }} />
+          </span>
         </div>
-        <div style={{ position: "relative" }}>
-          <input type="range" className="rng" min={0} max={max} step={10} value={val}
-            onPointerDown={() => { dragging.current = true; }}
-            onChange={(e) => setVal(Number(e.target.value))}
-            onPointerUp={(e) => commit(Number(e.currentTarget.value))}
-            onPointerCancel={() => { dragging.current = false; }}
-            onKeyUp={(e) => commit(Number(e.currentTarget.value))}
-            onBlur={(e) => commit(Number(e.currentTarget.value))} />
-          {reference != null && (
-            <>
-              <Tooltip label={`Nibud: ${eur(reference)}`} side="top"
-                style={{ position: "absolute", top: 1, left: `calc(${refPct} * (100% - 18px) + 9px)`, transform: "translateX(-50%)", width: 14, height: 18, alignItems: "center", justifyContent: "center", cursor: "help" }}>
-                <span aria-hidden style={{ width: 2, height: 12, borderRadius: 2, background: "var(--orange)" }} />
-              </Tooltip>
-              <span className="tnum" style={{ position: "absolute", top: "calc(100% + 1px)", left: `calc(${refPct} * (100% - 18px) + 9px)`, transform: "translateX(-50%)", fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap", pointerEvents: "none" }}>{eur(reference)}</span>
-            </>
-          )}
-        </div>
+        {reference != null && (
+          <span className="tnum" style={{ fontSize: 12, color: "var(--muted)" }}>Nibud: {eur(reference)}</span>
+        )}
       </div>
     </div>
   );
