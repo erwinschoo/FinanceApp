@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { Button } from "./Button";
 
 interface Props {
@@ -13,7 +14,9 @@ interface Props {
 
 export function ConfirmDialog({ open, title, message, confirmLabel = "Verwijderen", icon = "trash", confirmVariant = "danger", onConfirm, onCancel }: Props) {
   if (!open) return null;
-  return (
+  // Portal naar body: zo wordt de fixed-overlay niet beperkt door een getransformeerde voorouder
+  // (bv. .content-inner.fade-in), en blijft hij altijd gecentreerd in de viewport.
+  return createPortal(
     <div className="modal-overlay" onClick={onCancel}>
       <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <h3>{title}</h3>
@@ -23,6 +26,7 @@ export function ConfirmDialog({ open, title, message, confirmLabel = "Verwijdere
           <Button variant={confirmVariant} style={{ flex: 1, justifyContent: "center" }} icon={icon} onClick={onConfirm}>{confirmLabel}</Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

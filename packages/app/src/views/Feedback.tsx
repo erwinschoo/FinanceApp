@@ -123,11 +123,11 @@ export function Feedback() {
           <h3>Feedback &amp; bugs</h3>
         </div>
         <p style={{ color: "var(--muted)", margin: "0 0 16px", fontSize: 13.5, lineHeight: 1.6 }}>
-          Heb je een idee of liep je tegen een bug aan? Laat het weten. Je melding wordt per e-mail naar de
-          maker verstuurd, vanuit je eigen Microsoft-account zodat je een antwoord kunt krijgen.{" "}
+          Heb je een idee of liep je tegen een bug aan? Laat het ons weten! Je melding gaat per e-mail
+          rechtstreeks naar de maker — vanuit je eigen Microsoft-account, zodat je ook een antwoord kunt krijgen.{" "}
           {type === "bug"
-            ? "Bugs worden zo spoedig mogelijk bekeken."
-            : "Dit blijft een hobbyproject — is je idee interessant, dan wordt het misschien opgepakt."}{" "}
+            ? "Bugs pak ik graag zo snel mogelijk op."
+            : "bokkiep groeit dankzij ideeën zoals dat van jou — wie weet zie je het binnenkort terug in de app."}{" "}
           Voeg gerust een schermafbeelding toe.
         </p>
 
