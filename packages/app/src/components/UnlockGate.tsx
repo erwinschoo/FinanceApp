@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Ic } from "./Ic";
 import { Button } from "./Button";
-import { keepGet } from "../db/keep";
+import { keepGet, setEncEnabled } from "../db/keep";
 import {
   unlockWithPassphrase, unlockWithRecovery, unlockWithBiometric, hasBiometricSlot,
 } from "../sync/encSession";
-import { hydrateFromVault } from "../db/vault";
+import { hydrateFromVault, persistVaultNow } from "../db/vault";
 import goatLogo from "../assets/ibex-orange.png";
 
 const inputStyle: React.CSSProperties = {
@@ -18,7 +18,7 @@ const inputStyle: React.CSSProperties = {
  * worden de gegevens uit de versleutelde vault in de in-memory db gezet en mag de
  * app monten. Password-manager-vriendelijk: een echt <form> met username +
  * autocomplete=current-password; biometrie wanneer er een device-slot is. */
-export function UnlockGate({ onUnlocked }: { onUnlocked: () => void }) {
+export function UnlockGate({ atRest, onUnlocked }: { atRest: boolean; onUnlocked: () => void }) {
   const [email, setEmail] = useState<string>("");
   const [hasBio, setHasBio] = useState(false);
   const [mode, setMode] = useState<"pass" | "recovery">("pass");
@@ -36,7 +36,17 @@ export function UnlockGate({ onUnlocked }: { onUnlocked: () => void }) {
   }, []);
 
   async function finish() {
-    await hydrateFromVault();
+    if (atRest) {
+      // De hoofd-db is in-memory en leeg → vul 'm uit de versleutelde vault.
+      await hydrateFromVault();
+    } else {
+      // Legacy: er was al versleuteling, maar de data stond nog plaintext op schijf.
+      // Bouw nu de versleutelde vault uit de huidige data en markeer at-rest. Geen
+      // reload: deze sessie draait nog persistent; de volgende start is in-memory en
+      // ruimt de plaintext-db op.
+      await persistVaultNow();
+      await setEncEnabled(true);
+    }
     onUnlocked();
   }
 

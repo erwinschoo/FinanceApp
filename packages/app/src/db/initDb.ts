@@ -1,28 +1,28 @@
 import { FinanceDB, setDb, db } from "./schema";
-import { getEncEnabled, keepGet, keepPut, hasVault } from "./keep";
+import { keepGet, keepPut, hasVault } from "./keep";
 import { deletePlaintextDb } from "./vault";
 
-/* Kiest de IndexedDB-backend van de hoofd-db op basis van de versleutel-stand en
- * opent 'm. ALLEREERSTE stap in de bootstrap (vóór elke db-consumer).
- *  - versleuteling UIT → normale browser-IndexedDB (persistent plaintext, zoals altijd);
- *  - versleuteling AAN → in-memory IndexedDB (fake-indexeddb) zodat plaintext nooit op
- *    schijf komt; de persistente kopie is dan uitsluitend de versleutelde vault (keep).
- * Retourneert of we in versleutelde modus draaien. */
-export async function initDb(): Promise<{ encrypted: boolean }> {
-  const encrypted = await getEncEnabled();
-  if (encrypted) {
+/* Kiest de IndexedDB-backend van de hoofd-db en opent 'm. ALLEREERSTE stap in de
+ * bootstrap (vóór elke db-consumer).
+ *  - At-rest draait pas écht wanneer er versleuteling is ingesteld (enc-slot in de
+ *    keep-store) én er een versleutelde vault bestaat → in-memory IndexedDB
+ *    (fake-indexeddb), zodat plaintext nooit op schijf komt.
+ *  - Anders de normale browser-IndexedDB (persistent). Dit dekt ook een nog-niet-
+ *    gemigreerde gebruiker die al wél versleuteling had (cloud-only): die draait nog
+ *    persistent en migreert na de eerste ontgrendeling naar de vault.
+ * Retourneert of we at-rest (in-memory) draaien. */
+export async function initDb(): Promise<{ atRest: boolean }> {
+  const atRest = (await hasVault()) && (await keepGet("enc")) != null;
+  if (atRest) {
     const { IDBFactory, IDBKeyRange } = await import("fake-indexeddb");
     setDb(new FinanceDB({ indexedDB: new IDBFactory(), IDBKeyRange }));
     await db.open();
-    // Geen plaintext op schijf: ruim een eventueel achtergebleven persistente
-    // hoofd-db op — maar alleen als er een geldige vault is (anders zou dat data
-    // wissen bij een half-afgemaakte inschakeling).
-    if (await hasVault()) await deletePlaintextDb();
+    await deletePlaintextDb(); // geen plaintext op schijf laten staan
   } else {
     setDb(new FinanceDB());
     await db.open();
   }
-  return { encrypted };
+  return { atRest };
 }
 
 /* Eenmalige verhuizing van de apparaat-/sync-/account-meta van de hoofd-db naar de
