@@ -121,11 +121,14 @@ export function Feedback() {
       <div className="card card-pad">
         <div className="card-h" style={{ marginBottom: 6 }}>
           <h3>Feedback &amp; bugs</h3>
-          <span className="hint">per e-mail naar de maker</span>
         </div>
         <p style={{ color: "var(--muted)", margin: "0 0 16px", fontSize: 13.5, lineHeight: 1.6 }}>
-          Heb je een idee of liep je tegen een bug aan? Laat het weten. Je melding wordt vanuit je eigen
-          Microsoft-account verstuurd, zodat ik je kan antwoorden. Voeg gerust een schermafbeelding toe.
+          Heb je een idee of liep je tegen een bug aan? Laat het weten. Je melding wordt per e-mail naar de
+          maker verstuurd, vanuit je eigen Microsoft-account zodat je een antwoord kunt krijgen.{" "}
+          {type === "bug"
+            ? "Bugs worden zo spoedig mogelijk bekeken."
+            : "Dit blijft een hobbyproject — is je idee interessant, dan wordt het misschien opgepakt."}{" "}
+          Voeg gerust een schermafbeelding toe.
         </p>
 
         {/* Type: idee / bug */}
