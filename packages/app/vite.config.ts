@@ -32,7 +32,11 @@ function cspPlugin(): Plugin {
           `script-src 'self' ${[...hashes].join(" ")}`.trim(),
           "style-src 'self' 'unsafe-inline'", // React inline-styles (style={{…}})
           "img-src 'self' data: blob:", // profielfoto = data-URL
-          "connect-src 'self' https://graph.microsoft.com https://login.microsoftonline.com",
+          // graph + login voor de API/auth; de OneDrive-content-hosts zijn nodig omdat een
+          // GET op bestandsinhoud (data.json:/content) bij een persoonlijk account 302-redirect
+          // naar een aparte download-host (*.microsoftpersonalcontent.com / *.dms.live.com,
+          // zakelijk: *.sharepoint.com). Zonder deze hosts → "Failed to fetch" op elke download.
+          "connect-src 'self' https://graph.microsoft.com https://login.microsoftonline.com https://*.microsoftpersonalcontent.com https://*.dms.live.com https://*.sharepoint.com",
           "frame-src https://login.microsoftonline.com", // MSAL silent-token iframe
           "object-src 'none'",
           "base-uri 'self'",
