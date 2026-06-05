@@ -36,7 +36,7 @@ export function Dropdown({
   style?: CSSProperties;                 // extra stijl op de wrapper (bv. flex in een ribbon)
 }) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left?: number; right?: number } | null>(null);
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; left?: number; right?: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -55,9 +55,12 @@ export function Dropdown({
     if (disabled) return;
     if (!open && floating && ref.current) {
       const r = ref.current.getBoundingClientRect();
+      // Laag in beeld → opwaarts openen, zodat het menu niet onder de schermrand wegvalt.
+      const openUp = r.bottom > window.innerHeight * 0.6;
+      const vert = openUp ? { bottom: window.innerHeight - r.top + 6 } : { top: r.bottom + 6 };
       setPos(align === "right"
-        ? { top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) }
-        : { top: r.bottom + 6, left: r.left });
+        ? { ...vert, right: Math.max(8, window.innerWidth - r.right) }
+        : { ...vert, left: r.left });
     }
     setOpen((o) => !o);
   }
@@ -115,7 +118,8 @@ export function Dropdown({
       {open && (floating
         ? createPortal(
             <div ref={menuRef} className="cat-menu scroll"
-              style={{ position: "fixed", top: pos?.top, left: pos?.left ?? "auto", right: pos?.right ?? "auto",
+              style={{ position: "fixed", top: pos?.top ?? "auto", bottom: pos?.bottom ?? "auto",
+                left: pos?.left ?? "auto", right: pos?.right ?? "auto",
                 minWidth, maxHeight: "min(60vh,360px)" }}>
               {menuItems}
             </div>,

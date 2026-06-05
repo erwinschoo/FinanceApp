@@ -568,6 +568,12 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   /* brede tabellen → horizontaal scrollen (fallback voor o.a. Beheer/Regels) */
   .tbl-wrap { overflow-x:auto; }
   .tbl-wrap .tbl { min-width:600px; }
+
+  /* vergelijken: naam vol breedte, dan twee bedragen, dan de balk (vol breedte) eronder */
+  .cmp-head { display:none; }
+  .cmp-row { grid-template-columns:1fr 1fr; gap:6px 18px; }
+  .cmp-name { grid-column:1 / -1; }
+  .cmp-row .cmp-bar-col { grid-column:1 / -1; order:2; }
 }
 
 /* ── responsive: telefoon-tier ── */
@@ -596,12 +602,13 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   /* tabellen → gestapelde regels met dividers (zoals desktop, geen omkaderde boxes) */
   .tbl-cards thead { display:none; }
   .tbl-cards, .tbl-cards tbody, .tbl-cards tr, .tbl-cards td { display:block; width:auto !important; }
-  .tbl-cards tr.row { border:0; border-bottom:1px solid var(--line-soft); border-radius:0; margin-bottom:0; padding:12px 4px; }
+  .tbl-cards tr.row { border:0; border-bottom:1px solid var(--line-soft); border-radius:0; margin-bottom:0; padding:10px 4px; }
   .tbl-cards tr.row:last-child { border-bottom:0; }
   .tbl-cards tr.row td { background:transparent !important; }
-  .tbl-cards td { border:0 !important; padding:9px 0 !important; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+  .tbl-cards td { border:0 !important; padding:6px 0 !important; display:flex; align-items:center; justify-content:space-between; gap:14px; }
   .tbl-cards td[data-label]::before { content:attr(data-label); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--faint); flex:none; }
-  .tbl-cards .td-primary { display:block; padding:10px 0 12px !important; margin-bottom:2px; border-bottom:1px solid var(--line-soft) !important; }
+  /* item-titel zonder eigen divider → één nette divider per rij (clean lijst, vgl. Vergelijken) */
+  .tbl-cards .td-primary { display:block; padding:2px 0 6px !important; margin-bottom:0; }
   .tbl-cards td.amt { font-size:15px; }
   .tbl-cards td[colspan] { display:block; }
   .tbl-cards td[colspan]::before { content:none; }
@@ -644,12 +651,6 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
   .import-actions { flex-direction:column; align-items:stretch !important; }
   .import-actions > div { margin-left:0 !important; width:100%; flex-direction:column; }
   .import-actions .btn { width:100%; justify-content:center; }
-
-  /* vergelijken: naam vol breedte, dan twee bedragen, dan de balk eronder */
-  .cmp-head { display:none; }
-  .cmp-row { grid-template-columns:1fr 1fr; gap:6px 18px; }
-  .cmp-name { grid-column:1 / -1; }
-  .cmp-row .cmp-bar-col { grid-column:1 / -1; order:2; }
 }
 
 /* ── Profielpagina (sidebar-footer als knop) ── */

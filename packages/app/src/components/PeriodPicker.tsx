@@ -11,7 +11,7 @@ import { Ic } from "./Ic";
 export function PeriodPicker() {
   const { periodYear, periodMonth, setPeriodYear, setPeriodMonth, periodLabel, dataYears, dataMonthKeys } = useApp();
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +51,11 @@ export function PeriodPicker() {
   function toggle() {
     if (!open && ref.current) {
       const r = ref.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+      // Op mobile staat de knop onderaan vast → popover opwaarts openen zodat hij zichtbaar blijft.
+      const right = Math.max(8, window.innerWidth - r.right);
+      setPos(r.bottom > window.innerHeight * 0.6
+        ? { bottom: window.innerHeight - r.top + 6, right }
+        : { top: r.bottom + 6, right });
     }
     setOpen((o) => !o);
   }
@@ -79,14 +83,14 @@ export function PeriodPicker() {
       </button>
 
       {open && createPortal(
-        <div ref={panelRef} className="period-pop" style={{ position: "fixed", top: pos?.top, right: pos?.right }}>
+        <div ref={panelRef} className="period-pop" style={{ position: "fixed", top: pos?.top ?? "auto", bottom: pos?.bottom ?? "auto", right: pos?.right }}>
           <label className="period-field">
             <span className="period-lbl">Jaar</span>
-            <Dropdown value={String(periodYear)} onChange={onYear} options={yearOptions} ariaLabel="Kies jaar" fullWidth />
+            <Dropdown value={String(periodYear)} onChange={onYear} options={yearOptions} ariaLabel="Kies jaar" fullWidth floating />
           </label>
           <label className="period-field">
             <span className="period-lbl">Maand</span>
-            <Dropdown value={monthValue} onChange={onMonth} options={monthOptions} ariaLabel="Kies maand" fullWidth />
+            <Dropdown value={monthValue} onChange={onMonth} options={monthOptions} ariaLabel="Kies maand" fullWidth floating />
           </label>
         </div>,
         document.body,

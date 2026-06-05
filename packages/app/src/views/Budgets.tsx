@@ -126,7 +126,7 @@ function BudgetLeafRow({ c, spent, budget, count = 1, reference, indent }: { c: 
   const commit = (v: number) => { editing.current = false; setRecurringBudget(c.id, v); };
 
   return (
-    <div className="bud-grid" style={{ display: "grid", gridTemplateColumns: "180px 1fr 170px", alignItems: "center", gap: 22, padding: "14px 0", paddingLeft: indent ? 18 : 0, borderBottom: "1px solid var(--line-soft)" }}>
+    <div className="bud-grid" style={{ display: "grid", gridTemplateColumns: "180px 1fr auto", alignItems: "center", gap: 22, padding: "14px 0", paddingLeft: indent ? 18 : 0, borderBottom: "1px solid var(--line-soft)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <span style={{ width: 10, height: 10, borderRadius: "50%", background: c.color, flex: "none" }}></span>
         <div>
@@ -143,7 +143,10 @@ function BudgetLeafRow({ c, spent, budget, count = 1, reference, indent }: { c: 
           <span className="tnum" style={{ color: over ? "var(--over)" : "var(--muted)", fontWeight: 400 }}>{eff ? Math.round(r * 100) + "%" : "—"}</span>
         </div>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-end" }}>
+      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 14 }}>
+        {reference != null && (
+          <span className="tnum" style={{ fontSize: 12, color: "var(--muted)" }}>Nibud: {eur(reference * count)}</span>
+        )}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 14, color: "var(--muted)" }}>Budget</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 3, border: "1px solid var(--line)", borderRadius: 9, padding: "5px 10px", background: "var(--surface)" }}>
@@ -157,9 +160,6 @@ function BudgetLeafRow({ c, spent, budget, count = 1, reference, indent }: { c: 
               style={{ width: 64, border: 0, outline: "none", background: "transparent", textAlign: "right", fontSize: 17, fontWeight: 700, color: "var(--ink)" }} />
           </span>
         </div>
-        {reference != null && (
-          <span className="tnum" style={{ fontSize: 12, color: "var(--muted)" }}>Nibud: {eur(reference * count)}</span>
-        )}
       </div>
     </div>
   );

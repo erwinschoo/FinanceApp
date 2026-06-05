@@ -639,7 +639,7 @@ export function Sync() {
             {encEnabled && unlocked ? "Exporteren (versleuteld)" : "Exporteren naar bestand"}
           </Button>
           {encEnabled && (
-            <Button icon="download" disabled={busy || !unlocked} onClick={() => setShowPlainExport(true)}>
+            <Button icon="alert" disabled={busy || !unlocked} onClick={() => setShowPlainExport(true)}>
               Exporteren (onversleuteld)
             </Button>
           )}
@@ -662,7 +662,7 @@ export function Sync() {
         title="Onversleutelde back-up maken?"
         message="Dit bestand is niet beveiligd: iedereen die het bestand heeft kan al je gegevens lezen. Gebruik het alleen als bewuste back-up en bewaar het op een veilige plek waar niemand anders bij kan."
         confirmLabel="Onversleuteld exporteren"
-        icon="download"
+        icon="alert"
         confirmVariant="primary"
         onCancel={() => setShowPlainExport(false)}
         onConfirm={() => { setShowPlainExport(false); void run(() => exportToFile(false), "Onversleutelde back-up gedownload."); }}

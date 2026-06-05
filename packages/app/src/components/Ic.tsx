@@ -43,6 +43,7 @@ export function Ic({ name, size = 20, className, style, strokeWidth = 1.8 }: Pro
     wallet: <><rect x="3" y="6" width="18" height="13" rx="2.5" {...p} /><path d="M3 10h18" {...p} /><circle cx="16.5" cy="14.5" r="1.2" fill="currentColor" stroke="none" /></>,
     edit: <><path d="M12 20h9" {...p} /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" {...p} /></>,
     info: <><circle cx="12" cy="12" r="9" {...p} /><line x1="12" y1="11" x2="12" y2="16" {...p} /><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none" /></>,
+    alert: <><path d="M10.3 4 2.5 18a1.6 1.6 0 0 0 1.4 2.4h16.2A1.6 1.6 0 0 0 21.5 18L13.7 4a1.6 1.6 0 0 0-2.8 0Z" {...p} /><line x1="12" y1="10" x2="12" y2="14" {...p} /><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" /></>,
     feedback: <><path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" {...p} /><line x1="8" y1="9.5" x2="16" y2="9.5" {...p} /><line x1="8" y1="12.5" x2="13" y2="12.5" {...p} /></>,
     bug: <><rect x="8" y="8" width="8" height="11" rx="4" {...p} /><path d="M12 8V6a2.5 2.5 0 0 1 5 0M12 8V6a2.5 2.5 0 0 0-5 0" {...p} /><path d="M8 12H4M16 12h4M8 16H4.5M16 16h3.5M8.5 9 6 6.5M15.5 9 18 6.5" {...p} /></>,
     user: <><circle cx="12" cy="8" r="3.6" {...p} /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" {...p} /></>,
