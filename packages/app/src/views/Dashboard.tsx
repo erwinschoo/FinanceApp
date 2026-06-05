@@ -82,12 +82,13 @@ export function Dashboard() {
   // maand), in jaar-modus het maand-verloop (jan–dec). Maanden tonen we dus alleen bij "Heel jaar".
   const isDaily = periodMode === "month";
   const trendKeys = useMemo(() => {
-    if (!isDaily) return monthKeysOfYear(periodYear);
+    // Jaar-modus: alleen de maanden mét data tonen (geen gat voor de rest van het jaar).
+    if (!isDaily) return periodMonthKeys;
     const mk = periodKey as string;
     const [yy, mm] = mk.split("-").map(Number);
     const days = new Date(yy, mm, 0).getDate();
     return Array.from({ length: days }, (_, i) => `${mk}-${String(i + 1).padStart(2, "0")}`);
-  }, [isDaily, periodKey, periodYear]);
+  }, [isDaily, periodKey, periodMonthKeys]);
   const series = useMemo(
     () => trendKeys.map((k) => {
       const txs = isDaily ? transactions.filter((t) => t.date.slice(0, 10) === k) : txInMonths(transactions, [k]);
