@@ -120,7 +120,9 @@ export function Dropdown({
             <div ref={menuRef} className="cat-menu scroll"
               style={{ position: "fixed", top: pos?.top ?? "auto", bottom: pos?.bottom ?? "auto",
                 left: pos?.left ?? "auto", right: pos?.right ?? "auto",
-                minWidth, maxHeight: "min(60vh,360px)" }}>
+                // Boven andere geportaleerde popovers (o.a. de periode-popover, z-index 70),
+                // maar onder modals (100) — zodat een geopend menu altijd vóór de popover valt.
+                zIndex: 80, minWidth, maxHeight: "min(60vh,360px)" }}>
               {menuItems}
             </div>,
             document.body,
