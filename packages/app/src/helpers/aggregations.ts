@@ -81,6 +81,13 @@ export function rollupToGroup(spend: Record<string, number>, catMap: CatMap): Re
   return out;
 }
 
+/* Cumulatieve som: elk element wordt de som van zichzelf en alle voorgaande.
+ * [10, 20, 5] → [10, 30, 35]. Voor de "cumulatief"-weergave van de trend-grafiek. */
+export function runningTotal(nums: number[]): number[] {
+  let acc = 0;
+  return nums.map((n) => (acc += n));
+}
+
 /* De laatste 12 maand-keys ('YYYY-MM') eindigend op de huidige maand. */
 export function lastTwelveMonthKeys(ref = new Date()): string[] {
   const keys: string[] = [];

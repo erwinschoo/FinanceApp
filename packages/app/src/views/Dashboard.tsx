@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useApp } from "../state/AppContext";
 import { eur, eurSign, fmtDate } from "../lib/format";
-import { txInMonths, incomeOf, expensesOf, savingsOf, spendByCat, twelveMonthsEndingAt, monthKeysOfYear } from "../helpers/aggregations";
+import { txInMonths, incomeOf, expensesOf, savingsOf, spendByCat, twelveMonthsEndingAt, monthKeysOfYear, runningTotal } from "../helpers/aggregations";
 import { budgetColor } from "../helpers/budgetColor";
 import { KpiCard } from "../components/KpiCard";
 import { CatTag } from "../components/CatTag";
@@ -19,7 +19,8 @@ export function Dashboard() {
     periodMode, periodKey, periodYear, periodMonthKeys, periodMonthCount, periodLabel, dataMonthKeys,
   } = useApp();
   const [donutActive, setDonutActive] = useState<number | null>(null);
-  const [trendMode, setTrendMode] = useState<"beide" | "netto">("beide");
+  const [cumulative, setCumulative] = useState(true);
+  const [showBalance, setShowBalance] = useState(true);
   const isPhone = useMediaQuery("(max-width: 560px)");
 
   // Totalen over een set maand-keys (inkomsten/uitgaven/gespaard).
@@ -43,23 +44,28 @@ export function Dashboard() {
   const pct = (a: number, b: number) => (b ? ((a - b) / b) * 100 : 0);
   const deltaNote = periodMode === "month" ? "vs. vorige maand" : "vs. vorig jaar";
 
-  // Saldo aan het eind van een maand (key); valt terug op cumulatief vanaf het beginsaldo.
+  // Saldo aan het eind van een periode-grens. `end` mag een maand-key ("YYYY-MM") of een
+  // dag-key ("YYYY-MM-DD") zijn — de vergelijking volgt de lengte van `end`. Bestaat er een
+  // banksaldo in de import, dan pakken we de meest recente transactie t/m die grens (transacties
+  // zijn aflopend gesorteerd → eerste match); anders cumulatief vanaf het beginsaldo.
   const hasBalances = useMemo(() => transactions.some((t) => t.balance != null), [transactions]);
-  const balanceAtKey = useCallback(
+  const balanceAt = useCallback(
     (end: string) => {
+      // `end` kan in jaar-modus zonder data null zijn; `end.length` wordt daarom alleen
+      // binnen de predicaten gelezen (bij een lege transactielijst overgeslagen).
       if (hasBalances) {
-        const t = transactions.find((t) => t.date.slice(0, 7) <= end && t.balance != null);
+        const t = transactions.find((t) => t.date.slice(0, end.length) <= end && t.balance != null);
         if (t) return t.balance as number;
       }
       let b = startBalance;
-      transactions.forEach((t) => { if (t.date.slice(0, 7) <= end) b += t.amount; });
+      transactions.forEach((t) => { if (t.date.slice(0, end.length) <= end) b += t.amount; });
       return b;
     },
     [transactions, hasBalances, startBalance],
   );
   const lastKey = periodMonthKeys[periodMonthKeys.length - 1] ?? (periodKey as string);
-  const balance = balanceAtKey(lastKey);
-  const prevBalance = prevKeys.length ? balanceAtKey(prevKeys[prevKeys.length - 1]) : null;
+  const balance = balanceAt(lastKey);
+  const prevBalance = prevKeys.length ? balanceAt(prevKeys[prevKeys.length - 1]) : null;
 
   // KPI-sparklines: altijd op maand-niveau — 12 maanden t/m de gekozen periode (laatste 6 getoond).
   const sparkKeys = periodMode === "month" ? twelveMonthsEndingAt(periodKey as string) : monthKeysOfYear(periodYear);
@@ -102,13 +108,19 @@ export function Dashboard() {
   const last6 = (sel: (s: typeof sparkSeries[number]) => number) => sparkSeries.slice(-6).map(sel);
 
   const MONTH_ABBR = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
-  const trendSeries: TrendSeries[] =
-    trendMode === "beide"
-      ? [
-          { key: "inkomen", name: "Inkomsten", color: "var(--blue)", data: series.map((s) => s.income) },
-          { key: "uitgaven", name: "Uitgaven", color: "var(--orange)", data: series.map((s) => s.expense) },
-        ]
-      : [{ key: "netto", name: "Netto over", color: "var(--pos)", data: series.map((s) => Math.max(0, s.income - s.expense)) }];
+  // Cumulatief: inkomsten/uitgaven oplopend optellen over de getoonde periode (reset per maand
+  // in dagweergave, per jaar in jaarweergave). Saldo is al een lopend saldo en blijft ongemoeid.
+  const incData = cumulative ? runningTotal(series.map((s) => s.income)) : series.map((s) => s.income);
+  const expData = cumulative ? runningTotal(series.map((s) => s.expense)) : series.map((s) => s.expense);
+  const balanceData = trendKeys.map(balanceAt);
+  const trendSeries: TrendSeries[] = [
+    { key: "inkomen", name: "Inkomsten", color: "var(--blue)", data: incData, axis: "left" },
+    { key: "uitgaven", name: "Uitgaven", color: "var(--orange)", data: expData, axis: "left" },
+    // Saldo: bij cumulatief op dezelfde as (vergelijkbare grootte), anders op een eigen rechter-as.
+    ...(showBalance
+      ? [{ key: "saldo", name: "Saldo", color: "var(--pos)", data: balanceData, noArea: true, axis: cumulative ? "left" as const : "right" as const }]
+      : []),
+  ];
 
   // X-as: dagnummers binnen de maand, of maanden over het jaar (op desktop met jaartal).
   const trendLabels = isDaily
@@ -170,12 +182,16 @@ export function Dashboard() {
         <div className="card card-pad">
           <div className="card-h">
             <h3>Inkomsten &amp; uitgaven</h3>
-            <div className="seg" style={{ marginLeft: "auto" }}>
-              <button className={trendMode === "beide" ? "on" : ""} onClick={() => setTrendMode("beide")}>Beide</button>
-              <button className={trendMode === "netto" ? "on" : ""} onClick={() => setTrendMode("netto")}>Netto over</button>
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+              <div className="seg">
+                <button className={cumulative ? "on" : ""} aria-pressed={cumulative} onClick={() => setCumulative((v) => !v)}>Cumulatief</button>
+              </div>
+              <div className="seg">
+                <button className={showBalance ? "on" : ""} aria-pressed={showBalance} onClick={() => setShowBalance((v) => !v)}>Saldo</button>
+              </div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 18, margin: "4px 0 10px" }}>
+          <div className="trend-legend" style={{ display: "flex", gap: 18, margin: "4px 0 10px" }}>
             {trendSeries.map((s) => (
               <span key={s.key} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, color: "var(--body)" }}>
                 <span style={{ width: 11, height: 11, borderRadius: 3, background: s.color }}></span>{s.name}
