@@ -19,6 +19,11 @@ export function PeriodPicker() {
     function h(e: MouseEvent) {
       const t = e.target as Node;
       if (ref.current?.contains(t) || panelRef.current?.contains(t)) return;
+      // De jaar/maand-keuzelijsten zweven (portal naar body), dus buiten panelRef.
+      // Een klik dáárin mag de popover niet sluiten — anders verdwijnt de lijst vóór
+      // de optie-klik afgaat en wordt de keuze niet toegepast.
+      const el = t instanceof Element ? t : (t as ChildNode).parentElement;
+      if (el?.closest(".cat-menu")) return;
       setOpen(false);
     }
     if (open) document.addEventListener("mousedown", h);

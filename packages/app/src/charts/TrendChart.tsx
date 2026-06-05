@@ -14,11 +14,12 @@ export interface TrendSeries {
 interface Props {
   series: TrendSeries[];
   labels: string[];
+  tipLabels?: string[];   // optionele, rijkere koppen voor de tooltip (val terug op labels)
   height?: number;
   format?: (v: number) => string;
 }
 
-export function TrendChart({ series, labels, height = 260, format = (v) => eur(v) }: Props) {
+export function TrendChart({ series, labels, tipLabels, height = 260, format = (v) => eur(v) }: Props) {
   const [ref, W] = useMeasuredWidth();
   const [hover, setHover] = useState<number | null>(null);
   const H = height;
@@ -39,6 +40,11 @@ export function TrendChart({ series, labels, height = 260, format = (v) => eur(v
 
   const ticks = 4;
   const gridVals = Array.from({ length: ticks + 1 }, (_, i) => (niceMax / ticks) * i);
+
+  // X-as-labels uitdunnen zodat ze niet in elkaar lopen (bv. 30/31 dagen): toon er hooguit
+  // ~één per ~40px. Bij weinig punten (12 maanden) blijft elke label gewoon staan.
+  const labelStep = Math.max(1, Math.ceil(n / Math.max(4, Math.floor(iw / 40))));
+  const tip = tipLabels ?? labels;
 
   const linePath = (data: number[]) =>
     data.map((v, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
@@ -79,10 +85,10 @@ export function TrendChart({ series, labels, height = 260, format = (v) => eur(v
             <path key={"l" + s.key} d={linePath(s.data)} fill="none" stroke={s.color} strokeWidth={s.dashed ? 2 : 2.5}
               strokeDasharray={s.dashed ? "6 5" : undefined} strokeLinejoin="round" strokeLinecap="round" />
           ))}
-          {labels.map((lb, i) => (
+          {labels.map((lb, i) => (i % labelStep === 0 || hover === i) ? (
             <text key={i} x={x(i)} y={H - 9} textAnchor="middle" fontSize="11" fontWeight="600"
               fill={hover === i ? "var(--ink)" : "var(--muted)"}>{lb}</text>
-          ))}
+          ) : null)}
           {hover != null && (
             <g>
               <line x1={x(hover)} y1={pad.t} x2={x(hover)} y2={pad.t + ih} stroke="var(--faint)" strokeWidth="1" strokeDasharray="4 4" />
@@ -96,7 +102,7 @@ export function TrendChart({ series, labels, height = 260, format = (v) => eur(v
       )}
       {hover != null && W > 0 && (
         <div className="chart-tip" style={{ left: x(hover), top: pad.t + 6, opacity: 1 }}>
-          <div className="tt-h">{labels[hover]}</div>
+          <div className="tt-h">{tip[hover]}</div>
           {series.map((s) => (
             <div className="tt-row" key={s.key}>
               <span className="d" style={{ background: s.color }}></span>

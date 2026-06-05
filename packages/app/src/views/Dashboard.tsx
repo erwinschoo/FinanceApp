@@ -61,15 +61,34 @@ export function Dashboard() {
   const balance = balanceAtKey(lastKey);
   const prevBalance = prevKeys.length ? balanceAtKey(prevKeys[prevKeys.length - 1]) : null;
 
-  // Trend "Inkomsten & uitgaven": volgt de periode — 12 maanden t/m de gekozen maand, of jan–dec van het jaar.
-  const trendKeys = periodMode === "month" ? twelveMonthsEndingAt(periodKey as string) : monthKeysOfYear(periodYear);
-  const series = useMemo(
-    () => trendKeys.map((mk) => {
+  // KPI-sparklines: altijd op maand-niveau — 12 maanden t/m de gekozen periode (laatste 6 getoond).
+  const sparkKeys = periodMode === "month" ? twelveMonthsEndingAt(periodKey as string) : monthKeysOfYear(periodYear);
+  const sparkSeries = useMemo(
+    () => sparkKeys.map((mk) => {
       const txs = txInMonths(transactions, [mk]);
-      return { key: mk, income: incomeOf(txs, catMap), expense: expensesOf(txs, catMap), saved: savingsOf(txs, catMap) };
+      return { income: incomeOf(txs, catMap), expense: expensesOf(txs, catMap), saved: savingsOf(txs, catMap) };
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [transactions, catMap, trendKeys.join(",")],
+    [transactions, catMap, sparkKeys.join(",")],
+  );
+
+  // Trend "Inkomsten & uitgaven": in maand-modus het dag-verloop (alle dagen van de gekozen
+  // maand), in jaar-modus het maand-verloop (jan–dec). Maanden tonen we dus alleen bij "Heel jaar".
+  const isDaily = periodMode === "month";
+  const trendKeys = useMemo(() => {
+    if (!isDaily) return monthKeysOfYear(periodYear);
+    const mk = periodKey as string;
+    const [yy, mm] = mk.split("-").map(Number);
+    const days = new Date(yy, mm, 0).getDate();
+    return Array.from({ length: days }, (_, i) => `${mk}-${String(i + 1).padStart(2, "0")}`);
+  }, [isDaily, periodKey, periodYear]);
+  const series = useMemo(
+    () => trendKeys.map((k) => {
+      const txs = isDaily ? transactions.filter((t) => t.date.slice(0, 10) === k) : txInMonths(transactions, [k]);
+      return { key: k, income: incomeOf(txs, catMap), expense: expensesOf(txs, catMap), saved: savingsOf(txs, catMap) };
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [transactions, catMap, trendKeys.join(","), isDaily],
   );
 
   const periodTxs = txInMonths(transactions, periodMonthKeys);
@@ -80,13 +99,9 @@ export function Dashboard() {
     .sort((a, b) => b.value - a.value);
   const totalSpend = donutData.reduce((s, d) => s + d.value, 0) || 1;
 
-  const last6 = (sel: (s: typeof series[number]) => number) => series.slice(-6).map(sel);
+  const last6 = (sel: (s: typeof sparkSeries[number]) => number) => sparkSeries.slice(-6).map(sel);
 
   const MONTH_ABBR = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
-  const labels = trendKeys.map((mk) => {
-    const [y, m] = mk.split("-");
-    return `${MONTH_ABBR[+m - 1]} '${y.slice(2)}`;
-  });
   const trendSeries: TrendSeries[] =
     trendMode === "beide"
       ? [
@@ -95,11 +110,17 @@ export function Dashboard() {
         ]
       : [{ key: "netto", name: "Netto over", color: "var(--pos)", data: series.map((s) => Math.max(0, s.income - s.expense)) }];
 
-  // Mobiel: in maand-modus de laatste 6 maanden tonen (anders lopen labels in elkaar). Jaar-modus en
-  // desktop: de volledige reeks van 12.
-  const from = isPhone && periodMode === "month" ? 6 : 0;
-  const trendLabels = (isPhone ? trendKeys.map((mk) => MONTH_ABBR[+mk.split("-")[1] - 1]) : labels).slice(from);
-  const trendSeriesView = trendSeries.map((s) => ({ ...s, data: s.data.slice(from) }));
+  // X-as: dagnummers binnen de maand, of maanden over het jaar (op desktop met jaartal).
+  const trendLabels = isDaily
+    ? trendKeys.map((k) => String(Number(k.slice(8, 10))))
+    : isPhone
+      ? trendKeys.map((mk) => MONTH_ABBR[+mk.split("-")[1] - 1])
+      : trendKeys.map((mk) => { const [y, m] = mk.split("-"); return `${MONTH_ABBR[+m - 1]} '${y.slice(2)}`; });
+  // Tooltip-kop: bij dagen de volledige datum (bv. "12 mei"), anders gelijk aan de x-as.
+  const trendTipLabels = isDaily
+    ? trendKeys.map((k) => `${Number(k.slice(8, 10))} ${MONTH_ABBR[+k.slice(5, 7) - 1]}`)
+    : undefined;
+  const trendSeriesView = trendSeries;
 
   const budgetRows = categories
     .filter((c) => budgets[c.id])
@@ -161,7 +182,7 @@ export function Dashboard() {
               </span>
             ))}
           </div>
-          <TrendChart series={trendSeriesView} labels={trendLabels} height={isPhone ? 200 : 262} />
+          <TrendChart series={trendSeriesView} labels={trendLabels} tipLabels={trendTipLabels} height={isPhone ? 200 : 262} />
         </div>
 
         <div className="card card-pad">
