@@ -668,6 +668,7 @@ input[type=range].rng::-moz-range-thumb { width:18px; height:18px; border-radius
 
 /* ── Vergelijken-tabel ── */
 .cmp-row { display:grid; grid-template-columns:200px 1fr 120px 120px; align-items:center; gap:18px; padding:14px 0; border-bottom:1px solid var(--line-soft); }
+.cmp-row > * { min-width:0; }
 .cmp-head { display:grid; grid-template-columns:200px 1fr 120px 120px; gap:18px; padding-bottom:10px; font-size:12px; font-weight:700; color:var(--muted); border-bottom:1px solid var(--line); }
 .cmp-name { font-weight:400; color:var(--ink); font-size:14px; }
 .cmp-amt { text-align:right; font-size:14px; }
