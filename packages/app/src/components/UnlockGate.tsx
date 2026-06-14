@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Ic } from "./Ic";
 import { Button } from "./Button";
 import { PasswordInput } from "./PasswordInput";
@@ -26,7 +26,6 @@ export function UnlockGate({ atRest, onUnlocked }: { atRest: boolean; onUnlocked
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const triedBio = useRef(false);
 
   useEffect(() => {
     void (async () => {
@@ -62,14 +61,9 @@ export function UnlockGate({ atRest, onUnlocked }: { atRest: boolean; onUnlocked
     }
   }
 
-  // Bied biometrie automatisch één keer aan zodra bekend is dat er een slot is.
-  useEffect(() => {
-    if (hasBio && !triedBio.current && !busy) {
-      triedBio.current = true;
-      void doBiometric();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasBio]);
+  // Biometrie wordt NIET automatisch getriggerd: anders vuurt de browser bij opstart
+  // twee credential-prompts tegelijk af (passkey + wachtwoord-autofill). De gebruiker
+  // kiest zelf via de biometrie-knop of het wachtwoordveld → maximaal één prompt tegelijk.
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
